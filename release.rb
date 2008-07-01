@@ -1,6 +1,20 @@
 require 'fileutils'
 require 'yaml'
-require 'scripts/include/misc'
+
+def determinePlatform()
+	case RUBY_PLATFORM.downcase
+	when /linux/
+		'linux'
+	when /darwin/
+		'mac'
+	when /mswin/
+		'windows'
+	else
+		puts "Internal error: #{RUBY_PLATFORM} platform not supported."
+		exit 1
+	end
+end
+
 
 ls_Version = nil
 File.open('version.txt', 'r') { |lk_File| ls_Version = lk_File.read.strip }
