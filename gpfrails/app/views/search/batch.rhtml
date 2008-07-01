@@ -1,0 +1,94 @@
+<h2>Batch processing</h2>
+
+<p>
+The query batch upload is reserved to institutions with need for high-throughput 
+use of GPF. When you use the query batch upload, your queries will be enqueued 
+and processed when all previously started query batches have been finished. 
+</p>
+
+<p>
+Query
+batches are processed with a higher priority than normal website queries.
+</p>
+
+<h3>Input format</h3>
+
+<p>
+The query batch file contains a line for each query, and each line constists
+of the following values, separated by a semicolon:
+</p>
+
+<ul class='normal'>
+<li><em>peptide</em>: the de novo predicted peptide</li>
+<li><em>precursorMass</em> (optional): The mass of the precursor ion. If no precursor mass is specified, it will be calculated from the de novo predicted peptide. Specifying the precursor mass is a way of compensating for inaccuracy of the de novo prediction and so improving search accuracy.</li>
+</ul>
+
+<p>
+Here is an example query batch file with one query consisting of a de novo 
+predicted peptide and the corresponding precursor mass. 
+</p>
+
+<pre class='code'>
+peptide=LLCFFETFPVLLLDK;precursorMass=1797.39
+</pre>
+
+<h3>Output format</h3>
+
+<p>
+The response is a YAML document containing a map containing the parameters and
+a map containing the search results for each query. The keys of the results map
+are exactly the lines from the query batch file.
+</p>
+
+<pre class='code'>
+parameters:
+  genome: 'chlre2'
+  masses: 'monoisotopic'
+  protease: 'trypsin'
+  massError: '700'
+  searchSimilar: 'yes'
+  searchIntrons: 'always'
+  maxIntronLength: '2100'
+  splitTriplets: 'yes'
+  minChainLength: '5'
+  cropCompleteHits: 'no'
+  fullDetails: 'yes'
+
+results:
+
+  'peptide=LLCFFETFPVLLLDK;precursorMass=1797.39':
+    - peptide: MPTFFETFPVLLLDK
+      score: 12
+      mass: 1796.93
+      assembly: chlre2-124277516:45
+      details:
+        organism: chlre2
+        forward: false
+        parts:
+        - { scaffold: scaffold_3208, position: 2239, length: 45, frame: 5 }
+    - peptide: VLPPPSIALLPVLLLDK
+      score: 7
+      mass: 1797.13
+      assembly: chlre2+9685604:41&9686670:10
+      details:
+        organism: chlre2
+        forward: true
+        parts:
+        - { scaffold: scaffold_6, position: 1112143, length: 41, frame: 1 }
+        - { scaffold: scaffold_6, position: 1113209, length: 10, frame: 2 }
+    ...
+</pre>
+
+<h3>Usage</h3>
+
+<p>
+Please use the form on the left to upload your queries. After your query batch file
+has been uploaded, the progress of the query batch processing is shown on the
+website.
+</p>
+
+<p>
+It is not necessary to leave the browser window open in order to receive your 
+results if you note down the result file URL at which the results will become
+available as soon as your query batch has been finished.
+</p>

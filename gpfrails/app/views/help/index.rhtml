@@ -1,0 +1,84 @@
+<%= render :partial => 'layouts/header' %>
+
+<h2>What does GPF do?</h2>
+
+<p>
+The intention of GPF is to provide a means of evaluating de novo predicted 
+peptides by determining how these peptides can be deduced from a genomic 
+sequence. GPF is able to find intron split peptides and can also find peptides
+that are similar to the original query.
+</p>
+
+<h2>Limitations of GPF</h2>
+
+<p>
+There are a few limitations that you should be aware of:
+</p>
+
+<h3>Number of correctly predicted amino acids</h3>
+
+<p>
+For each exon, at least three consecutive amino acids must have been correctly
+predicted. That means that for non-intron split peptides, three consecutive amino
+acids must be correct in the query, and for intron split peptides, two such chains
+of three consecutive amino acids each must be present in the peptide query.
+</p>
+
+<h3>Peptide length constraints</h3>
+
+<p>
+There is a minimum and maximum peptide length: Currently all peptides must have a 
+length of 3 to 1000 amino acids in order to be found by GPF.
+</p>
+
+<h3>Mass precision</h3>
+
+<p>
+GPF uses fixed-point arithmetic for mass calculations. The mass precision is 10<sup>-4</sup> Da.
+</p>
+
+<h2>Searching</h2>
+
+<p>
+In order to start a search, enter your peptide query plus an additional 
+precursor mass. If no precursor mass is specified, it is automatically 
+calculated from the peptide query. Specifying a precursor mass may improve 
+the search performace because usually, the precursor mass can be measured
+very accurately during MS/MS, whereas the de novo predicted peptide coming 
+from the de novo software usually has some inaccuracies due to noise and 
+mass ambiguities.
+</p>
+
+<h2>Search results</h2>
+
+<p>
+An example result list is depicted below:
+</p>
+
+<img src='/images/introduction-search-results.png' />
+
+<p>
+Each row represesents a hit which fits your query. The score is 
+the length of the longest chain of consecutive amino acids from the found
+peptide that match the query peptide. In the next three columns, the result
+peptide plus its left and right surrounding amino acids are shown. An intron
+split is denoted by [...] (see the first and second rows). If there is an 
+amino acid on one side of the intron split (as in the first row), a triplet 
+split was found within this amino acid. The assembly shown in the last column
+describes where the hit was found: in which genomic sequence, in which 
+direction, and the spans of DNA from which the result peptide is assembled.
+</p>
+
+<p>
+
+Some hits are highlighted with a green background which means that there
+is a high probability that they are correct due to one of the following reasons:
+</p>
+
+<ul>
+<li>the peptide has no intron</li>
+<li>the peptide has a GT-AG intron</li>
+<li>the peptide has a GC-AG intron</li>
+</ul>
+
+<%= render :partial => 'layouts/footer' %>

@@ -1,0 +1,368 @@
+body
+{
+	font-family: 'Verdana', sans-serif;
+	font-size: 9pt;
+	top: 0;
+	right: 0;
+	margin: 1em;
+	padding: 1em;
+}
+
+#top
+{
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	z-index: 1;
+	//height: 3.5em;
+	padding-left: 12px;
+	background-image: url('/images/green-top.png');
+	background-position: left bottom;
+	background-repeat: repeat-x;
+	padding-bottom: 20px;
+}
+
+#top h1
+{
+	font-weight: bold;
+	font-size: 14pt;
+	display: table-cell;
+	vertical-align: middle;
+	float: left;
+	margin: 0;
+	margin-top: 0.5em;
+}
+
+.hide
+{
+	display: none;
+}
+
+ul.navigation
+{
+	float: right;
+	padding: 0;
+	display: table-cell;
+	//padding-left: 5em;
+	right: 0;
+	vertical-align: middle;
+	margin-top: 1.2em;
+	padding-right: 1em;
+	color: #283d01;
+}
+
+/* 
+really dark green: #283d01 
+link dark green: #416402 
+*/
+
+ul.navigation a
+{
+	color: #283d01;
+}
+
+ul.navigation li
+{
+	display: inline;
+	margin-right: 4px;
+}
+
+#sidebar
+{
+	width: 226px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	margin: 0;
+	padding: 12px;
+	padding-top: 4em;
+}
+
+p
+{
+	margin: 0;
+	padding: 0;
+	margin-top: 8pt;
+	margin-bottom: 8pt;
+}
+
+form
+{
+	margin: 0;
+	padding: 0;
+	margin-top: 8pt;
+	margin-bottom: 8pt;
+}
+
+h1
+{
+	font-size: 14pt;
+	margin-top: 2em;
+}
+
+h2
+{
+	font-size: 12pt;
+	margin-top: 2em;
+}
+
+h3
+{
+	font-size: 10pt;
+	margin-top: 2em;
+}
+
+#sidebar h3
+{
+	margin-top: 1em;
+}
+
+
+a, .linklike
+{
+	color: #666;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+a:hover, .linklike:hover
+{
+	text-decoration: underline;
+}
+
+
+hr
+{
+	max-height: 1px;
+	height: 1px;
+	border-bottom: none;
+	border-top: 1px dashed #aaa;
+}
+
+#sidebar hr
+{
+	border-top: 1px dashed #666;
+}
+
+#sidebar a
+{
+	color: #666;
+}
+
+table.query-form
+{
+	border-style: none;
+	width: 100%;
+}
+
+table.query-form td, table.query-form th
+{
+	border-style: none;
+	vertical-align: middle;
+	padding: 0;
+}
+
+#gpf-output table
+{
+	font-size: 9pt;	
+	border-collapse: collapse;
+	border: 1px solid #aaa;
+	border-style: outset;
+}
+
+#gpf-output th,td
+{
+	text-align: left;
+	padding: 3pt 6pt 3pt 6pt;
+	border-collapse: collapse;
+	border: 1px solid #aaa;
+	border-style: inset;
+	vertical-align: top;
+}
+
+#gpf-output th
+{
+	font-weight: bold;
+	background-color: #eee;
+}
+
+#gpf-output tt
+{
+	font-family: 'Lucida Console', monospace;
+	font-size: 8pt;
+	border-bottom: 1px solid white;
+	border-top: 1px solid white;
+}
+
+#gpf-output tt u
+{
+	text-decoration: none;
+	background-color: #aed16f;
+	border-bottom: 1px solid #39673d;
+	border-top: 1px solid #39673d;
+	//background-image: url('marker.png');
+	//background-repeat: repeat-x;
+}
+
+input[type=text]
+{
+	border: 1px solid #aaa;
+	padding-left: 2px;
+	padding-right: 2px;
+}
+
+input[type=text]:focus
+{
+	border: 1px solid #444;
+}
+
+select
+{
+	border: 1px solid #aaa;
+}
+
+select:focus
+{
+	border: 1px solid #444;
+}
+
+s
+{
+	text-decoration: none;
+	background-image: url('split.png');
+	background-repeat: repeat-y;
+	background-position: center top;
+	border-top: 1px solid #a00;
+	border-bottom: 1px solid #a00;
+}	
+
+s.l
+{
+	background-position: left top;
+}	
+
+s.r
+{
+	background-position: right top;
+}	
+
+#bottom
+{
+	position: fixed;
+	left: 0;
+	bottom: 0;
+	background-image: url('/images/green-bottom.png');
+	background-repeat: repeat-x;
+	width: 100%;
+	padding: 0.5em;
+	padding-top: 16px;
+	font-size: 80%;
+	color: #283d01;
+}
+
+#bottom a
+{
+	color: #416402;
+}
+
+ul
+{
+	margin-left: 0;
+	padding-left: 0em;
+	list-style-type: none;
+}
+
+ul li
+{
+	padding-left: 0.5em;
+	margin-bottom: 0.2em;
+}
+
+ul li:before
+{
+	content: "\00BB \0020";
+}
+
+ul.normal
+{
+	padding-left: 2em;
+	list-style-type: square;
+}
+
+ul.normal li
+{
+	padding-left: 0.2em;
+	padding-bottom: 0.2em;
+}
+
+ul.normal li:before
+{
+	content: '';
+}
+
+.code
+{
+	display: table-cell;
+	font-family: 'Lucida Console', monospace;
+	background-color: #f8f8f8;
+	border: 1px solid #aaa;
+	padding: 0.5em;
+	color: #444;
+}
+
+dl dt
+{
+	display: inline;
+	font-weight: bold;
+}
+
+dl dd
+{
+	display: inline;
+}
+
+.peptide-surroundings
+{
+	font-size: 80%;
+	color: #aaa;
+}
+
+.assembly
+{
+	font-size: 80%;
+}
+
+tt
+{
+	font-family: 'Lucida Console', monospace;
+	font-size: 8pt;
+	border-bottom: 1px solid white;
+	border-top: 1px solid white;
+}
+
+table.browse
+{
+	font-size: 9pt;	
+	border-collapse: collapse;
+	border: 1px solid #aaa;
+	border-style: outset;
+}
+
+table.browse tt u
+{
+	text-decoration: none;
+	background-color: #b9d090;
+	border-bottom: 1px solid #758d4a;
+	border-top: 1px solid #758d4a;
+}
+
+ul.horizontalMenu li
+{
+	display: inline;
+}
+
+p
+{
+	max-width: 800px;
+}

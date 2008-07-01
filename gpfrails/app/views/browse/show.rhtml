@@ -1,0 +1,51 @@
+<%= render :partial => 'layouts/header' %>
+
+<% lb_Forward = params['forward'] == 'true' %>
+
+<h2>Browsing <%= @mk_Result['scaffoldId'] %> (<%= params['forward'] == 'true'? 'forward': 'backward' %>)</h2>
+
+<% if @ms_PeptideShowing %>
+<p>
+Showing <%= link_to @ms_PeptideShowing, { :controller => 'search', :action => 'query', :genome => params['genome'], :peptide => @ms_PeptideShowing } %> <span class='assembly'>(<%= @ms_AssemblyShowing %>)</span>
+</p>
+<% end %>
+
+<!--
+<ul class='horizontalMenu'>
+<li><%= link_to 'reverse', {:action => 'show', :genome => params['genome'], :position => params['position'], :length => params['length'], :forward => lb_Forward ? 'false' : 'true', :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
+<li><%= link_to 'up', {:action => 'show', :genome => params['genome'], :position => params['position'].to_i + ($gi_BrowseWidth * (lb_Forward ? -1 : +1)), :length => params['length'], :forward => params['forward'], :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
+<li><%= link_to 'down', {:action => 'show', :genome => params['genome'], :position => params['position'].to_i + ($gi_BrowseWidth * (lb_Forward ? +1 : -1)), :length => params['length'], :forward => params['forward'], :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
+<li><%= link_to 'left', {:action => 'show', :genome => params['genome'], :position => params['position'].to_i + ((lb_Forward ? +3 : -3)), :length => params['length'], :forward => params['forward'], :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
+<li><%= link_to 'right', {:action => 'show', :genome => params['genome'], :position => params['position'].to_i + ((lb_Forward ? -3 : +3)), :length => params['length'], :forward => params['forward'], :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
+</ul>
+-->
+
+<% 
+li_Position = @mi_Position
+li_Position += @mi_Length - 1 if !lb_Forward
+@mk_BrowserRows.each do |lk_Row| 
+%>
+<p style='font-size: 7pt; margin: 0; margin-bottom: 0.2em;'><%= li_Position %></p>
+<table class='browse'>
+<tr><td><tt>DNA</tt></td><td><tt><%= lk_Row[0] %></tt></td></tr>
+<tr><td>
+<% (lb_Forward ? (1..3) : (4..6)).each do |i| %>
+<%= "<tt>RF#{i}</tt><br />" %>
+<% end %>
+</td><td><tt>
+<% 
+(1..3).each do |i| 
+%>
+<%= lk_Row[i] + '<br />' %>
+<%
+end
+%>
+</tt></td></tr>
+</table>
+<br />
+<% 
+	lb_Forward ? li_Position += $gi_BrowseWidth : li_Position -= $gi_BrowseWidth
+end 
+%>
+
+<%= render :partial => 'layouts/footer' %>

@@ -1,0 +1,65 @@
+enums:
+  MassesOption: &Masses
+    - monoisotopic
+  ProteaseOption: &Protease
+    - trypsin
+  YesNoOption: &YesNo
+    - 'no'
+    - 'yes'
+  SearchIntronOption: &SearchIntron
+    - never
+    - always
+    - ifNecessary: if necessary
+    
+
+parameters:
+  - id: masses
+    type: *Masses
+    label: Masses
+    default: monoisotopic
+  - id: protease
+    type: *Protease
+    label: Protease
+    default: trypsin
+  - id: massError
+    type: int
+    default: 700
+    label: Precision (ppm)
+    description: Specify the mass precision of the mass spectrometer here.
+  - id: searchSimilar
+    type: *YesNo
+    default: 'yes'
+    label: Similarity search
+    description: Choose whether GPF should search for hits that are only partially equal to the query. Similar hits may be very different from the original query, but the mass is still correct.
+  - id: searchIntrons
+    type: *YesNo
+    default: 'yes'
+    label: Intron search
+  - id: maxIntronLength
+    type: int
+    default: 2100
+    label: Max intron length
+#  - id: splitTriplets
+#    type: *YesNo
+#    default: 'yes'
+#    label: Split triplets
+  - id: minChainLength
+    type: int
+    default: 5
+    label: Minimum aa chain length
+#  - id: cropCompleteHits
+#    type: *YesNo
+#    default: 'no'
+#    label: Crop complete hits
+#    description: If hits with a full score are found, discard all lower-scored hits
+#  - id: cropCsIntrons
+#    type: *YesNo
+#    default: 'no'
+#    label: CS introns only
+#    description: Only list intron split hits that have a consensus sequence.
+  - id: fullDetails
+    type: *YesNo
+    default: 'no'
+    label: Full details
+    description: Return full hit details
+	

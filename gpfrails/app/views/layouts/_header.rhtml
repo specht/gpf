@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<link rel='shortcut icon' type='image/x-icon' href='favicon.ico' />
+<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+<title><%= @ms_PageTitle %><% if @ms_PageTitle %> - <% end %>Genomic Peptide Finder, the B-side</title>
+<%= stylesheet_link_tag 'styles', :media => 'all' %>
+<%= stylesheet_link_tag 'styles-print' , :media => 'print' %>
+<%
+user_agent = request.user_agent.downcase
+ls_Agent = ['ie'].detect { |b| user_agent.include? b } 
+if (ls_Agent != nil)
+%>
+<%= stylesheet_link_tag 'styles-ie' %>
+<% end %>
+<% if (@mb_ShowSidebar) %>
+	<%= stylesheet_link_tag 'styles-sidebar' %>
+<% end %>
+<%= javascript_include_tag :defaults %>
+<%= javascript_include_tag 'gpfrails' %>
+<%= javascript_include_tag 'browserdetect' %>
+</head>
+<body>
+
+<a href='#content' class='hide'>Skip to content</a>
+
+<div id='top'>
+<h1>Genomic Peptide Finder</h1>
+<ul class='navigation'>
+<%
+lk_MenuItems = [
+	{'link' => 'search', 'label' => 'Search'},
+	#{'link' => 'browse', 'label' => 'Browse'},
+	#{'link' => 'batch', 'label' => 'Batch processing'},
+	#{'link' => 'download', 'label' => 'Download'},
+	#{'link' => 'help', 'label' => 'Help'}
+	]
+	
+lk_MenuItems.each do |lk_Entry|
+%>
+<li><%= link_to lk_Entry['label'], :controller => lk_Entry['link'] %></li>
+<%
+end
+%>
+</ul>
+</div>
+
+<span id='content' />
