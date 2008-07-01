@@ -1,12 +1,14 @@
 TEMPLATE = app
-
 win32 {
-	TEMPLATE = vcapp
+    CONFIG += embed_manifest_exe
+}
+
+macx {
+	CONFIG -= app_bundle
+	CONFIG += x86 ppc
 }
 
 CONFIG += debug_and_release
-
-DEPENDPATH += .
 
 OBJECTS_DIR = ../../obj/
 MOC_DIR = ../../obj/
