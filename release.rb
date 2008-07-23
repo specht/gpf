@@ -41,7 +41,7 @@ FileUtils.rm_rf(ls_DestDir + '.zip')
 puts 'Building GPF executables...'
 
 FileUtils.rmtree(File::join('obj'))
-lk_Projects = ['gpfbatch', 'gpfd', 'gpfdump', 'gpfindex', 'gpfquery']
+lk_Projects = ['gpfbatch', 'gpfd', 'gpfdump', 'gpfindex']#, 'gpfquery']
 lk_Projects.each { |ls_Project| system("cd projects/#{ls_Project} && #{ls_QMake[ls_Platform]} && #{ls_Make[ls_Platform]} release && cd ../../") }
 
 puts 'Collecting GPF executables...'
@@ -49,11 +49,11 @@ puts 'Collecting GPF executables...'
 lk_Projects.each { |ls_Project| FileUtils.cp(ls_Project + ls_BinaryExtension[ls_Platform], ls_DestDir) }
 
 if (ls_Platform == 'windows')
-	lk_Projects.each { |ls_Project| FileUtils.cp(ls_Project + '.exe.manifest', ls_DestDir) }
-	FileUtils.cp('C:/Qt/4.3.4/bin/QtCore4.dll', ls_DestDir)
-	FileUtils.cp('C:/Qt/4.3.4/bin/QtNetwork4.dll', ls_DestDir)
-	FileUtils.cp('C:/Programme/Microsoft Visual Studio 9.0/VC/redist/x86/Microsoft.VC90.CRT/msvcp90.dll', ls_DestDir)
-	FileUtils.cp('C:/Programme/Microsoft Visual Studio 9.0/VC/redist/x86/Microsoft.VC90.CRT/msvcr90.dll', ls_DestDir)
+	#lk_Projects.each { |ls_Project| FileUtils.cp(ls_Project + '.exe.manifest', ls_DestDir) }
+	FileUtils.cp('C:/Qt/4.3.0/bin/QtCore4.dll', ls_DestDir)
+	FileUtils.cp('C:/Qt/4.3.0/bin/QtNetwork4.dll', ls_DestDir)
+	FileUtils.cp('C:/Program Files/Microsoft Visual Studio 8/VC/redist/x86/Microsoft.VC80.CRT/msvcp80.dll', ls_DestDir)
+	FileUtils.cp('C:/Program Files/Microsoft Visual Studio 8/VC/redist/x86/Microsoft.VC80.CRT/msvcr80.dll', ls_DestDir)
 end
 
 if (ls_Platform == 'windows')
