@@ -1,3 +1,5 @@
+# save as gpf_constants.rb
+
 $gs_GpfServer = 'http://gpf.uni-muenster.de:19810'
 $gi_BrowseWidth = 120
 
