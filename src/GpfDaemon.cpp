@@ -8,9 +8,6 @@ k_GpfDaemon::k_GpfDaemon(QString as_HostName, quint16 auw_Port, QStringList ak_I
 	: QTcpServer(NULL)
 	, ms_HostName(as_HostName)
 	, muw_Port(auw_Port)
-	, ms_TempPath("")
-	, ms_DownloadPath("")
-	, ms_UriDownloadPath("")
 	, mui_MaxWorkerThreadCount(2)
 	, mk_GpfBase(ak_IndexFiles)
 	, mk_QueryQueue(*this)
@@ -33,24 +30,6 @@ k_GpfDaemon::~k_GpfDaemon()
 quint16 k_GpfDaemon::get_Port() const
 {
 	return muw_Port;
-}
-
-
-QString k_GpfDaemon::get_TemporaryPath() const
-{
-	return ms_TempPath;
-}
-
-
-QString k_GpfDaemon::get_DownloadPath() const
-{
-	return ms_DownloadPath;
-}
-
-
-QString k_GpfDaemon::get_UriDownloadPath() const
-{
-	return ms_UriDownloadPath;
 }
 
 
@@ -124,6 +103,7 @@ void k_GpfDaemon::DelegateQuery()
 void k_GpfDaemon::notifyFinished()
 {
 	// if this was a batch query, send result to appropriate query batch object
+	/*
 	RefPtr<k_GpfQuery> lk_pQuery = static_cast<k_GpfWorkerThread*>(sender())->get_Query();
 	{
 		QMutexLocker lk_Locker(&mk_BatchQueriesMutex);
@@ -140,6 +120,7 @@ void k_GpfDaemon::notifyFinished()
 			mk_BatchQueries.remove(lk_GpfQuery_);
 		}
 	}
+	*/
 
 	// remove worker thread from mk_WorkerThreads
 	{

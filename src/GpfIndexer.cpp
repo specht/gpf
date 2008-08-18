@@ -8,8 +8,8 @@ k_GpfIndexer::k_GpfIndexer(QString as_GenomeFilename, QString as_GpfIndexFilenam
 	: ms_GenomeFilename(as_GenomeFilename)
 	, ms_GenomeTitle(as_GenomeTitle)
 	, mk_GpfBase()
-	, mk_IndexFileInfo(mk_GpfBase)
 	, ms_IndexFilename(as_GpfIndexFilename)
+	, mk_IndexFileInfo(mk_GpfBase)
 {
 }
 

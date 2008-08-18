@@ -20,9 +20,6 @@ public:
 
 	QString get_HostName() const;
 	quint16 get_Port() const;
-	QString get_TemporaryPath() const;
-	QString get_DownloadPath() const;
-	QString get_UriDownloadPath() const;
 	k_QueryQueue& get_QueryQueue();
 	k_GpfBase& get_GpfBase();
 	k_ValueEstimator& get_SpeedEstimator();
@@ -45,9 +42,6 @@ private:
 
 	QString ms_HostName;
 	quint16 muw_Port;
-	QString ms_TempPath;
-	QString ms_DownloadPath;
-	QString ms_UriDownloadPath;
 	unsigned int mui_MaxWorkerThreadCount;
 	k_GpfBase mk_GpfBase;
 

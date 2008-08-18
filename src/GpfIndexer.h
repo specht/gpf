@@ -16,8 +16,8 @@ private:
 	QFile mk_IndexFile;
 	QString ms_GenomeFilename;
 	QString ms_GenomeTitle;
-	QString ms_IndexFilename;
 	k_GpfBase mk_GpfBase;
+	QString ms_IndexFilename;
 	k_GpfIndexFileInfo mk_IndexFileInfo;
 
 	void WriteHeader();

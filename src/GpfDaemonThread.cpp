@@ -69,6 +69,7 @@ void k_GpfDaemonThread::run()
 						ls_ContentLength = ls_ContentLength.left(ls_ContentLength.indexOf("\r\n"));
 					li_ContentLength = ls_ContentLength.trimmed().toInt();
 
+					/*
 					if (ls_Method == "POST")
 					{
 						ls_Ticket = mk_GpfDaemon.get_UniqueTicket();
@@ -80,6 +81,7 @@ void k_GpfDaemonThread::run()
 						// act as if the received packet was only made up of content,
 						// so that the content is written to the content file further below
 					}
+					*/
 					ls_Packet = ls_Content;
 				}
 				else
@@ -154,6 +156,7 @@ void k_GpfDaemonThread::run()
 
 	// we now have the headers and the content of the HTTP request, let's do some work!
 
+	/*
 	if (ls_Method == "POST")
 	{
 		if (lk_RequestVars.contains("queryBatch"))
@@ -179,6 +182,7 @@ void k_GpfDaemonThread::run()
 				.arg(ls_Ticket);
 		}
 	}
+	*/
 
 	if (lk_RequestVars.contains("getParameters"))
 	{
@@ -186,6 +190,7 @@ void k_GpfDaemonThread::run()
 		ms_ResponseContentType = "text/yaml";
 		ms_ResponseContent = mk_GpfBase.get_GpfParameters();
 	}
+	/*
 	else if (lk_RequestVars.contains("queryBatchStatus"))
 	{
 		QString ls_Ticket = lk_RequestVars["queryBatchStatus"];
@@ -204,6 +209,7 @@ void k_GpfDaemonThread::run()
 		ms_ResponseContentType = "text/html";
 		ms_ResponseContent = QString("Please download the result file at: <a href='%1'>%1</a>.").arg(ls_Location);
 	}
+	*/
 	else if (lk_RequestVars.contains("query"))
 	{
 		// create a query and enqueue it

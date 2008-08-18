@@ -24,10 +24,12 @@ void k_QueryQueue::Enqueue(RefPtr<k_GpfQuery> ak_pQuery)
 
 void k_QueryQueue::AddBatch(QString as_Ticket)
 {
+/*
 	QMutexLocker lk_Locker(&mk_BatchListMutex);
 	RefPtr<k_QueryBatch> lk_pQueryBatch(new k_QueryBatch(mk_GpfDaemon, as_Ticket));
 	mk_QueryBatches.append(lk_pQueryBatch);
 	mk_QueryBatchByTicket[as_Ticket] = lk_pQueryBatch;
+	*/
 }
 
 
@@ -49,6 +51,7 @@ QString k_QueryQueue::QueryBatchStatus(QString ls_Ticket)
 {
 	QString ls_Status("response: error\n");
 
+/*
 	QMutexLocker lk_Locker(&mk_BatchListMutex);
 	if (mk_QueryBatchByTicket.contains(ls_Ticket))
 	{
@@ -67,17 +70,6 @@ QString k_QueryQueue::QueryBatchStatus(QString ls_Ticket)
 					.arg(lk_pQueryBatch->get_ExpectedQueryCount())
 					.arg(lk_pQueryBatch->get_ProcessedQueryCount());
 
-				/*
-				double ld_EstimatedSpeed = 0;
-				if (mk_GpfDaemon.get_SpeedEstimator().get_Estimate(&ld_EstimatedSpeed))
-				{
-					double ld_EstimatedRemainingTime = ld_EstimatedSpeed * lk_pQueryBatch->get_RemainingQueryCount();
-					QString ls_EstimatedRemainingTime = k_StopWatch::getTimeAsString(ld_EstimatedRemainingTime);
-					ls_Status += QString("estimatedDuration: { seconds: %1, verbose: %2 }\n")
-						.arg(ld_EstimatedRemainingTime)
-						.arg(ls_EstimatedRemainingTime);
-				}
-				*/
 
 				break;
 			}
@@ -92,6 +84,7 @@ QString k_QueryQueue::QueryBatchStatus(QString ls_Ticket)
 		if (QFile::exists(mk_GpfDaemon.get_DownloadPath() + ls_Ticket + ".yaml"))
 			ls_Status = QString("response: ok\nstate: finished\n");
 	}
+	*/
 
 	return ls_Status;
 }
@@ -106,44 +99,18 @@ RefPtr<k_GpfQuery> k_QueryQueue::get_NextQuery(RefPtr<k_QueryBatch>* ak_pQueryBa
 	QMutexLocker lk_BatchListLocker(&mk_BatchListMutex);
 
 	// clean up high-priority batch list
+	/*
 	while (!mk_QueryBatches.empty() && mk_QueryBatches.first()->get_RemainingQueryCount() == 0)
 	{
 		mk_QueryBatchByTicket.remove(mk_QueryBatches.first()->get_Ticket());
 		mk_QueryBatches.removeFirst();
 	}
+	*/
 
-	if (mk_LowPriorityQueries.empty())
+	if (!mk_LowPriorityQueries.empty())
 	{
-		// no low priority queries, pick the next high priority query, if available
-		if (!mk_QueryBatches.empty())
-		{
-			// TODO!!! ATTENTION ATTENTION THERE IS A POTENTIAL GLITCH HERE
-			// What if the next query is null? Eh?
-			lk_pQuery = mk_QueryBatches.first()->get_NextQuery();
-			*ak_pQueryBatchPicked_ = mk_QueryBatches.first();
-		}
-	}
-	else
-	{
-		// there are low priority queries waiting, do time check
-		bool lb_PickLowPriorityQuery = true;
-		if (!mk_QueryBatches.empty())
-		{
-			// there is also at least one high priority query waiting
-			if (mk_LowPriorityStopWatch.get_Time() < gd_LowPriorityQueryPause)
-				lb_PickLowPriorityQuery = false;
-		}
-
-		if (lb_PickLowPriorityQuery)
-		{
-			lk_pQuery = mk_LowPriorityQueries.takeFirst();
-			mk_LowPriorityStopWatch.reset();
-		}
-		else
-		{
-			lk_pQuery = mk_QueryBatches.first()->get_NextQuery();
-			*ak_pQueryBatchPicked_ = mk_QueryBatches.first();
-		}
+		lk_pQuery = mk_LowPriorityQueries.takeFirst();
+		mk_LowPriorityStopWatch.reset();
 	}
 
 	/*
