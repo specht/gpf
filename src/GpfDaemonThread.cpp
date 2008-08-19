@@ -149,6 +149,7 @@ void k_GpfDaemonThread::run()
 	QString ls_AdditionalResponseHeaders;
 	QString ls_ResponseCode("200 OK");
 
+	printf("-------------\nREQUEST START\n-------------\n%s\n-------------\nREQUEST END\n-------------\n", ls_Request.toStdString().c_str());
 	// see if the query is specific to a certain genome, fetch that if possible
 	RefPtr<k_GpfIndexFileInfo> lk_pIndexFileInfo = mk_GpfBase.get_DefaultIndexFileInfo();
 	if (lk_RequestVars.contains("genome"))
