@@ -149,13 +149,17 @@ void k_GpfDaemonThread::run()
 	QString ls_AdditionalResponseHeaders;
 	QString ls_ResponseCode("200 OK");
 
-	printf("-------------\nREQUEST START\n-------------\n%s\n-------------\nREQUEST END\n-------------\n", ls_Request.toStdString().c_str());
+	printf("-------------\nREQUEST START (from: %s)\n-------------\n%s\n-------------\nREQUEST END\n-------------\n", 
+		mk_Socket.peerAddress().toString().toStdString().c_str(), 
+		ls_Request.toStdString().c_str());
 	// see if the query is specific to a certain genome, fetch that if possible
 	RefPtr<k_GpfIndexFileInfo> lk_pIndexFileInfo = mk_GpfBase.get_DefaultIndexFileInfo();
 	if (lk_RequestVars.contains("genome"))
 	{
 		printf("looking for genome: %s.\n", lk_RequestVars["genome"].toStdString().c_str());
 		lk_pIndexFileInfo = mk_GpfBase.get_IndexFileInfo(lk_RequestVars["genome"]);
+		if (lk_pIndexFileInfo.get_Pointer() == NULL)
+			lk_pIndexFileInfo = mk_GpfBase.get_DefaultIndexFileInfo();
 	}
 
 	// we now have the headers and the content of the HTTP request, let's do some work!
