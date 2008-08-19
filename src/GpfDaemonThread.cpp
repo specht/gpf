@@ -152,7 +152,10 @@ void k_GpfDaemonThread::run()
 	// see if the query is specific to a certain genome, fetch that if possible
 	RefPtr<k_GpfIndexFileInfo> lk_pIndexFileInfo = mk_GpfBase.get_DefaultIndexFileInfo();
 	if (lk_RequestVars.contains("genome"))
+	{
+		printf("looking for genome: %s.\n", lk_RequestVars["genome"].toStdString().c_str());
 		lk_pIndexFileInfo = mk_GpfBase.get_IndexFileInfo(lk_RequestVars["genome"]);
+	}
 
 	// we now have the headers and the content of the HTTP request, let's do some work!
 
