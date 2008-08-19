@@ -1,6 +1,9 @@
 include(../gpfapp.pro)
 
 TARGET = gpfd
+CONFIG(debug, debug|release) {
+	TARGET = $$join(TARGET,,,_debug)
+}
 
 QT += network
 

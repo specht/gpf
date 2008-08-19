@@ -1,7 +1,4 @@
 TEMPLATE = app
-win32 {
-    CONFIG += embed_manifest_exe
-}
 
 macx {
 	CONFIG -= app_bundle
@@ -10,9 +7,17 @@ macx {
 
 CONFIG += debug_and_release
 
-OBJECTS_DIR = ../../obj/
-MOC_DIR = ../../obj/
-RCC_DIR = ../../obj/
+CONFIG(debug, debug|release) {
+	OBJECTS_DIR = ../../obj/debug/
+	MOC_DIR = ../../obj/debug/
+	RCC_DIR = ../../obj/debug/
+}
+else {
+	OBJECTS_DIR = ../../obj/release/
+	MOC_DIR = ../../obj/release/
+	RCC_DIR = ../../obj/release/
+}
+
 DESTDIR = ../../
 
 QT -= gui

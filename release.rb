@@ -56,7 +56,7 @@ FileUtils.rm_rf(ls_DestDir + '.zip')
 puts 'Building GPF executables...'
 
 FileUtils.rmtree(File::join('obj'))
-lk_Projects = ['gpfbatch', 'gpfd', 'gpfdump', 'gpfindex']#, 'gpfquery']
+lk_Projects = ['gpfbatch', 'gpfd', 'gpfdump', 'gpfindex', 'gpfquery']
 lk_Projects.each { |ls_Project| system("cd projects/#{ls_Project} && #{ls_QMake[ls_Platform]} && #{ls_Make[ls_Platform]} release && cd ../../") }
 
 puts 'Collecting GPF executables...'
