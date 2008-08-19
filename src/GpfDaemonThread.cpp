@@ -158,6 +158,8 @@ void k_GpfDaemonThread::run()
 	{
 		printf("looking for genome: %s.\n", lk_RequestVars["genome"].toStdString().c_str());
 		lk_pIndexFileInfo = mk_GpfBase.get_IndexFileInfo(lk_RequestVars["genome"]);
+		// TODO: change this crummy error handling, an illegal request should be treated as an illegal request
+		// so that shit is not being passed on to further processing
 		if (lk_pIndexFileInfo.get_Pointer() == NULL)
 			lk_pIndexFileInfo = mk_GpfBase.get_DefaultIndexFileInfo();
 	}
