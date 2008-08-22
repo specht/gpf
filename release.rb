@@ -27,7 +27,6 @@ if ls_Platform == 'windows'
 			lk_File.puts "QT_PATH = 'c:/Qt/4.4.1'"
 			lk_File.puts "MINGW_PATH = 'c:/MinGW'"
 		end
-		FileUtils::cp('release.template.conf', 'release.conf')
 	end
 	ls_Config = File::read('release.conf')
 end
