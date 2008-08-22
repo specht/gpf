@@ -52,8 +52,6 @@ if ls_Version == nil
 	exit 1
 end
 
-File.open('version.txt', 'w') { |lk_File| lk_File.write(ls_Version) }
-
 puts "Creating release for GPF #{ls_Version}..."
 
 ls_Make = {'windows' => File::join(MINGW_PATH, 'bin', 'mingw32-make.exe'), 'linux' => 'make', 'mac' => 'make'}
