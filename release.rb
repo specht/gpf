@@ -56,8 +56,8 @@ File.open('version.txt', 'w') { |lk_File| lk_File.write(ls_Version) }
 
 puts "Creating release for GPF #{ls_Version}..."
 
-ls_Make = {'windows' => 'make', 'linux' => 'make', 'mac' => 'make'}
-ls_QMake = {'windows' => 'qmake -spec win32-g++', 'linux' => 'qmake', 'mac' => 'qmake -spec macx-g++'}
+ls_Make = {'windows' => File::join(MINGW_PATH, 'make.exe'), 'linux' => 'make', 'mac' => 'make'}
+ls_QMake = {'windows' => File::join(QT_PATH, 'qmake') + ' -spec win32-g++', 'linux' => 'qmake', 'mac' => 'qmake -spec macx-g++'}
 ls_BinaryExtension = {'windows' => '.exe', 'linux' => '', 'mac' => ''}
 
 ls_DestDir = "gpf-#{ls_Version}-#{ls_Platform}"
