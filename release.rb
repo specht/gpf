@@ -33,6 +33,9 @@ end
 
 eval(ls_Config)
 
+MINGW_PATH = '' unless defined?(MINGW_PATH)
+QT_PATH = '' unless defined?(QT_PATH)
+
 # test config
 if ls_Platform == 'windows' 
 	lk_Errors = Array.new
@@ -69,7 +72,12 @@ puts 'Building GPF executables...'
 
 FileUtils.rmtree(File::join('obj'))
 lk_Projects = ['gpfbatch', 'gpfd', 'gpfdump', 'gpfindex', 'gpfquery']
-lk_Projects.each { |ls_Project| system("cd projects/#{ls_Project} && #{ls_QMake[ls_Platform]} && #{ls_Make[ls_Platform]} release && cd ../../") }
+lk_Projects.each do |ls_Project| 
+	unless system("cd projects/#{ls_Project} && #{ls_QMake[ls_Platform]} && #{ls_Make[ls_Platform]} release && cd ../../")
+		puts 'There was an error!'
+		exit
+	end
+end
 
 puts 'Collecting GPF executables...'
 
@@ -84,11 +92,20 @@ end
 if (ls_Platform == 'windows')
 	puts 'Building ZIP package...'
 	
-	system("helpers/7z/7za.exe a -r #{ls_DestDir}.zip #{ls_DestDir}")
+	unless system("helpers/7z/7za.exe a -r #{ls_DestDir}.zip #{ls_DestDir}")
+		puts 'There was an error!'
+		exit
+	end
 else
 	puts 'Builing bzip2 package...'
-	system("tar cvf #{ls_DestDir}.tar #{ls_DestDir}")
-	system("bzip2 -z #{ls_DestDir}.tar")
+	unless system("tar cvf #{ls_DestDir}.tar #{ls_DestDir}")
+		puts 'There was an error!'
+		exit
+	end
+	unless system("bzip2 -z #{ls_DestDir}.tar")
+		puts 'There was an error!'
+		exit
+	end
 end
 
 FileUtils.rmtree(ls_DestDir)
