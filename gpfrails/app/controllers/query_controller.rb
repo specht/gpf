@@ -23,6 +23,7 @@ class QueryController < ApplicationController
 		ls_Parameters = params['queryParameters']
 		@ms_YamlResponse = Net::HTTP.get(URI.parse($gs_GpfServer + '?query=' + params['queryPeptide'] + '&' + ls_Parameters + '&fullDetails=yes'))
 		lk_Result = YAML::load(@ms_YamlResponse)
+		puts "RESULTS:\n#{lk_Result.to_yaml}\n"
 		@mk_Results = lk_Result['results']
 		if @mk_Results
 			@mk_Results.sort! do |x, y|
@@ -74,7 +75,9 @@ class QueryController < ApplicationController
 		@mi_MaxScore = @ms_QueryPeptide.length
 		
 		lk_Peptides = Hash.new()
-		lk_Result['results'].each_index { |i| lk_Peptides[lk_Result['results'][i]['peptide']] = true if !lk_Peptides.has_key?(lk_Result['results'][i]['peptide']) }
+		if lk_Result['results']
+			lk_Result['results'].each_index { |i| lk_Peptides[lk_Result['results'][i]['peptide']] = true if !lk_Peptides.has_key?(lk_Result['results'][i]['peptide']) }
+		end
 		ls_Fasta = ''		
 		lk_Peptides.keys.each do |ls_Peptide|
 			ls_Fasta += ">#{ls_Peptide}\n#{ls_Peptide}\n"

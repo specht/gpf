@@ -75,16 +75,18 @@ Query processing took <%= @ms_Time %>.
 </p>
 
 
-<% form_tag({:action => 'resultDownload', :controller => 'search'}, :method => :post) do %>
-	<%= hidden_field_tag 'contents', @ms_Fasta %>
-	<%= hidden_field_tag 'filename', "#{@ms_QueryPeptide}.fasta" %>
-	<!-- <input type='image' src='/images/plus.png' value='' />  -->
-	<input type='image' src='/images/arrow.png' style='position: relative; top: 2px;'/> Download results as a fasta peptide database.
-<% end %>
-
-<% form_tag({:action => 'resultDownload', :controller => 'search'}, :method => :post) do %>
-	<%= hidden_field_tag 'contents', @ms_YamlResponse %>
-	<%= hidden_field_tag 'filename', "#{@ms_QueryPeptide}.yaml" %>
-	<!-- <input type='image' src='/images/plus.png' value='' />  -->
-	<input type='image' src='/images/arrow.png' style='position: relative; top: 2px;'/> Download results as a YAML document.
+<% if @mk_Results %>
+	<% form_tag({:action => 'resultDownload', :controller => 'search'}, :method => :post) do %>
+		<%= hidden_field_tag 'contents', @ms_Fasta %>
+		<%= hidden_field_tag 'filename', "#{@ms_QueryPeptide}.fasta" %>
+		<!-- <input type='image' src='/images/plus.png' value='' />  -->
+		<input type='image' src='/images/arrow.png' style='position: relative; top: 2px;'/> Download results as a fasta peptide database.
+	<% end %>
+	
+	<% form_tag({:action => 'resultDownload', :controller => 'search'}, :method => :post) do %>
+		<%= hidden_field_tag 'contents', @ms_YamlResponse %>
+		<%= hidden_field_tag 'filename', "#{@ms_QueryPeptide}.yaml" %>
+		<!-- <input type='image' src='/images/plus.png' value='' />  -->
+		<input type='image' src='/images/arrow.png' style='position: relative; top: 2px;'/> Download results as a YAML document.
+	<% end %>
 <% end %>
