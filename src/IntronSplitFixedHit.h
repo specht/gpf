@@ -19,7 +19,7 @@ public:
 	virtual QString description();
 
 protected:
-	virtual unsigned int CalculateScore() const;
+	virtual void CalculateScore();
 
 	QString ms_PeptideLeft, ms_GapFix, ms_PeptideRight;
 	unsigned int mui_GnoLeft, mui_GnoRight;

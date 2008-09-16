@@ -6,7 +6,8 @@ k_Hit::k_Hit(k_GpfQuery& ak_Query, bool ab_Forward, QList<QPair<unsigned int, un
 	, mb_Forward(ab_Forward)
 	, mk_Assembly(ak_Assembly)
 	, mui_QueryLength(ak_Query.get_Query().length())
-	, mui_MaxChainLength(0)
+	, mi_Score(0)
+	, mk_PartScores(QList<unsigned int>())
 	, mb_IsDiscarded(false)
 {
 	Initialize();
@@ -18,7 +19,8 @@ k_Hit::k_Hit(const k_Hit& ak_Other)
 	, mb_Forward(ak_Other.mb_Forward)
 	, mk_Assembly(ak_Other.mk_Assembly)
 	, mui_QueryLength(ak_Other.mui_QueryLength)
-	, mui_MaxChainLength(ak_Other.mui_MaxChainLength)
+	, mi_Score(ak_Other.mi_Score)
+	, mk_PartScores(ak_Other.mk_PartScores)
 	, mb_IsDiscarded(ak_Other.mb_IsDiscarded)
 {
 	Initialize();
@@ -56,9 +58,9 @@ void k_Hit::AddInformation(QString as_Key, QString as_Value)
 
 void k_Hit::Finish()
 {
-	mui_MaxChainLength = CalculateScore();
+	CalculateScore();
 
-	if (mui_MaxChainLength < mk_Query.GET_INT_PARAMETER(MinChainLength))
+	if (mi_Score < mk_Query.GET_INT_PARAMETER(MinChainLength))
 	{
 		mb_IsDiscarded = true;
 		return;
@@ -71,13 +73,17 @@ void k_Hit::Finish()
 	}
 
 
-	mk_ResultItems.append(QPair<QString, QString>("score", QString("%1").arg(mui_MaxChainLength)));
+	mk_ResultItems.append(QPair<QString, QString>("score", QString("%1").arg(mi_Score)));
+	QStringList lk_PartScoresString;
+	foreach (unsigned int li_Score, mk_PartScores)
+		lk_PartScoresString << QString("%1").arg(li_Score);
+	mk_ResultItems.append(QPair<QString, QString>("partScores", QString("[%1]").arg(lk_PartScoresString.join(", "))));
 }
 
 
 bool k_Hit::get_HasFullScore() const
 {
-	return mui_MaxChainLength == mui_QueryLength;
+	return mi_Score == mui_QueryLength;
 }
 
 
@@ -108,59 +114,78 @@ QString k_Hit::description()
 }
 
 
-unsigned int k_Hit::CalculateScore() const
+void k_Hit::CalculateScore()
 {
+	// TODO: k_IntronSplitFixedHit is oviously not used anymore since we changed
+	// to consensus sequence intron searching... so everything happens within k_Hit,
+	// possibly rendering k_IntronSplitHit and k_IntronSplitFixedHit obsolete?
+	// ...do some housekeeping!
+	
 	QString ls_CollapsedPeptide = mk_Query.get_GpfBase().CollapsePeptide(ms_Peptide);
 	QString ls_CollapsedQuery = mk_Query.get_CollapsedQuery();
-
-	QString ls_Marks = ls_CollapsedPeptide;
-	RefPtr<bool> lb_pMarks(new bool[ls_CollapsedQuery.length()]);
-	memset(lb_pMarks.get_Pointer(), false, ls_CollapsedQuery.length());
-
-	int li_LastIndex = -1;
-	for (int i = 0; i < ls_CollapsedQuery.length() - 2; ++i)
+	
+	int li_TotalScore = 0;	
+	mk_PartScores = QList<unsigned int>();
+	
+	typedef QPair<unsigned int, unsigned int> tk_UIntPair;
+	// calculate score for each exon and determine total score
+	foreach (tk_UIntPair lk_AssemblyPart, mk_Assembly)
 	{
-		QString ls_QueryTrimer = ls_CollapsedQuery.mid(i, 3);
-		int li_Index = -2;
-		while (li_Index != -1 && li_Index <= li_LastIndex)
-			li_Index = ls_CollapsedPeptide.indexOf(ls_QueryTrimer, li_Index == -2? 0: li_Index + 1);
-
-		if (li_Index > li_LastIndex)
+		QString ls_CollapsedPeptidePart = ls_CollapsedPeptide;
+		int li_Score = 0;
+		
+		RefPtr<bool> lb_pMarks(new bool[ls_CollapsedQuery.length()]);
+		memset(lb_pMarks.get_Pointer(), false, ls_CollapsedQuery.length());
+	
+		int li_LastIndex = -1;
+		for (int i = 0; i < ls_CollapsedQuery.length() - 2; ++i)
 		{
-			li_LastIndex = li_Index;
-			for (int k = 0; k < 3; ++k)
-				lb_pMarks.get_Pointer()[i + k] = true;
-		}
-	}
-
-	int li_MaxLength = 0;
-	int li_CurrentLength = 0;
-	bool lb_Inside = false;
-	for (int i = 0; i < ls_CollapsedQuery.length(); ++i)
-	{
-		if (lb_pMarks.get_Pointer()[i])
-		{
-			if (!lb_Inside)
+			QString ls_QueryTrimer = ls_CollapsedQuery.mid(i, 3);
+			int li_Index = -2;
+			while (li_Index != -1 && li_Index <= li_LastIndex)
+				li_Index = ls_CollapsedPeptidePart.indexOf(ls_QueryTrimer, li_Index == -2? 0: li_Index + 1);
+	
+			if (li_Index > li_LastIndex)
 			{
-				lb_Inside = true;
-				li_CurrentLength = 1;
+				li_LastIndex = li_Index;
+				for (int k = 0; k < 3; ++k)
+					lb_pMarks.get_Pointer()[i + k] = true;
+			}
+		}
+	
+		int li_MaxLength = 0;
+		int li_CurrentLength = 0;
+		bool lb_Inside = false;
+		for (int i = 0; i < ls_CollapsedQuery.length(); ++i)
+		{
+			if (lb_pMarks.get_Pointer()[i])
+			{
+				if (!lb_Inside)
+				{
+					lb_Inside = true;
+					li_CurrentLength = 1;
+				}
+				else
+					++li_CurrentLength;
 			}
 			else
-				++li_CurrentLength;
-		}
-		else
-		{
-			if (lb_Inside)
 			{
-				li_MaxLength = std::max<int>(li_MaxLength, li_CurrentLength);
-				lb_Inside = false;
-				li_CurrentLength = 0;
+				if (lb_Inside)
+				{
+					li_MaxLength = std::max<int>(li_MaxLength, li_CurrentLength);
+					lb_Inside = false;
+					li_CurrentLength = 0;
+				}
 			}
 		}
+		li_MaxLength = std::max<int>(li_MaxLength, li_CurrentLength);
+		li_Score = li_MaxLength;
+	
+		mk_PartScores << li_Score;
+		li_TotalScore = std::max<int>(li_TotalScore, li_Score);
 	}
-	li_MaxLength = std::max<int>(li_MaxLength, li_CurrentLength);
-
-	return li_MaxLength;
+	
+	mi_Score = li_TotalScore;
 }
 
 

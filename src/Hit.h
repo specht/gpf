@@ -36,8 +36,7 @@ public:
 	virtual QString description();
 
 protected:
-
-	virtual unsigned int CalculateScore() const;
+	virtual void CalculateScore();
 
 	k_GpfQuery& mk_Query;
 	bool mb_Forward;
@@ -52,7 +51,8 @@ protected:
 	QString ms_Assembly;
 
 	// derived values that are calculated on Finish().
-	unsigned int mui_MaxChainLength;
+	int mi_Score;
+	QList<unsigned int> mk_PartScores;
 	unsigned int mui_HitMass;
 	bool mb_IsDiscarded;
 

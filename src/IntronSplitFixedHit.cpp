@@ -91,11 +91,14 @@ QString k_IntronSplitFixedHit::description()
 }
 
 
-unsigned int k_IntronSplitFixedHit::CalculateScore() const
+void k_IntronSplitFixedHit::CalculateScore()
 {
 	// For the score calculation, determine the score of both the left and 
 	// the right half peptide fragment and then return the maximum.
 	// If a triplet split occured, count the split amino acid for both halves.
 	//return std::max<unsigned int>(CalculateScoreForChainMarker(r_ChainMarker::Left), CalculateScoreForChainMarker(r_ChainMarker::Right));
-	return CalculateScoreForChainMarker(r_ChainMarker::Left | r_ChainMarker::Right);
+	mui_Score = CalculateScoreForChainMarker(r_ChainMarker::Left | r_ChainMarker::Right);
+	mk_PartScores = QList<unsigned int>();
+	mk_PartScores << 0;
+	mk_PartScores << 0;
 }
