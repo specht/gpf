@@ -145,15 +145,18 @@ void k_Hit::CalculateScore()
 			ls_CollapsedPeptidePartTriple[lui_Index] = ls_CollapsedPeptide[lui_Index / 3];
 		}
 		QString ls_CollapsedPeptidePart;
-		// ATTENTION: in this loop it is decided that intron-split amino acids are
-		// not taken into account for the score calculation... do we want it like this?
+		// ATTENTION: amino acids that are intron-split are taken into account
+		// for both exons! this is what happens in the next few lines.
 		for (int i = 0; i < ls_CollapsedPeptide.size(); ++i)
 		{
 			QString ls_Portion = ls_CollapsedPeptidePartTriple.mid(i * 3, 3);
-			if (ls_Portion.contains("."))
+			if (ls_Portion == "...")
 				ls_CollapsedPeptidePart += ".";
 			else
-				ls_CollapsedPeptidePart += ls_Portion[1];
+			{
+				ls_Portion.replace(".", "");
+				ls_CollapsedPeptidePart += ls_Portion[0];
+			}
 		}
 		lui_AssemblyOffset += lk_AssemblyPart.second;
 		
