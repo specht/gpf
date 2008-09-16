@@ -120,6 +120,10 @@ void k_Hit::CalculateScore()
 	// to consensus sequence intron searching... so everything happens within k_Hit,
 	// possibly rendering k_IntronSplitHit and k_IntronSplitFixedHit obsolete?
 	// ...do some housekeeping!
+	// TODO number 2: it might happen that the score is not calculated correctly -
+	// maybe we need a better matching algorithm: if a trimer repeats in the peptide
+	// on the left and on the right side, then it may happen, that the chunky bacon
+	// is missed by the linear matching algorithm which is applied here.
 	
 	QString ls_CollapsedPeptide = mk_Query.get_GpfBase().CollapsePeptide(ms_Peptide);
 	QString ls_CollapsedQuery = mk_Query.get_CollapsedQuery();
@@ -129,9 +133,30 @@ void k_Hit::CalculateScore()
 	
 	typedef QPair<unsigned int, unsigned int> tk_UIntPair;
 	// calculate score for each exon and determine total score
+	unsigned int lui_AssemblyOffset = 0;
 	foreach (tk_UIntPair lk_AssemblyPart, mk_Assembly)
 	{
-		QString ls_CollapsedPeptidePart = ls_CollapsedPeptide;
+		QString ls_CollapsedPeptidePartTriple;
+		for (int i = 0; i < ls_CollapsedPeptide.size(); ++i)
+			ls_CollapsedPeptidePartTriple += "...";
+		for (int i = 0; i < lk_AssemblyPart.second; ++i)
+		{
+			unsigned int lui_Index = i + lui_AssemblyOffset;
+			ls_CollapsedPeptidePartTriple[lui_Index] = ls_CollapsedPeptide[lui_Index / 3];
+		}
+		QString ls_CollapsedPeptidePart;
+		// ATTENTION: in this loop it is decided that intron-split amino acids are
+		// not taken into account for the score calculation... do we want it like this?
+		for (int i = 0; i < ls_CollapsedPeptide.size(); ++i)
+		{
+			QString ls_Portion = ls_CollapsedPeptidePartTriple.mid(i * 3, 3);
+			if (ls_Portion.contains("."))
+				ls_CollapsedPeptidePart += ".";
+			else
+				ls_CollapsedPeptidePart += ls_Portion[1];
+		}
+		lui_AssemblyOffset += lk_AssemblyPart.second;
+		
 		int li_Score = 0;
 		
 		RefPtr<bool> lb_pMarks(new bool[ls_CollapsedQuery.length()]);
