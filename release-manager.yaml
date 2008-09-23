@@ -1,0 +1,7 @@
+projects:
+  - projects/gpfbatch
+  - projects/gpfd
+  - projects/gpfdump
+  - projects/gpfindex
+  - projects/gpfquery
+qt: [core]
