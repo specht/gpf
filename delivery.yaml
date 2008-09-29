@@ -4,4 +4,4 @@ projects:
   - projects/gpfdump
   - projects/gpfindex
   - projects/gpfquery
-qt: [core]
+qt: [core, network]
