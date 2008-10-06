@@ -30,6 +30,9 @@ k_GpfBase::k_GpfBase()
 
 k_GpfBase::k_GpfBase(QStringList ak_IndexFiles)
 {
+	// . is the decimal point!
+	QLocale::setDefault(QLocale::C);
+
 	// load index files
 	foreach (QString ls_Filename, ak_IndexFiles)
 	{
