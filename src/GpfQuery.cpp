@@ -30,20 +30,50 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 k_GpfQuery::k_GpfQuery(k_GpfBase& ak_GpfBase, QString as_Query, double ad_PrecursorMass, QString as_Label)
 	: mk_GpfBase(ak_GpfBase)
 	, mk_pIndexFileInfo(RefPtr<k_GpfIndexFileInfo>(NULL))
-	, ms_Query(as_Query)
+	, ms_Query(as_Query.trimmed())
 	, ms_CollapsedQuery(ak_GpfBase.CollapsePeptide(as_Query))
 	, ms_Result(QString())
 	, mb_IsFinished(false)
 	, md_PrecursorMass(ad_PrecursorMass)
+	, md_LeftGapMass(0.0)
+	, md_RightGapMass(0.0)
 	, ms_Label(as_Label)
 {
 	#include "generated/GpfParametersInitialize.inc.cpp"
 
+	// set left and right gap masses, if available
+	if (ms_Query.startsWith("[") && ms_Query.endsWith("]"))
+	{
+		ms_Query = ms_Query.mid(1, ms_Query.length() - 2);
+		QStringList lk_Parts = ms_Query.split(",");
+		if (lk_Parts.size() <= 3)
+		{
+			bool lb_Ok = false;
+			double ld_Value = lk_Parts.first().toDouble(&lb_Ok);
+			if (lb_Ok)
+			{
+				md_LeftGapMass = ld_Value;
+				lk_Parts.removeFirst();
+			}
+			ms_Query = lk_Parts.takeFirst().trimmed();
+			if (!lk_Parts.empty())
+			{
+				lb_Ok = false;
+				double ld_Value = lk_Parts.first().toDouble(&lb_Ok);
+				if (lb_Ok)
+				{
+					md_RightGapMass = ld_Value;
+					lk_Parts.removeFirst();
+				}
+			}
+		}
+	}
+	
 	// set expected mass of the result peptide
 	if (ad_PrecursorMass != 0.0)
 		mui_QueryMass = (unsigned int)(ad_PrecursorMass * gui_MassPrecision);
 	else
-		mui_QueryMass = mk_GpfBase.CalculatePeptideMass(ms_Query);
+		mui_QueryMass = mk_GpfBase.CalculatePeptideMass(ms_Query) + (unsigned int)((md_LeftGapMass + md_RightGapMass) * gui_MassPrecision);
 }
 
 
@@ -265,8 +295,8 @@ tk_ResultList k_GpfQuery::QueryImmediateHit()
 
 	QString ls_CollapsedQuery = mk_GpfBase.CollapsePeptide(ms_Query);
 
-	unsigned int lui_LeftMass = 0;
-	unsigned int lui_RightMass = 0;
+	unsigned int lui_LeftMass = (unsigned int)(md_LeftGapMass * gui_MassPrecision);
+	unsigned int lui_RightMass = (unsigned int)(md_RightGapMass * gui_MassPrecision);
 
 	for (int i = 3; i < ms_Query.length(); ++i)
 	{
@@ -741,11 +771,12 @@ tk_PeptideLocations k_GpfQuery::FindPentamers(bool ab_Left)
 	RefPtr<unsigned int>* lui_pTagList_ = new RefPtr<unsigned int>[li_ListSize];
 	RefPtr<unsigned int> lui_pTagListEntryCount(new unsigned int[li_ListSize]);
 
-	int li_Mass = 0;
-
-	QList<unsigned int> lk_PentamerGnos;
+	int li_Mass = ab_Left ? 
+		(unsigned int)(md_LeftGapMass * gui_MassPrecision) : 
+		(unsigned int)(md_RightGapMass * gui_MassPrecision);
 
 	// look up all half mass sequence tags (three amino acids)
+	// fill lui_pTagList and lui_pTagListEntryCount with the GNOs for each trimer
 	int li_IndexStart = ab_Left? 0: li_ListSize - 1;
 	int li_IndexEnd = ab_Left? li_ListSize: -1;
 	int li_IndexStep = ab_Left? 1: -1;
@@ -785,8 +816,9 @@ tk_PeptideLocations k_GpfQuery::FindPentamers(bool ab_Left)
 		li_Mass += mk_GpfBase.mui_AminoAcidWeight_[(unsigned char)(ab_Left? le_First: le_Third)];
 	}
 
+	QList<unsigned int> lk_PentamerGnos;
+
 	// find pentamers by searching for pairs of trimers that have a distance of two amino acids
-	QList<unsigned int> lk_Pentamers;
 	for (int li_Index = 0; li_Index < li_ListSize - 2; ++li_Index)
 	{
 		unsigned int* lui_FirstListItem_ = lui_pTagList_[li_Index].get_Pointer();
@@ -816,6 +848,8 @@ tk_PeptideLocations k_GpfQuery::FindPentamers(bool ab_Left)
 			}
 		}
 	}
+	
+	// now we all good pentamers in lk_PentamerGnos
 
 	// lk_Peptides contains all peptides that represent a possible half of a hit
 	tk_PeptideLocations lk_Peptides;
