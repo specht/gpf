@@ -33,6 +33,15 @@ typedef QList<tk_AssemblyPart> tk_Assembly;
 typedef QPair<unsigned int, unsigned int> tk_PeptideSpan;
 typedef QSet<tk_PeptideSpan> tk_PeptideLocations;
 
+/* 
+a peptide query can be one of the following:
+WLQYSEVIHAR
+[WLQYSEVIHAR]
+[left mass, YSEVIHAR]
+[WLQYSEV, right mass]
+[left mass, YSEVI, right mass]
+*/
+
 
 class k_GpfQuery: public QObject
 {
@@ -87,5 +96,7 @@ private:
 	QFile mk_IndexFile;
 	QString ms_QueryProcessingTime;
 	double md_PrecursorMass;
+	double md_LeftGapMass;
+	double md_RightGapMass;
 	QString ms_Label;
 };
