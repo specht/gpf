@@ -2,7 +2,7 @@ TEMPLATE = app
 
 macx {
 	CONFIG -= app_bundle
-	CONFIG += x86 ppc
+	CONFIG += x86
 }
 
 CONFIG += debug_and_release
