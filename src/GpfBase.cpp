@@ -42,7 +42,7 @@ k_GpfBase::k_GpfBase(QStringList ak_IndexFiles)
 
 	if (mk_IndexFiles.empty())
 	{
-		printf(QString("Error: No GPF index files loaded.\n").toStdString().c_str());
+		printf("Error: No GPF index files loaded.\n");
 		exit(1);
 	}
 
