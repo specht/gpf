@@ -1,0 +1,24 @@
+chlamy genome: 120 Mbases -> 27 bits
+0. Chlamy genomic DNA sequence = 40 MB
+1. tag offset table (sorted by tag, direction): 6.400.000 (2 * 20^5) * (27 bits) = 20.59 MB (put in RAM?!)
+2. tag table: (offset (27 bits) + half mass (27 bits?)) * 2 * 120M = 1620MB
+total = 1.64 GB
+ratio: 14
+
+human genome: 1.2 Gbases -> 31 bits
+0. Human genomic DNA sequence = 409.6 MB
+1. tag offset table: 6.400.000 * 31 bits = 23.65 MB (put in RAM!) 
+2. tag table: (31 bits + 32 bits) * 2 * 1.2 G = 17.4 G
+total = 17.8 GB
+ratio: 14.9
+
+3 nucl/byte: 40 MB
+
+raw genome length [64 bits]
+raw genome sequence [CTAGN -> 2.32 bits, 3 nucleotides in 8 bits]
+scaffold count [32 bits]
+scaffold offset table [scaffold count * 32 bits]
+
+max mass: 8000 Da (was: max peptide length of 1000 peptides)
+precision: 10000
+

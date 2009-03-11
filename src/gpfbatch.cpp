@@ -85,10 +85,10 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
 		++lui_ProcessedCount;
 		printf("\rProcessed %d of %d queries.", lui_ProcessedCount, lui_QueryCount);
 		QString ls_Result = lk_Query.get_Result();
+		lk_OutFile.write(QString("\"%1\":\n").arg(ls_Line).toAscii());
 		if (!ls_Result.isEmpty())
 		{
 			ls_Result = "  " + ls_Result.replace("\n-", "\n  -");
-			lk_OutFile.write(QString("\"%1\":\n").arg(ls_Line).toAscii());
 			lk_OutFile.write(ls_Result.toAscii());
 		}
 	}
