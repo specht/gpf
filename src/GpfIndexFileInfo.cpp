@@ -457,10 +457,29 @@ QString k_GpfIndexFileInfo::get_AssemblyInfoAsYaml(QString as_Assembly)
 	// strip direction indicator from contigs string
 	ls_Contigs = ls_Contigs.mid(1);
 
-	QString ls_AssemblyInfo = QString("{ organism: '%1', forward: %2, parts: [")
+	QString ls_AssemblyInfo = QString("{ organism: '%1', forward: %2")
 		.arg(ls_Organism).arg(lb_BackwardAssembly? "false": "true");
-
+		
 	lk_Parts = ls_Contigs.split(",");
+
+	if (lk_Parts.size() > 1)
+	{
+		// this hit assembly contains an intron, determine the intron length
+		QStringList lk_Elements = lk_Parts[0].split(":");
+		unsigned int lui_Pos0 = lk_Elements[0].toUInt();
+		unsigned int lui_Length0 = lk_Elements[1].toUInt();
+		lk_Elements = lk_Parts[1].split(":");
+		unsigned int lui_Pos1 = lk_Elements[0].toUInt();
+		unsigned int lui_Length1 = lk_Elements[1].toUInt();
+		unsigned int lui_IntronLength = 0;
+		if (!lb_BackwardAssembly)
+			lui_IntronLength = lui_Pos1 - (lui_Pos0 + lui_Length0);
+		else
+			lui_IntronLength = (lui_Pos0 - lui_Length0) - lui_Pos1;
+		ls_AssemblyInfo += QString(", intronLength: %1").arg(lui_IntronLength);
+	}
+
+	ls_AssemblyInfo += ", parts: [";
 	bool lb_First = true;
 	foreach (QString ls_Part, lk_Parts)
 	{
