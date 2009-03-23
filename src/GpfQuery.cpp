@@ -1010,7 +1010,7 @@ tk_ResultList k_GpfQuery::AssembleHalfHits(tk_PeptideLocations ak_Locations, boo
 		bool lb_Forward = (lui_Gno & gui_GlobalNucleotideOffsetBackwardFlag) == 0;
 		unsigned int lui_PeptidePosition = lui_Gno & ~gui_GlobalNucleotideOffsetBackwardFlag;
 		unsigned int lui_PeptideLength = lk_Peptide.second * 3;
-
+		
 		// read DNA span
 		unsigned int lui_DnaSpanLength = 0;
 		unsigned int lui_LeftBorder = ab_Left? 0: li_MaxDnaSpanLength - lui_PeptideLength;
@@ -1039,7 +1039,7 @@ tk_ResultList k_GpfQuery::AssembleHalfHits(tk_PeptideLocations ak_Locations, boo
 			if (li_Mass > (int)mui_ResultMassMaximum)
 				break;
 
-			if (r_AminoAcid::isTrypticCleavageSiteOrStop(le_AminoAcid) || r_AminoAcid::isUnknown(le_AminoAcid))
+			if (r_AminoAcid::isStop(le_AminoAcid) || r_AminoAcid::isUnknown(le_AminoAcid))
 			{
 				if (ab_Left || ((!ab_Left) && (li_Index != li_IndexStart)))
 					break;
@@ -1122,7 +1122,7 @@ tk_ResultList k_GpfQuery::AssembleHalfHits(tk_PeptideLocations ak_Locations, boo
 				}
 
 				// process remaining amino acids
-				while ((!r_AminoAcid::isTrypticCleavageSiteOrStop(le_AminoAcid)) && (!r_AminoAcid::isUnknown(le_AminoAcid)) &&  (li_VariablePartLength <= li_MaxVariablePartLength - 3))
+				while ((li_PeptideMass < mui_ResultMassMinimum) && (!r_AminoAcid::isStop(le_AminoAcid)) && (!r_AminoAcid::isUnknown(le_AminoAcid)) &&  (li_VariablePartLength <= li_MaxVariablePartLength - 3))
 				{
 					unsigned int lui_Triplet = 0;
 					for (int li_Index = 0; li_Index < 3; ++li_Index)
