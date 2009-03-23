@@ -283,9 +283,9 @@ void k_GpfQuery::SetParameters(QMap<QString,QString> ak_Parameters)
 
 tk_ResultList k_GpfQuery::QueryImmediateHit()
 {
-	// Immediate Query: Find places where a sequence tag consisting of 
-	// [left mass, amino acid trimer, right mass] matches within 
-	// a single reading frame of a single scaffold.
+	// Immediate Query: Do two runs: Find places where a sequence tag 
+	// consisting of an amino acid pentamer plus either the left or right
+	// mass matches. Then see if the rest fits as well.
 
 	// we need at least three consecutive amino acids for the immediate search
 	tk_ResultList lk_Results;
@@ -305,18 +305,26 @@ tk_ResultList k_GpfQuery::QueryImmediateHit()
 		lui_RightMass += mk_GpfBase.mui_AminoAcidWeight_[(unsigned char)le_AminoAcid];
 	}
 
-	QHash<unsigned int, RefPtr<k_Hit> > lk_ImmediateHits;
+	QHash<QPair<unsigned int, unsigned int>, RefPtr<k_Hit> > lk_ImmediateHits;
 
 	unsigned int lui_StartIndex = 0;
 	unsigned int lui_LastIndex = ms_Query.length() - 3;
 
+	/*
+	// this has been disabled in order to handle miscleaved peptides
 	if (GET_INT_PARAMETER(SearchSimilar) == r_YesNoOption::No)
 	{
 		// if similarity search is turned off, only search for the center amino acid trimer
 		lui_StartIndex = (ms_Query.length() - 3) / 2;
 		lui_LastIndex = lui_StartIndex;
 	}
+	*/
 
+	QMap<int, QHash<bool, RefPtr<unsigned int> > > lk_LeftTags;
+	QMap<int, QHash<bool, RefPtr<unsigned int> > > lk_RightTags;
+	QHash<int, QHash<bool, int> > lk_LeftTagCount;
+	QHash<int, QHash<bool, int> > lk_RightTagCount;
+	
 	// extract trimers from query
 	for (unsigned int lui_AminoAcidIndex = 0; lui_AminoAcidIndex < (unsigned int)ms_Query.length() - 2; ++lui_AminoAcidIndex)
 	{
@@ -359,19 +367,136 @@ tk_ResultList k_GpfQuery::QueryImmediateHit()
 				mk_IndexFile.seek(mk_pIndexFileInfo->mi_RightTagGnoFilePosition + lui_RightStart * sizeof(unsigned int));
 				mk_IndexFile.read((char*)lui_pRightEntries.get_Pointer(), sizeof(unsigned int) * lui_RightCount);
 				
-				// sort entries by file position
-				if (lui_LeftCount > 0)
-					SortUnsignedIntGno(lui_pLeftEntries.get_Pointer(), 0, lui_LeftCount - 1);
-				if (lui_RightCount > 0)
-					SortUnsignedIntGno(lui_pRightEntries.get_Pointer(), 0, lui_RightCount - 1);
+				// split GNOs by forward and backward
+				int li_LeftForwardCount = 0;
+				int li_LeftBackwardCount = 0;
+				
+				RefPtr<unsigned int> lui_pTemp = RefPtr<unsigned int>(new unsigned int[lui_LeftCount]);
+				for (int i = 0; i < lui_LeftCount; ++i)
+				{
+					if ((lui_pLeftEntries.get_Pointer()[i] & GNO_BACKWARD) == 0)
+						// forward
+						lui_pLeftEntries.get_Pointer()[li_LeftForwardCount++] = lui_pLeftEntries.get_Pointer()[i];
+					else
+						// backward
+						lui_pTemp.get_Pointer()[li_LeftBackwardCount++] = lui_pLeftEntries.get_Pointer()[i];
+				}
+				RefPtr<unsigned int> lui_pLeftForwardTags = RefPtr<unsigned int>(new unsigned int[li_LeftForwardCount]);
+				RefPtr<unsigned int> lui_pLeftBackwardTags = RefPtr<unsigned int>(new unsigned int[li_LeftBackwardCount]);
+				memcpy(lui_pLeftForwardTags.get_Pointer(), lui_pLeftEntries.get_Pointer(), li_LeftForwardCount * sizeof(unsigned int));
+				memcpy(lui_pLeftBackwardTags.get_Pointer(), lui_pTemp.get_Pointer(), li_LeftBackwardCount * sizeof(unsigned int));
+				// sort entries GNO AND NOT BACKWARDS BIT
+				if (li_LeftForwardCount > 0)
+					SortUnsignedIntGno(lui_pLeftForwardTags.get_Pointer(), 0, li_LeftForwardCount - 1);
+				if (li_LeftBackwardCount > 0)
+					SortUnsignedIntGno(lui_pLeftBackwardTags.get_Pointer(), 0, li_LeftBackwardCount - 1);
 
-				// check if we can find an immediate hit
+				lk_LeftTags[lui_AminoAcidIndex][false] = lui_pLeftForwardTags;
+				lk_LeftTags[lui_AminoAcidIndex][true] = lui_pLeftBackwardTags;
+				lk_LeftTagCount[lui_AminoAcidIndex][false] = li_LeftForwardCount;
+				lk_LeftTagCount[lui_AminoAcidIndex][true] = li_LeftBackwardCount;
+
+				int li_RightForwardCount = 0;
+				int li_RightBackwardCount = 0;
+
+				lui_pTemp = RefPtr<unsigned int>(new unsigned int[lui_RightCount]);
+				for (int i = 0; i < lui_RightCount; ++i)
+				{
+					if ((lui_pRightEntries.get_Pointer()[i] & GNO_BACKWARD) == 0)
+						// forward
+						lui_pRightEntries.get_Pointer()[li_RightForwardCount++] = lui_pRightEntries.get_Pointer()[i];
+					else
+						// backward
+						lui_pTemp.get_Pointer()[li_RightBackwardCount++] = lui_pRightEntries.get_Pointer()[i];
+				}
+				RefPtr<unsigned int> lui_pRightForwardTags = RefPtr<unsigned int>(new unsigned int[li_RightForwardCount]);
+				RefPtr<unsigned int> lui_pRightBackwardTags = RefPtr<unsigned int>(new unsigned int[li_RightBackwardCount]);
+				memcpy(lui_pRightForwardTags.get_Pointer(), lui_pRightEntries.get_Pointer(), li_RightForwardCount * sizeof(unsigned int));
+				memcpy(lui_pRightBackwardTags.get_Pointer(), lui_pTemp.get_Pointer(), li_RightBackwardCount * sizeof(unsigned int));
+				// sort entries GNO AND NOT BACKWARDS BIT
+				if (li_RightForwardCount > 0)
+					SortUnsignedIntGno(lui_pRightForwardTags.get_Pointer(), 0, li_RightForwardCount - 1);
+				if (li_RightBackwardCount > 0)
+					SortUnsignedIntGno(lui_pRightBackwardTags.get_Pointer(), 0, li_RightBackwardCount - 1);
+
+				lk_RightTags[lui_AminoAcidIndex][false] = lui_pRightForwardTags;
+				lk_RightTags[lui_AminoAcidIndex][true] = lui_pRightBackwardTags;
+				lk_RightTagCount[lui_AminoAcidIndex][false] = li_RightForwardCount;
+				lk_RightTagCount[lui_AminoAcidIndex][true] = li_RightBackwardCount;
+			}
+		}
+		lui_LeftMass += mk_GpfBase.mui_AminoAcidWeight_[(unsigned char)le_First];
+		if (lui_AminoAcidIndex + 3 < (unsigned int)ms_Query.length())
+			lui_RightMass -= mk_GpfBase.mui_AminoAcidWeight_[(unsigned char)mk_GpfBase.me_CharToAminoAcid_[(int)ms_Query.at(lui_AminoAcidIndex + 3).toAscii()]];
+	}
+	
+	// check left and right tag hits
+	foreach (int lui_LeftAminoAcidIndex, lk_LeftTags.keys())
+	{
+		foreach (int lui_RightAminoAcidIndex, lk_RightTags.keys())
+		{
+			if (lui_RightAminoAcidIndex < lui_LeftAminoAcidIndex)
+				continue;
+			
+			for (int li_Backwards = 0; li_Backwards < 2; ++li_Backwards)
+			{
+				bool lb_Backwards = (li_Backwards != 0);
+				
+				// distance of tags in nucleotides
+				int li_Distance = (lui_RightAminoAcidIndex - lui_LeftAminoAcidIndex) * 3;
+				
 				unsigned int lui_LeftPosition = 0;
 				unsigned int lui_RightPosition = 0;
+				
+				unsigned int lui_LeftCount = lk_LeftTagCount[lui_LeftAminoAcidIndex][lb_Backwards];
+				unsigned int lui_RightCount = lk_RightTagCount[lui_RightAminoAcidIndex][lb_Backwards];
 
 				// advance pointers in both the left and right sorted mass lists and check for equal GNO
-				while (lui_LeftPosition < lui_LeftCount && lui_RightPosition < lui_RightCount)
+				while ((lui_LeftPosition < lui_LeftCount) && (lui_RightPosition < lui_RightCount))
 				{
+					unsigned int lui_LeftGno = lk_LeftTags[lui_LeftAminoAcidIndex][lb_Backwards].get_Pointer()[lui_LeftPosition];
+					unsigned int lui_RightGno = lk_RightTags[lui_RightAminoAcidIndex][lb_Backwards].get_Pointer()[lui_RightPosition]; 
+					int li_GnoDistance = lui_RightGno - lui_LeftGno;
+					if (lb_Backwards)
+						li_GnoDistance = (lui_LeftGno & GNO_BACKWARD_INVERSE) - (lui_RightGno & GNO_BACKWARD_INVERSE);
+						
+					if (li_GnoDistance == li_Distance)
+					{
+						unsigned int lui_PeptideStart = lui_LeftGno;
+						if (lb_Backwards)
+							lui_PeptideStart += lui_LeftAminoAcidIndex * 3;
+						else
+							lui_PeptideStart -= lui_LeftAminoAcidIndex * 3;
+						
+						unsigned int lui_PeptideEnd = lui_RightGno;
+						if (lb_Backwards)
+							lui_PeptideEnd -= ((unsigned int)ms_Query.length() - lui_RightAminoAcidIndex) * 3;
+						else
+							lui_PeptideEnd += ((unsigned int)ms_Query.length() - lui_RightAminoAcidIndex) * 3;
+
+						
+						unsigned int lui_PeptideLength = 0;
+						if (lb_Backwards)
+							lui_PeptideLength = lui_PeptideStart - lui_PeptideEnd;
+						else
+							lui_PeptideLength = lui_PeptideEnd - lui_PeptideStart;
+						
+						// insert a new immediate hit, if it hasn't been found already
+						if (!lk_ImmediateHits.contains(QPair<unsigned int, unsigned int>(lui_PeptideStart, lui_PeptideLength)))
+						{
+							tk_Assembly lk_Assembly = tk_Assembly()
+								<< tk_AssemblyPart(lui_PeptideStart, lui_PeptideLength);
+							RefPtr<k_Hit> lk_pHit(new k_Hit(*this, !lb_Backwards, lk_Assembly));
+							QString ls_Peptide;
+							QString ls_Left, ls_Right;
+							mk_pIndexFileInfo->readAssembly(lk_pHit->get_Assembly(), ls_Peptide, ls_Left, ls_Right);
+							unsigned int lui_Mass = mk_GpfBase.CalculatePeptideMass(ls_Peptide);
+							// only add to results if mass is good
+							if ((lui_Mass >= mui_ResultMassMinimum) && (lui_Mass <= mui_ResultMassMaximum))
+								lk_ImmediateHits.insert(QPair<unsigned int, unsigned int>(lui_PeptideStart, lui_PeptideLength), lk_pHit);
+						}
+					}
+					/*
 					if (lui_pLeftEntries.get_Pointer()[lui_LeftPosition] == lui_pRightEntries.get_Pointer()[lui_RightPosition])
 					{
 						unsigned int lui_Gno = lui_pLeftEntries.get_Pointer()[lui_LeftPosition];
@@ -391,17 +516,24 @@ tk_ResultList k_GpfQuery::QueryImmediateHit()
 							lk_ImmediateHits.insert(lui_PeptideStartGno, lk_pHit);
 						}
 					}
-
-					if (lt_Gno(&lui_pLeftEntries.get_Pointer()[lui_LeftPosition], &lui_pRightEntries.get_Pointer()[lui_RightPosition]))
-						++lui_LeftPosition;
+					*/
+					if (lb_Backwards)
+					{
+						if ((lui_RightGno & GNO_BACKWARD_INVERSE) + li_Distance < (lui_LeftGno & GNO_BACKWARD_INVERSE))
+							++lui_RightPosition;
+						else
+							++lui_LeftPosition;
+					}
 					else
-						++lui_RightPosition;
+					{
+						if (lui_RightGno < lui_LeftGno + li_Distance)
+							++lui_RightPosition;
+						else
+							++lui_LeftPosition;
+					}
 				}
 			}
 		}
-		lui_LeftMass += mk_GpfBase.mui_AminoAcidWeight_[(unsigned char)le_First];
-		if (lui_AminoAcidIndex + 3 < (unsigned int)ms_Query.length())
-			lui_RightMass -= mk_GpfBase.mui_AminoAcidWeight_[(unsigned char)mk_GpfBase.me_CharToAminoAcid_[(int)ms_Query.at(lui_AminoAcidIndex + 3).toAscii()]];
 	}
 
 	QList<RefPtr<k_Hit> > lk_Hits = lk_ImmediateHits.values();
