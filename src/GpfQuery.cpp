@@ -883,6 +883,8 @@ tk_ResultList k_GpfQuery::QueryCsIntronHit()
 	if (ms_Query.length() < 6)
 		return lk_Results;
 
+	// attention! this only contains indexed strictly tryptic peptides, but we are
+	// only interested in anchors here... this should be redone
 	tk_PeptideLocations lk_Locations;
 	// find left pentamers
 	lk_Locations = this->FindPentamers(true);
@@ -981,7 +983,7 @@ tk_PeptideLocations k_GpfQuery::FindPentamers(bool ab_Left)
 		}
 	}
 	
-	// now we all good pentamers in lk_PentamerGnos
+	// now we have all good pentamers in lk_PentamerGnos
 
 	// lk_Peptides contains all peptides that represent a possible half of a hit
 	tk_PeptideLocations lk_Peptides;
@@ -989,6 +991,7 @@ tk_PeptideLocations k_GpfQuery::FindPentamers(bool ab_Left)
 	{
 		r_Scaffold& lr_Scaffold = mk_pIndexFileInfo->mk_Scaffolds[mk_pIndexFileInfo->get_ScaffoldIndexForGno(lui_Gno)];
 		unsigned int lui_PeptideStart, lui_PeptideLength;
+		// FindPeptide finds an indexed strictly tryptic peptide which contains the gno
 		mk_pIndexFileInfo->FindPeptide(lui_PeptideStart, lui_PeptideLength, lui_Gno, lr_Scaffold.getReadingFrameForGlobalNucleotideOffset(lui_Gno));
 		lk_Peptides.insert(tk_PeptideSpan(lui_PeptideStart, lui_PeptideLength));
 	}
@@ -1087,6 +1090,7 @@ tk_ResultList k_GpfQuery::AssembleHalfHits(tk_PeptideLocations ak_Locations, boo
 				// we have found an intron with a valid dinucleotide pair
 				int li_FixedPartSplit = *lk_FixedIter;
 				int li_VariablePartSplit = *lk_VariableIter;
+				// ALEGEIYDTFK: li_FixedPartSplit == 2148 and li_VariablePartSplit == 1868
 				int li_FixedPartLength = ab_Left? li_FixedPartSplit: lui_DnaSpanLength - li_FixedPartSplit;
 				int li_VariablePartLength = 0;
 				int li_MaxVariablePartLength = ab_Left? lui_DnaSpanLength - li_VariablePartSplit: li_VariablePartSplit;
@@ -1122,27 +1126,31 @@ tk_ResultList k_GpfQuery::AssembleHalfHits(tk_PeptideLocations ak_Locations, boo
 				}
 
 				// process remaining amino acids
-				while ((li_PeptideMass < mui_ResultMassMinimum) && (!r_AminoAcid::isStop(le_AminoAcid)) && (!r_AminoAcid::isUnknown(le_AminoAcid)) &&  (li_VariablePartLength <= li_MaxVariablePartLength - 3))
+				while ((!r_AminoAcid::isStop(le_AminoAcid)) && (!r_AminoAcid::isUnknown(le_AminoAcid)) &&  (li_VariablePartLength <= li_MaxVariablePartLength - 3))
 				{
 					unsigned int lui_Triplet = 0;
 					for (int li_Index = 0; li_Index < 3; ++li_Index)
 						lui_Triplet = (lui_Triplet << 3) | (luc_pNucleotides.get_Pointer()[ab_Left? (li_VariablePartSplit + li_VariablePartLength + li_Index): (li_VariablePartSplit - li_VariablePartLength - 3 + li_Index)] & 7);
 
 					le_AminoAcid = (r_AminoAcid::Enumeration)(unsigned char)mk_GpfBase.mc_TripletToAminoAcidForward_[lui_Triplet];
+					if (li_FixedPartSplit == 2148 && li_VariablePartSplit == 1868)
+						printf("%c", mk_GpfBase.mc_AminoAcidToChar_[le_AminoAcid]);
 
 					li_PeptideMass += mk_GpfBase.mui_AminoAcidWeight_[le_AminoAcid];
 					li_VariablePartLength += 3;
+					if (li_PeptideMass >= mui_ResultMassMinimum && li_PeptideMass <= mui_ResultMassMaximum)
+						break;
 				}
 
 				// remove trailing stop if there is one
-				if (r_AminoAcid::isStop(le_AminoAcid) || !ab_Left)
+				if (r_AminoAcid::isStop(le_AminoAcid))
 				{
 					li_VariablePartLength -= 3;
 					li_PeptideMass -= mk_GpfBase.mui_AminoAcidWeight_[le_AminoAcid];
 				}
 
 				// see if something useful came out
-				if ((li_PeptideMass >= (int)mui_ResultMassMinimum && li_PeptideMass <= (int)mui_ResultMassMaximum) && r_AminoAcid::isTrypticCleavageSiteOrStop(le_AminoAcid) && li_VariablePartLength > 0)
+				if ((li_PeptideMass >= (int)mui_ResultMassMinimum && li_PeptideMass <= (int)mui_ResultMassMaximum) && li_VariablePartLength > 0)
 				{
 					tk_Assembly lk_Assembly;
 
