@@ -1133,8 +1133,6 @@ tk_ResultList k_GpfQuery::AssembleHalfHits(tk_PeptideLocations ak_Locations, boo
 						lui_Triplet = (lui_Triplet << 3) | (luc_pNucleotides.get_Pointer()[ab_Left? (li_VariablePartSplit + li_VariablePartLength + li_Index): (li_VariablePartSplit - li_VariablePartLength - 3 + li_Index)] & 7);
 
 					le_AminoAcid = (r_AminoAcid::Enumeration)(unsigned char)mk_GpfBase.mc_TripletToAminoAcidForward_[lui_Triplet];
-					if (li_FixedPartSplit == 2148 && li_VariablePartSplit == 1868)
-						printf("%c", mk_GpfBase.mc_AminoAcidToChar_[le_AminoAcid]);
 
 					li_PeptideMass += mk_GpfBase.mui_AminoAcidWeight_[le_AminoAcid];
 					li_VariablePartLength += 3;
