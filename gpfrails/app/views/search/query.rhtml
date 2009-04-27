@@ -1,9 +1,0 @@
-<div id='gpf-output' style='margin-bottom: 2em'>
-<h2>Results for <%= @ms_Peptide %></h2>
-<div id='query-result'>
-<%= image_tag 'wait.gif' %>
-</div>
-<script type='text/javascript'>
-<%= remote_function :update => 'query-result', :url => { :controller => 'query', :action => 'execute', :queryParameters => @ms_QueryParameters, :queryPeptide => @ms_Peptide} %>
-</script>
-</div>
