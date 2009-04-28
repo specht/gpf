@@ -23,6 +23,21 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #include "StopWatch.h"
 
 
+// :UGLY: This is really ugly indeed. But it has been done in order to be able
+// to use Qt's qsort() function with a simple less-than function pointer which
+// can not be a class member function pointer. Therefore, we just store the current
+// indexer in this global variable in order to do the comparison in a global
+// less-than function. Otherwise, we would have to implement our own sorting function
+// or, as an alternative, implement a new class containing the int and the pointer to
+// the appropriate indexer, which means much more space. Because probably, only one
+// genome file is indexed at a time, we can probably do this trick.
+// Actually, it's not a pointer to the current indexer, but to the current list 
+// containing all masses from the current tag/direction set while sorting out there
+// final index.
+quint8* guc_MassesBuffer_;
+qint32 gi_MassBits;
+
+
 k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString as_Title)
 	: ms_DnaPath(as_DnaPath)
 	, ms_DnaIndexPath(as_DnaIndexPath)
@@ -37,6 +52,7 @@ k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString 
 	, mi_IndexBufferMaxLength(8 * 1024 * 1024)
 	, mk_TempFileA_(NULL)
 	, mk_TempFileB_(NULL)
+	, mk_IndexBufferBitWriterFile_(NULL)
 {
 }
 
@@ -255,6 +271,10 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 	}
 	qint64 li_MaxMass = ((qint64)1 << mi_MassBits) - 1;
 	
+	mk_IndexBufferBitWriterFile_ = mk_TempFileA_;
+	mi_IndexBufferOffset = 0;
+	mi_IndexBufferBitOffset = 0;
+	
 	printf("Translating DNA, marking cleavage sites...");
 	mi_PreIndexEntryCount = 0;
 	// for each scaffold: translate all six reading frames
@@ -409,24 +429,43 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 			li_MaxEntryCount = mui_pTagDirectionCount.get_Pointer()[li_TagAndDir];
 	}
 	
-	RefPtr<quint8> luc_pEntryList(new quint8[li_MaxEntryCount * mi_PreIndexEntryBits / 8 + 1]);
-	RefPtr<quint32> lui_pEntryListIndex(new quint32[li_MaxEntryCount]);
-	if (!luc_pEntryList || !lui_pEntryListIndex)
+	RefPtr<quint8> luc_pEntryMassList(new quint8[li_MaxEntryCount * mi_MassBits / 8 + 1]);
+	RefPtr<quint8> luc_pEntryGnoList(new quint8[li_MaxEntryCount * mi_OffsetBits / 8 + 1]);
+	QList<int> lk_EntryListIndex;
+	if (!luc_pEntryMassList || !luc_pEntryGnoList)
 	{
-		printf("Error: Unable to allocate %d bytes for sorting.\n", li_MaxEntryCount * mi_PreIndexEntryBits / 8 + 1 + li_MaxEntryCount * 4);
+		printf("Error: Unable to allocate a few bytes for sorting.\n");
 		exit(1);
 	}
+	guc_MassesBuffer_ = luc_pEntryMassList.get_Pointer();
+	gi_MassBits = mi_MassBits;
 	
 	mk_TempFileA_->reset();
 	mui_CurrentPreIndexByte = 0;
 	mi_CurrentPreIndexByteBitsLeft = 0;
 	
+	// determine how many bits are required for storing the entry count
+	quint32 lui_EntryCountBits = 1;
+	while (((int)1 << lui_EntryCountBits) < li_MaxEntryCount + 1)
+		++lui_EntryCountBits;
+
+	// write entry count bit count
+	ak_OutFile_->write((char*)&lui_EntryCountBits, 4);
+	
+	mk_IndexBufferBitWriterFile_ = ak_OutFile_;
+	mi_IndexBufferOffset = 0;
+	mi_IndexBufferBitOffset = 0;
+	// write entry counts
+	for (qint64 li_TagAndDir = 0; li_TagAndDir < mi_TagCount * 2; ++li_TagAndDir)
+		writeBitsToIndexBuffer(mui_pTagDirectionCount.get_Pointer()[li_TagAndDir], lui_EntryCountBits);
+	
 	for (qint64 li_TagAndDir = 0; li_TagAndDir < mi_TagCount * 2; ++li_TagAndDir)
 	{
 		if (li_TagAndDir % 1000 == 0)
 			printf("\rCreating index... %d%%", (int)(li_TagAndDir * 100 / (mi_TagCount * 2)));
-		int li_EntryListOffset = 0;
-		int li_EntryListIndexOffset = 0;
+		lk_EntryListIndex.clear();
+		int li_EntryMassListOffset = 0;
+		int li_EntryGnoListOffset = 0;
 		// read all entries from this tag/dir group into buffer
 		for (quint32 li_Entry = 0; li_Entry < mui_pTagDirectionCount.get_Pointer()[li_TagAndDir]; ++li_Entry)
 		{
@@ -442,19 +481,26 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 						);
 				exit(1);
 			}
-			overwriteBitsInBuffer(luc_pEntryList.get_Pointer(), li_EntryListOffset, li_Tag, mi_TagBits);
-			li_EntryListOffset += mi_TagBits;
-			overwriteBitsInBuffer(luc_pEntryList.get_Pointer(), li_EntryListOffset, li_Direction, 1);
-			li_EntryListOffset += 1;
-			overwriteBitsInBuffer(luc_pEntryList.get_Pointer(), li_EntryListOffset, li_HalfMass, mi_MassBits);
-			li_EntryListOffset += mi_MassBits;
-			overwriteBitsInBuffer(luc_pEntryList.get_Pointer(), li_EntryListOffset, lui_Gno, mi_OffsetBits);
-			li_EntryListOffset += mi_OffsetBits;
-			lui_pEntryListIndex.get_Pointer()[li_EntryListIndexOffset] = li_EntryListIndexOffset;
-			++li_EntryListIndexOffset;
+			overwriteBitsInBuffer(luc_pEntryMassList.get_Pointer(), li_EntryMassListOffset, li_HalfMass, mi_MassBits);
+			li_EntryMassListOffset += mi_MassBits;
+			overwriteBitsInBuffer(luc_pEntryGnoList.get_Pointer(), li_EntryGnoListOffset, lui_Gno, mi_OffsetBits);
+			li_EntryGnoListOffset += mi_OffsetBits;
+			lk_EntryListIndex.append(lk_EntryListIndex.size());
 		}
 		// now sort the entries in RAM
+		qSort(lk_EntryListIndex.begin(), lk_EntryListIndex.end(), lessThanPreIndexEntry);
+		for (int i = 0; i < lk_EntryListIndex.size(); ++i)
+		{
+			qint64 li_Mass = readBitsFromBuffer(luc_pEntryMassList.get_Pointer(), lk_EntryListIndex[i] * mi_MassBits, mi_MassBits);
+			writeBitsToIndexBuffer(li_Mass, mi_MassBits);
+		}
+		for (int i = 0; i < lk_EntryListIndex.size(); ++i)
+		{
+			quint64 lui_Gno = readBitsFromBuffer(luc_pEntryGnoList.get_Pointer(), lk_EntryListIndex[i] * mi_OffsetBits, mi_OffsetBits);
+			writeBitsToIndexBuffer(lui_Gno, mi_OffsetBits);
+		}
 	}
+	flushIndexBuffer();
 	printf("\rCreating index... done.\n");
 	mk_pTempFileA->remove();
 	
@@ -524,7 +570,7 @@ void k_GpfIndexer::flushIndexBuffer()
 	int li_Size = mi_IndexBufferOffset;
 	if (mi_IndexBufferBitOffset > 0)
 		++li_Size;
-	mk_TempFileA_->write((char*)muc_pIndexBuffer.get_Pointer(), li_Size);
+	mk_IndexBufferBitWriterFile_->write((char*)muc_pIndexBuffer.get_Pointer(), li_Size);
 	mi_IndexBufferOffset = 0;
 	mi_IndexBufferBitOffset = 0;
 }
@@ -580,7 +626,7 @@ void k_GpfIndexer::writePreIndexEntryToFileB(qint64 ai_OutPosition, int ai_Tag, 
 }
 
 
-void k_GpfIndexer::overwriteBitsInBuffer(quint8* auc_Buffer_, int ai_Offset, quint64 aui_Value, int ai_Size)
+void overwriteBitsInBuffer(quint8* auc_Buffer_, int ai_Offset, quint64 aui_Value, int ai_Size)
 {
 	while (ai_Size > 0)
 	{
@@ -598,4 +644,34 @@ void k_GpfIndexer::overwriteBitsInBuffer(quint8* auc_Buffer_, int ai_Offset, qui
 		aui_Value >>= li_CopyBits;
 		ai_Size -= li_CopyBits;
 	}
+}
+
+
+quint64 readBitsFromBuffer(quint8* auc_Buffer_, int ai_Offset, int ai_Size)
+{
+	quint64 lui_Result = 0;
+	int li_BitsCopied = 0;
+	while (ai_Size > 0)
+	{
+		int li_ByteOffset = ai_Offset / 8;
+		int li_BitOffset = ai_Offset % 8;
+		int li_CopyBits = (8 - li_BitOffset);
+		if (li_CopyBits > ai_Size)
+			li_CopyBits = ai_Size;
+		quint8 lui_CopyMask = ((((quint32)1) << li_CopyBits) - 1);
+		quint8 lui_CopyByte = (auc_Buffer_[li_ByteOffset] >> li_BitOffset) & lui_CopyMask;
+		lui_Result |= (((quint64)lui_CopyByte) << li_BitsCopied);
+		ai_Offset += li_CopyBits;
+		ai_Size -= li_CopyBits;
+		li_BitsCopied += li_CopyBits;
+	}
+	return lui_Result;
+}
+
+
+bool lessThanPreIndexEntry(const int ai_First, const int ai_Second)
+{
+	qint64 li_FirstMass = readBitsFromBuffer(guc_MassesBuffer_, ai_First * gi_MassBits, gi_MassBits);
+	qint64 li_SecondMass = readBitsFromBuffer(guc_MassesBuffer_, ai_Second * gi_MassBits, gi_MassBits);
+	return li_FirstMass < li_SecondMass;
 }

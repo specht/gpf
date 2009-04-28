@@ -45,11 +45,12 @@ protected:
 	
 	inline quint16 readNucleotideTriplet(quint64 aui_Gno);
 	void recordHalfMassSequenceTag(int ai_Tag, bool ab_RightTag, qint64 ai_HalfMass, qint64 ai_Gno);
+	
 	void writeBitsToIndexBuffer(quint64 aui_Value, int ai_Size);
 	void flushIndexBuffer();
+	
 	quint64 readBitsFromTempFileA(int ai_Size);
 	void writePreIndexEntryToFileB(qint64 ai_OutPosition, int ai_Tag, int ai_Direction, qint64 ai_HalfMass, quint64 aui_Gno);
-	void overwriteBitsInBuffer(quint8* auc_Buffer_, int ai_Offset, quint64 aui_Value, int ai_Size);
 	
 	QString ms_DnaPath;
 	QString ms_DnaIndexPath;
@@ -86,8 +87,13 @@ protected:
 	RefPtr<QFile> mk_pTempFileB;
 	QFile* mk_TempFileA_;
 	QFile* mk_TempFileB_;
+	QFile* mk_IndexBufferBitWriterFile_;
 	
 	RefPtr<quint32> mui_pTagDirectionCount;
 	qint64 mi_PreIndexEntryCount;
 	RefPtr<quint8> muc_pOnePreIndexEntry;
 };
+
+void overwriteBitsInBuffer(quint8* auc_Buffer_, int ai_Offset, quint64 aui_Value, int ai_Size);
+quint64 readBitsFromBuffer(quint8* auc_Buffer_, int ai_Offset, int ai_Size);
+bool lessThanPreIndexEntry(const int ai_First, const int ai_Second);
