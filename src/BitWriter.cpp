@@ -35,29 +35,31 @@ k_BitWriter::~k_BitWriter()
 {
 }
 
+#define READ_BITS 32
+#define READ_TYPE quint32
 
 void k_BitWriter::writeBits(quint64 aui_Value, int ai_Bits)
 {
 	while (ai_Bits > 0)
 	{
-		int li_CopyBits = (8 - mi_BufferBitOffset);
+		int li_CopyBits = READ_BITS - mi_BufferBitOffset;
 		if (li_CopyBits > ai_Bits)
 			li_CopyBits = ai_Bits;
-		quint8 lui_Byte = aui_Value & ((1 << li_CopyBits) - 1);
-		quint8 lui_NullMask = (((quint32)1) << li_CopyBits) - 1;
+		READ_TYPE lui_Byte = aui_Value & ((1 << li_CopyBits) - 1);
+		READ_TYPE lui_NullMask = (((quint64)1) << li_CopyBits) - 1;
 		lui_NullMask <<= mi_BufferBitOffset;
-		lui_NullMask ^= 0xff;
+		lui_NullMask ^= (((quint64)1) << READ_BITS) - 1;
 		lui_Byte <<= mi_BufferBitOffset;
 		aui_Value >>= li_CopyBits;
 		ai_Bits -= li_CopyBits;
-		muc_pBuffer.get_Pointer()[mi_BufferOffset] &= lui_NullMask;
-		muc_pBuffer.get_Pointer()[mi_BufferOffset] |= lui_Byte;
+		((READ_TYPE*)(muc_pBuffer.get_Pointer()))[mi_BufferOffset] &= lui_NullMask;
+		((READ_TYPE*)(muc_pBuffer.get_Pointer()))[mi_BufferOffset] |= lui_Byte;
 		mi_BufferBitOffset += li_CopyBits;
-		if (mi_BufferBitOffset > 7)
+		if (mi_BufferBitOffset >= READ_BITS)
 		{
-			mi_BufferBitOffset -= 8;
+			mi_BufferBitOffset -= READ_BITS;
 			++mi_BufferOffset;
-			if (mi_BufferOffset >= mui_BufferSize)
+			if (mi_BufferOffset * READ_BITS / 8 >= mui_BufferSize)
 				flush();
 		}
 	}
@@ -66,12 +68,16 @@ void k_BitWriter::writeBits(quint64 aui_Value, int ai_Bits)
 
 void k_BitWriter::flush()
 {
-	size_t li_Size = mi_BufferOffset;
-	if (mi_BufferBitOffset > 0)
+	size_t li_Size = mi_BufferOffset * READ_BITS / 8;
+	while (mi_BufferBitOffset > 0)
+	{
 		++li_Size;
-	printf("writing %d bytes... to %p\n", li_Size, mk_Device_);
+		if (mi_BufferBitOffset >= 8)
+			mi_BufferBitOffset -= 8;
+		else
+			mi_BufferBitOffset = 0;
+	}
 	mk_Device_->write((char*)muc_pBuffer.get_Pointer(), li_Size);
-	printf("done.\n");
 	mi_BufferOffset = 0;
 	mi_BufferBitOffset = 0;
 }

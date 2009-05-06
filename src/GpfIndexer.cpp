@@ -51,7 +51,7 @@ k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString 
 	, mi_MassPrecision(10000)
 	, mi_TagSize(5)
 	, mi_DnaBufferLength(0)
-	, mi_IndexBufferMaxLength(512 * 1024 * 1024)
+	, mi_IndexBufferMaxLength(768 * 1024 * 1024)
 {
 }
 
@@ -91,7 +91,8 @@ void k_GpfIndexer::compileIndex()
 	memset(mui_pTagDirectionCount.get_Pointer(), 0, mi_TagCount * 2 * 4);
 	
 	printf("Allocating %s for index buffer.\n", bytesToStr(mi_IndexBufferMaxLength).toStdString().c_str());
-	muc_pIndexBuffer = RefPtr<quint8>(new quint8[mi_IndexBufferMaxLength]);
+	// allocate 9 extra bytes so that we're always safe if we should read several bytes at once
+	muc_pIndexBuffer = RefPtr<quint8>(new quint8[mi_IndexBufferMaxLength + 9]);
 	memset(muc_pIndexBuffer.get_Pointer(), 0, mi_IndexBufferMaxLength);
 	mi_IndexBufferOffset = 0;
 	mi_IndexBufferBitOffset = 0;
@@ -282,20 +283,25 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 	RefPtr<qint64> li_pTagDirectionCount(new qint64[mi_TagCount * 2]);
 	memset(li_pTagDirectionCount.get_Pointer(), 0, sizeof(qint64) * mi_TagCount * 2);
 	qint64 li_BiggestBucketSize = 0;
-	while (lk_HmstIterator.next(&lr_Hmst))
 	{
-		//printf("%d %d %d\n", (unsigned int)lr_Hmst.mui_TagDirectionIndex, (int)lr_Hmst.mi_HalfMass, (unsigned int)lr_Hmst.mui_Gno);
-		// count
-		++li_TotalHmstCount;
-		if (li_TotalHmstCount % 10000 == 0)
-			printf("\r%d %d", (int)(li_TotalHmstCount >> 32), (int)(li_TotalHmstCount & 0xffffffff));
-		++li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex];
-		if (li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] > li_BiggestBucketSize)
-			li_BiggestBucketSize = li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex];
+		k_StopWatch lk_SubStopWatch("One iteration took %1.\n");
+		while (lk_HmstIterator.next(&lr_Hmst))
+		{
+			//printf("%d %d %d\n", (unsigned int)lr_Hmst.mui_TagDirectionIndex, (int)lr_Hmst.mi_HalfMass, (unsigned int)lr_Hmst.mui_Gno);
+			// count
+			++li_TotalHmstCount;
+			if (li_TotalHmstCount % 10000 == 0)
+				printf("\r%d %d", (int)(li_TotalHmstCount >> 32), (int)(li_TotalHmstCount & 0xffffffff));
+			++li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex];
+			if (li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] > li_BiggestBucketSize)
+				li_BiggestBucketSize = li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex];
+		}
+		printf("\nfound %d %d HMST\n", (int)(li_TotalHmstCount >> 32), (int)(li_TotalHmstCount & 0xffffffff));
 	}
-	printf("\nfound %d %d HMST\n", (int)(li_TotalHmstCount >> 32), (int)(li_TotalHmstCount & 0xffffffff));
 	
 	qint64 li_MaxHmstPerIteration = ((qint64)mi_IndexBufferMaxLength * 8) / mi_HmstBits;
+	
+	RefPtr<quint32> lui_pIndicesToSort(new quint32[li_BiggestBucketSize]);
 	
 	if (li_BiggestBucketSize > li_MaxHmstPerIteration)
 	{
@@ -366,167 +372,63 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 		
 		// sort each tag/dir list
 		li_Offset = 0;
+		mui_IndexBufferBitReader_ = (quint32*)(muc_pIndexBuffer.get_Pointer());
+		mui_IndexBufferBitReaderOffset = 32;
+
 		for (unsigned int i = lui_FirstTagDirectionIndex; i <= lui_LastTagDirectionIndex; ++i)
 		{
 			if (li_pTagDirectionCount.get_Pointer()[i] > 0)
 			{
-				// sort items from li_FirstItem to li_LastItem according to half mass
-				qint64 li_FirstItem = li_Offset;
-				qint64 li_LastItem = li_Offset + li_pTagDirectionCount.get_Pointer()[i] - 1;
-				//printf("%d %d-%d\n", i, (int)li_FirstItem, (int)li_LastItem);
-				quickSortHmst(muc_pIndexBuffer.get_Pointer(), li_FirstItem, li_LastItem, mi_MassBits, mi_OffsetBits);
+				typedef QPair<quint32, quint64> tk_MassGnoPair;
+				QMap<quint32, tk_MassGnoPair> lk_Map;
+				
+				for (int k = 0; k < li_pTagDirectionCount.get_Pointer()[i]; ++k)
+				{
+					//quint32 lui_Mass = readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), (li_Offset + k) * mi_HmstBits, mi_MassBits);
+					//quint64 lui_Gno = readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), (li_Offset + k) * mi_HmstBits + mi_MassBits, mi_OffsetBits);
+					quint32 lui_Mass = readBitsFromIndexBuffer(mi_MassBits);
+					quint64 lui_Gno = readBitsFromIndexBuffer(mi_OffsetBits);
+					lk_Map.insertMulti(lui_Mass, tk_MassGnoPair(lui_Mass, lui_Gno));
+				}
+				
+				QMapIterator<quint32, tk_MassGnoPair> lk_Iterator(lk_Map);
+				while (lk_Iterator.hasNext())
+				{
+					lk_Iterator.next();
+					lk_pBitWriter->writeBits(lk_Iterator.value().first, mi_MassBits);
+				}
+
+				lk_Iterator.toFront();
+				while (lk_Iterator.hasNext())
+				{
+					lk_Iterator.next();
+					lk_pBitWriter->writeBits(lk_Iterator.value().second, mi_OffsetBits);
+				}
+				
+/*				// init indices
+				for (unsigned int k = 0; k < li_pTagDirectionCount.get_Pointer()[i]; ++k)
+					lui_pIndicesToSort.get_Pointer()[k] = k;
+				
+				// printf("sorting %d from %d to %d.\n", i, (int)li_FirstItem, (int)li_LastItem);
+				// printf("%d %d-%d\n", i, (int)li_FirstItem, (int)li_LastItem);
+				quickSortHmst(lui_pIndicesToSort.get_Pointer(), 
+							   0, li_pTagDirectionCount.get_Pointer()[i] - 1, 
+							   muc_pIndexBuffer.get_Pointer(), li_Offset, 
+							   mi_MassBits, mi_OffsetBits);
+				
+				// flush to output file
+				for (int k = 0; k < li_pTagDirectionCount.get_Pointer()[i]; ++k)
+					lk_pBitWriter->writeBits(readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), (li_Offset + lui_pIndicesToSort.get_Pointer()[k]) * mi_HmstBits, mi_MassBits), mi_MassBits);
+				for (int k = 0; k < li_pTagDirectionCount.get_Pointer()[i]; ++k)
+					lk_pBitWriter->writeBits(readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), (li_Offset + lui_pIndicesToSort.get_Pointer()[k]) * mi_HmstBits + mi_MassBits, mi_OffsetBits), mi_OffsetBits);*/
+				
 				li_Offset += li_pTagDirectionCount.get_Pointer()[i];
 			}
 		}
-		
-		// flush range to index file
-		li_Offset = 0;
-		for (unsigned int i = lui_FirstTagDirectionIndex; i <= lui_LastTagDirectionIndex; ++i)
-		{
-			if (li_pTagDirectionCount.get_Pointer()[i] > 0)
-			{
-				// sort items from li_FirstItem to li_LastItem according to half mass
-				qint64 li_FirstItem = li_Offset;
-				qint64 li_LastItem = li_Offset + li_pTagDirectionCount.get_Pointer()[i] - 1;
-				for (qint64 k = li_FirstItem; k <= li_LastItem; ++k)
-					lk_pBitWriter->writeBits(readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), k * mi_HmstBits, mi_MassBits), mi_MassBits);
-				for (qint64 k = li_FirstItem; k <= li_LastItem; ++k)
-					lk_pBitWriter->writeBits(readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), k * mi_HmstBits + mi_MassBits, mi_OffsetBits), mi_OffsetBits);
-				li_Offset += li_pTagDirectionCount.get_Pointer()[i];
-			}
-		}
+		//printf("\n");
 	}
 	
 	lk_pBitWriter->flush();
-	
-	//printf(" done.\n");
-
-	/*
-	// we now have the raw unsorted HMST in temp file A
-	// now we already know how many entries we have for each tag/direction pair
-	// rearrange the entries, so that all entries are already sorted by tag/direction
-	mk_TempFileB_->resize(mi_PreIndexEntryBits * mi_PreIndexEntryCount / 8 + 1);
-	RefPtr<quint64> lk_pTagDirectionOffset(new quint64[mi_TagCount * 2]);
-	RefPtr<quint32> lk_pTagDirectionWritten(new quint32[mi_TagCount * 2]);
-	memset(lk_pTagDirectionWritten.get_Pointer(), 0, mi_TagCount * 2 * 4);
-	quint64 li_Offset = 0;
-	for (int i = 0; i < mi_TagCount * 2; ++i)
-	{
-		lk_pTagDirectionOffset.get_Pointer()[i] = li_Offset;
-		li_Offset += mui_pTagDirectionCount.get_Pointer()[i];
-	}
-	mk_TempFileA_->reset();
-	mui_CurrentPreIndexByte = 0;
-	mi_CurrentPreIndexByteBitsLeft = 0;
-	for (qint64 i = 0; i < mi_PreIndexEntryCount; ++i)
-	{
-		if (i % 1000 == 0)
-			printf("\rRearranging pre-index... %d%%", (int)(i * 100 / mi_PreIndexEntryCount));
-		// read one pre index entry and write it to the correct position
-		int li_Tag = readBitsFromTempFileA(mi_TagBits);
-		int li_Direction = readBitsFromTempFileA(1);
-		qint64 li_HalfMass = readBitsFromTempFileA(mi_MassBits);
-		quint64 lui_Gno = readBitsFromTempFileA(mi_OffsetBits);
-		qint64 li_OutPosition = 
-			lk_pTagDirectionOffset.get_Pointer()[li_Tag * 2 + li_Direction] +
-			lk_pTagDirectionWritten.get_Pointer()[li_Tag * 2 + li_Direction];
-		writePreIndexEntryToFileB(li_OutPosition * mi_PreIndexEntryBits, li_Tag, li_Direction, li_HalfMass, lui_Gno);
-		++lk_pTagDirectionWritten.get_Pointer()[li_Tag * 2 + li_Direction];
-// 		printf("W %d %d %d %d\n", (int)li_Tag, (int)li_Direction, (int)li_HalfMass, (int)lui_Gno);
-	}
-	printf("\rRearranging pre-index... done.\n");
-	
-	(dynamic_cast<QTemporaryFile*>(mk_TempFileB_))->setAutoRemove(false);
-	QString ls_TempFileBPath = mk_TempFileB_->fileName();
-	mk_TempFileB_->close();
-	mk_pTempFileB = RefPtr<QFile>(NULL);
-	mk_pTempFileA = RefPtr<QFile>(new QFile(ls_TempFileBPath));
-	mk_pTempFileA->open(QIODevice::ReadOnly);
-	mk_TempFileB_ = NULL;
-	mk_TempFileA_ = mk_pTempFileA.get_Pointer();
-
-	int li_MaxEntryCount = 0;
-	for (qint64 li_TagAndDir = 0; li_TagAndDir < mi_TagCount * 2; ++li_TagAndDir)
-	{
-		if ((int)mui_pTagDirectionCount.get_Pointer()[li_TagAndDir] > li_MaxEntryCount)
-			li_MaxEntryCount = mui_pTagDirectionCount.get_Pointer()[li_TagAndDir];
-	}
-	
-	RefPtr<quint8> luc_pEntryMassList(new quint8[li_MaxEntryCount * mi_MassBits / 8 + 1]);
-	RefPtr<quint8> luc_pEntryGnoList(new quint8[li_MaxEntryCount * mi_OffsetBits / 8 + 1]);
-	QList<int> lk_EntryListIndex;
-	if (!luc_pEntryMassList || !luc_pEntryGnoList)
-	{
-		printf("Error: Unable to allocate a few bytes for sorting.\n");
-		exit(1);
-	}
-	guc_MassesBuffer_ = luc_pEntryMassList.get_Pointer();
-	gi_MassBits = mi_MassBits;
-	
-	mk_TempFileA_->reset();
-	mui_CurrentPreIndexByte = 0;
-	mi_CurrentPreIndexByteBitsLeft = 0;
-	
-	// determine how many bits are required for storing the entry count
-	quint32 lui_EntryCountBits = 1;
-	while (((int)1 << lui_EntryCountBits) < li_MaxEntryCount + 1)
-		++lui_EntryCountBits;
-
-	// write entry count bit count
-	ak_OutFile_->write((char*)&lui_EntryCountBits, 4);
-	
-	mk_IndexBufferBitWriterFile_ = ak_OutFile_;
-	mi_IndexBufferOffset = 0;
-	mi_IndexBufferBitOffset = 0;
-	// write entry counts
-	for (qint64 li_TagAndDir = 0; li_TagAndDir < mi_TagCount * 2; ++li_TagAndDir)
-		writeBitsToIndexBuffer(mui_pTagDirectionCount.get_Pointer()[li_TagAndDir], lui_EntryCountBits);
-	
-	for (qint64 li_TagAndDir = 0; li_TagAndDir < mi_TagCount * 2; ++li_TagAndDir)
-	{
-		if (li_TagAndDir % 1000 == 0)
-			printf("\rCreating index... %d%%", (int)(li_TagAndDir * 100 / (mi_TagCount * 2)));
-		lk_EntryListIndex.clear();
-		int li_EntryMassListOffset = 0;
-		int li_EntryGnoListOffset = 0;
-		// read all entries from this tag/dir group into buffer
-		for (quint32 li_Entry = 0; li_Entry < mui_pTagDirectionCount.get_Pointer()[li_TagAndDir]; ++li_Entry)
-		{
-			int li_Tag = readBitsFromTempFileA(mi_TagBits);
-			int li_Direction = readBitsFromTempFileA(1);
-			qint64 li_HalfMass = readBitsFromTempFileA(mi_MassBits);
-			quint64 lui_Gno = readBitsFromTempFileA(mi_OffsetBits);
-			if (li_TagAndDir != li_Tag * 2 + li_Direction)
-			{
-				printf("Error: expecting %d %d, got %d %d.\n", 
-						(int)(li_TagAndDir / 2), (int)(li_TagAndDir % 2),
-						(int)(li_Tag), (int)li_Direction
-						);
-				exit(1);
-			}
-			overwriteBitsInBuffer(luc_pEntryMassList.get_Pointer(), li_EntryMassListOffset, li_HalfMass, mi_MassBits);
-			li_EntryMassListOffset += mi_MassBits;
-			overwriteBitsInBuffer(luc_pEntryGnoList.get_Pointer(), li_EntryGnoListOffset, lui_Gno, mi_OffsetBits);
-			li_EntryGnoListOffset += mi_OffsetBits;
-			lk_EntryListIndex.append(lk_EntryListIndex.size());
-		}
-		// now sort the entries in RAM
-		qSort(lk_EntryListIndex.begin(), lk_EntryListIndex.end(), lessThanPreIndexEntry);
-		for (int i = 0; i < lk_EntryListIndex.size(); ++i)
-		{
-			qint64 li_Mass = readBitsFromBuffer(luc_pEntryMassList.get_Pointer(), lk_EntryListIndex[i] * mi_MassBits, mi_MassBits);
-			writeBitsToIndexBuffer(li_Mass, mi_MassBits);
-		}
-		for (int i = 0; i < lk_EntryListIndex.size(); ++i)
-		{
-			quint64 lui_Gno = readBitsFromBuffer(luc_pEntryGnoList.get_Pointer(), lk_EntryListIndex[i] * mi_OffsetBits, mi_OffsetBits);
-			writeBitsToIndexBuffer(lui_Gno, mi_OffsetBits);
-		}
-	}
-	flushIndexBuffer();
-	printf("\rCreating index... done.\n");
-	mk_pTempFileA->remove();
-	*/
 	
 	// finish index chunk
 	li_ChunkSize = ak_OutFile_->pos() - li_ChunkSize;
@@ -539,82 +441,31 @@ quint16 k_GpfIndexer::readNucleotideTriplet(quint64 aui_Gno)
 	// 9 bits are always contained in at most 2 bytes!
 	quint64 lui_Offset = (aui_Gno * 3) / 8;
 	quint16 lui_Bit;
-	memcpy((char*)(&lui_Bit), muc_pDnaBuffer.get_Pointer() + lui_Offset, 1);
-	memcpy((char*)(&lui_Bit) + 1, muc_pDnaBuffer.get_Pointer() + lui_Offset + 1, 1);
+	memcpy(&lui_Bit, muc_pDnaBuffer.get_Pointer() + lui_Offset, 2);
 	lui_Bit >>= ((aui_Gno * 3) & 7);
 	lui_Bit &= 511;
 	return lui_Bit;
 }
 
 
-quint64 k_GpfIndexer::readBitsFromTempFileA(int ai_Size)
-{
-	quint64 lui_Result = 0;
-	/*
-	int li_BitsCopied = 0;
-	while (ai_Size > 0)
-	{
-		if (mi_CurrentPreIndexByteBitsLeft == 0)
-		{
-			// read next byte from file
-			mk_TempFileA_->read((char*)&mui_CurrentPreIndexByte, 1);
-			mi_CurrentPreIndexByteBitsLeft = 8;
-		}
-		int li_CopyBits = mi_CurrentPreIndexByteBitsLeft;
-		if (li_CopyBits > ai_Size)
-			li_CopyBits = ai_Size;
-		// extract bits
-		quint64 lui_Byte = mui_CurrentPreIndexByte >> (8 - mi_CurrentPreIndexByteBitsLeft);
-		lui_Byte &= ((quint64)1 << li_CopyBits) - 1;
-		lui_Result |= lui_Byte << li_BitsCopied;
-		li_BitsCopied += li_CopyBits;
-		mi_CurrentPreIndexByteBitsLeft -= li_CopyBits;
-		ai_Size -= li_CopyBits;
-	}
-	*/
-	return lui_Result;
-}
-
-
-/*
-void k_GpfIndexer::writePreIndexEntryToFileB(qint64 ai_OutPosition, int ai_Tag, int ai_Direction, qint64 ai_HalfMass, quint64 aui_Gno)
-{
-	// write the pre index entry to the specified position (in bits)
-	// read a small chunk to muc_pOnePreIndexEntry
-	int li_FilePosition = ai_OutPosition / 8;
-	int li_BufferPosition = ai_OutPosition - li_FilePosition * 8;
-	mk_TempFileB_->seek(li_FilePosition);
-	mk_TempFileB_->read((char*)muc_pOnePreIndexEntry.get_Pointer(), mi_PreIndexEntryBytes);
-	// inject entry into these few bytes
-	overwriteBitsInBuffer(muc_pOnePreIndexEntry.get_Pointer(), li_BufferPosition, ai_Tag, mi_TagBits);
-	li_BufferPosition += mi_TagBits;
-	overwriteBitsInBuffer(muc_pOnePreIndexEntry.get_Pointer(), li_BufferPosition, ai_Direction, 1);
-	li_BufferPosition += 1;
-	overwriteBitsInBuffer(muc_pOnePreIndexEntry.get_Pointer(), li_BufferPosition, ai_HalfMass, mi_MassBits);
-	li_BufferPosition += mi_MassBits;
-	overwriteBitsInBuffer(muc_pOnePreIndexEntry.get_Pointer(), li_BufferPosition, aui_Gno, mi_OffsetBits);
-	li_BufferPosition += mi_OffsetBits;
-	// write back the modified bytes
-	mk_TempFileB_->seek(li_FilePosition);
-	mk_TempFileB_->write((char*)muc_pOnePreIndexEntry.get_Pointer(), mi_PreIndexEntryBytes);
-}
-*/
+#define READ_BITS 32
+#define READ_TYPE quint32
 
 
 void overwriteBitsInBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, quint64 aui_Value, int ai_Size)
 {
 	while (ai_Size > 0)
 	{
-		int li_ByteOffset = ai_BitOffset / 8;
-		int li_BitOffset = ai_BitOffset % 8;
-		int li_CopyBits = (8 - li_BitOffset);
+		int li_ByteOffset = ai_BitOffset / READ_BITS;
+		int li_BitOffset = ai_BitOffset % READ_BITS;
+		int li_CopyBits = (READ_BITS - li_BitOffset);
 		if (li_CopyBits > ai_Size)
 			li_CopyBits = ai_Size;
-		quint8 lui_CopyMask = ((((quint32)1) << li_CopyBits) - 1);
-		quint8 lui_NullMask = ~(lui_CopyMask << li_BitOffset);
-		auc_Buffer_[li_ByteOffset] &= lui_NullMask;
-		quint8 lui_CopyByte = (aui_Value & lui_CopyMask) << li_BitOffset;
-		auc_Buffer_[li_ByteOffset] |= lui_CopyByte;
+		READ_TYPE lui_CopyMask = ((((quint64)1) << li_CopyBits) - 1);
+		READ_TYPE lui_NullMask = ~(lui_CopyMask << li_BitOffset);
+		((READ_TYPE*)auc_Buffer_)[li_ByteOffset] &= lui_NullMask;
+		READ_TYPE lui_CopyByte = (aui_Value & lui_CopyMask) << li_BitOffset;
+		((READ_TYPE*)auc_Buffer_)[li_ByteOffset] |= lui_CopyByte;
 		ai_BitOffset += li_CopyBits;
 		aui_Value >>= li_CopyBits;
 		ai_Size -= li_CopyBits;
@@ -628,13 +479,14 @@ quint64 readBitsFromBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, int ai_Size
 	int li_BitsCopied = 0;
 	while (ai_Size > 0)
 	{
-		int li_ByteOffset = ai_BitOffset / 8;
-		int li_BitOffset = ai_BitOffset % 8;
-		int li_CopyBits = (8 - li_BitOffset);
+		int li_ByteOffset = ai_BitOffset / READ_BITS;
+		int li_BitOffset = ai_BitOffset % READ_BITS;
+		int li_CopyBits = READ_BITS - li_BitOffset;
 		if (li_CopyBits > ai_Size)
 			li_CopyBits = ai_Size;
-		quint8 lui_CopyMask = ((((quint32)1) << li_CopyBits) - 1);
-		quint8 lui_CopyByte = (auc_Buffer_[li_ByteOffset] >> li_BitOffset) & lui_CopyMask;
+		READ_TYPE lui_CopyMask = ((((quint64)1) << li_CopyBits) - 1);
+		//READ_TYPE lui_CopyByte = (auc_Buffer_[li_ByteOffset] >> li_BitOffset) & lui_CopyMask;
+		READ_TYPE lui_CopyByte = (*((READ_TYPE*)auc_Buffer_ + li_ByteOffset) >> li_BitOffset) & lui_CopyMask;
 		lui_Result |= (((quint64)lui_CopyByte) << li_BitsCopied);
 		ai_BitOffset += li_CopyBits;
 		ai_Size -= li_CopyBits;
@@ -644,46 +496,43 @@ quint64 readBitsFromBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, int ai_Size
 }
 
 
-void quickSortHmst(quint8* auc_Buffer_, int ai_First, int ai_Last, int ai_MassBits, int ai_OffsetBits)
+void quickSortHmst(quint32* aui_Indices_, int ai_First, int ai_Last, quint8* auc_Buffer_, qint64 ai_Offset, int ai_MassBits, int ai_OffsetBits)
 {
 	if (ai_First < ai_Last)
 	{
-		int li_Pivot = quickSortHmstDivide(auc_Buffer_, ai_First, ai_Last, ai_MassBits, ai_OffsetBits);
+		int li_Pivot = quickSortHmstDivide(aui_Indices_, ai_First, ai_Last, auc_Buffer_, ai_Offset, ai_MassBits, ai_OffsetBits);
 		//printf("pivot is %d!\n", li_Pivot);
-		quickSortHmst(auc_Buffer_, ai_First, li_Pivot - 1, ai_MassBits, ai_OffsetBits);
-		quickSortHmst(auc_Buffer_, li_Pivot + 1, ai_Last, ai_MassBits, ai_OffsetBits);
+		quickSortHmst(aui_Indices_, ai_First, li_Pivot - 1, auc_Buffer_, ai_Offset, ai_MassBits, ai_OffsetBits);
+		quickSortHmst(aui_Indices_, li_Pivot + 1, ai_Last, auc_Buffer_, ai_Offset, ai_MassBits, ai_OffsetBits);
 	}
 }
 
 
-int quickSortHmstDivide(quint8* auc_Buffer_, int ai_First, int ai_Last, int ai_MassBits, int ai_OffsetBits)
+int quickSortHmstDivide(quint32* aui_Indices_, int ai_First, int ai_Last, quint8* auc_Buffer_, qint64 ai_Offset, int ai_MassBits, int ai_OffsetBits)
 {
 	int i = ai_First;
 	int j = ai_Last - 1;
-	qint64 li_PivotMass = readBitsFromBuffer(auc_Buffer_, ai_Last * (ai_MassBits + ai_OffsetBits), ai_MassBits);
-	//printf("pivot mass is %d!\n", (int)li_PivotMass);
+	qint64 li_PivotMass = readBitsFromBuffer(auc_Buffer_, (ai_Offset + aui_Indices_[ai_Last]) * (ai_MassBits + ai_OffsetBits), ai_MassBits);
 	do 
 	{
-		while ((i < ai_Last) && (qint64)readBitsFromBuffer(auc_Buffer_, i * (ai_MassBits + ai_OffsetBits), ai_MassBits) <= li_PivotMass)
+		while ((i < ai_Last) && (qint64)readBitsFromBuffer(auc_Buffer_, (ai_Offset + aui_Indices_[i]) * (ai_MassBits + ai_OffsetBits), ai_MassBits) <= li_PivotMass)
 			++i;
-		while ((j > ai_First) && (qint64)readBitsFromBuffer(auc_Buffer_, j * (ai_MassBits + ai_OffsetBits), ai_MassBits) >= li_PivotMass)
+		while ((j > ai_First) && (qint64)readBitsFromBuffer(auc_Buffer_, (ai_Offset + aui_Indices_[j]) * (ai_MassBits + ai_OffsetBits), ai_MassBits) >= li_PivotMass)
 			--j;
 		if (i < j)
 		{
-			qint64 li_MassA = readBitsFromBuffer(auc_Buffer_, j * (ai_MassBits + ai_OffsetBits), ai_MassBits);
-			qint64 li_MassB = readBitsFromBuffer(auc_Buffer_, i * (ai_MassBits + ai_OffsetBits), ai_MassBits);
-			overwriteBitsInBuffer(auc_Buffer_, i * (ai_MassBits + ai_OffsetBits), li_MassA, ai_MassBits);
-			overwriteBitsInBuffer(auc_Buffer_, j * (ai_MassBits + ai_OffsetBits), li_MassB, ai_MassBits);
+			quint32 lui_Temp = aui_Indices_[i];
+			aui_Indices_[i] = aui_Indices_[j];
+			aui_Indices_[j] = lui_Temp;
 		}
 	}
 	while (i < j);
 	
-	if (readBitsFromBuffer(auc_Buffer_, i * (ai_MassBits + ai_OffsetBits), ai_MassBits) > li_PivotMass)
+	if (readBitsFromBuffer(auc_Buffer_, (ai_Offset + aui_Indices_[i]) * (ai_MassBits + ai_OffsetBits), ai_MassBits) > li_PivotMass)
 	{
-		qint64 li_MassA = readBitsFromBuffer(auc_Buffer_, ai_Last * (ai_MassBits + ai_OffsetBits), ai_MassBits);
-		qint64 li_MassB = readBitsFromBuffer(auc_Buffer_, i * (ai_MassBits + ai_OffsetBits), ai_MassBits);
-		overwriteBitsInBuffer(auc_Buffer_, i * (ai_MassBits + ai_OffsetBits), li_MassA, ai_MassBits);
-		overwriteBitsInBuffer(auc_Buffer_, ai_Last * (ai_MassBits + ai_OffsetBits), li_MassB, ai_MassBits);
+		quint32 lui_Temp = aui_Indices_[ai_Last];
+		aui_Indices_[ai_Last] = aui_Indices_[i];
+		aui_Indices_[i] = lui_Temp;
 	}
 	return i;
 }
@@ -711,4 +560,28 @@ QString k_GpfIndexer::bytesToStr(qint64 ai_Size)
 	else 
 		return QString("%1 TB").arg(ai_Size / 1024 / 1024 / 1024 / 1024);
 		
+}
+
+
+quint64 k_GpfIndexer::readBitsFromIndexBuffer(quint8 ai_Bits)
+{
+	quint64 lui_Result = 0;
+	while (ai_Bits > 0)
+	{
+		quint8 lui_CopyBits = 32 - mui_IndexBufferBitReaderOffset;
+		if (lui_CopyBits > ai_Bits)
+			lui_CopyBits = ai_Bits;
+		quint32 lui_Mask = ((quint64)1 << lui_CopyBits) - 1;
+		lui_Result <<= lui_CopyBits;
+		lui_Result |= (mui_IndexBufferBitReaderCurrentByte >> mui_IndexBufferBitReaderOffset) & lui_Mask;
+		ai_Bits -= lui_CopyBits;
+		mui_IndexBufferBitReaderOffset += lui_CopyBits;
+		if (mui_IndexBufferBitReaderOffset >= 32)
+		{
+			mui_IndexBufferBitReaderOffset -= 32;
+			mui_IndexBufferBitReaderCurrentByte = *mui_IndexBufferBitReader_;
+			++mui_IndexBufferBitReader_;
+		}
+	}
+	return lui_Result;
 }
