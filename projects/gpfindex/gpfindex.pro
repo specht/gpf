@@ -7,7 +7,9 @@ CONFIG(debug, debug|release) {
 
 HEADERS += \
 	../../src/GpfIndexer.h \
+	../../src/HmstIterator.h \
 	
 SOURCES += \
 	../../src/gpfindex.cpp \
 	../../src/GpfIndexer.cpp \
+	../../src/HmstIterator.cpp \

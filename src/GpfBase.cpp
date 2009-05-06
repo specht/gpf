@@ -95,7 +95,7 @@ k_GpfBase::k_GpfBase()
 	}
 	
 	for (int i = 0; i < 256; ++i)
-		mi_AminoAcidToNumber_[i] = 256;
+		mi_AminoAcidToNumber_[i] = 20;
 	
 	{
 		QFile lk_File(":res/AminoAcids.csv");
@@ -133,7 +133,10 @@ int k_GpfBase::aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length)
 	for (int i = 0; i < ai_Length; ++i)
 	{
 		li_Result *= 20;
-		li_Result += mi_AminoAcidToNumber_[(int)ac_Buffer_[i]];
+		int li_AminoAcidNumber = mi_AminoAcidToNumber_[(int)ac_Buffer_[i]];
+		if (li_AminoAcidNumber < 0 || li_AminoAcidNumber > 19)
+			return -1;
+		li_Result += li_AminoAcidNumber;
 	}
 	return li_Result;
 }

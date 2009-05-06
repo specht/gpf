@@ -26,6 +26,8 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 
 class k_GpfIndexer
 {
+	friend class k_HmstIterator;
+	
 public:
 	k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString as_Title);
 	virtual ~k_GpfIndexer();
@@ -43,22 +45,19 @@ protected:
 	virtual void writeDnaChunk(QFile* ak_OutFile_);
 	virtual void writeIndexChunk(QFile* ak_OutFile_);
 	
-	inline quint16 readNucleotideTriplet(quint64 aui_Gno);
-	void recordHalfMassSequenceTag(int ai_Tag, bool ab_RightTag, qint64 ai_HalfMass, qint64 ai_Gno);
-	
-	void writeBitsToIndexBuffer(quint64 aui_Value, int ai_Size);
-	void flushIndexBuffer();
+	quint16 readNucleotideTriplet(quint64 aui_Gno);
 	
 	quint64 readBitsFromTempFileA(int ai_Size);
-	void writePreIndexEntryToFileB(qint64 ai_OutPosition, int ai_Tag, int ai_Direction, qint64 ai_HalfMass, quint64 aui_Gno);
+	//void writePreIndexEntryToFileB(qint64 ai_OutPosition, int ai_Tag, int ai_Direction, qint64 ai_HalfMass, quint64 aui_Gno);
+	QString bytesToStr(qint64 ai_Size);
 	
 	QString ms_DnaPath;
 	QString ms_DnaIndexPath;
 	QString ms_Title;
 	
 	QStringList mk_ScaffoldLabels;
-	QHash<QString, qint64> mk_ScaffoldLength;
-	QHash<QString, qint64> mk_ScaffoldStart;
+	QList<qint64> mk_ScaffoldLength;
+	QList<qint64> mk_ScaffoldStart;
 	qint64 mi_TotalNucleotideCount;
 	
 	qint64 mi_OffsetBits;
@@ -66,10 +65,8 @@ protected:
 	qint32 mi_MassBits;
 	qint32 mi_MassPrecision;
 	qint32 mi_TagSize;
-	qint32 mi_TagBits;
-	qint32 mi_PreIndexEntryBits;
-	qint32 mi_PreIndexEntryBytes;
 	qint32 mi_TagCount;
+	qint32 mi_HmstBits;
 	
 	qint64 mi_AminoAcidMasses_[256];
 	
@@ -81,19 +78,12 @@ protected:
 	qint32 mi_IndexBufferMaxLength;
 	qint32 mi_IndexBufferOffset;
 	qint32 mi_IndexBufferBitOffset;
-	quint8 mui_CurrentPreIndexByte;
-	quint32 mi_CurrentPreIndexByteBitsLeft;
-	RefPtr<QFile> mk_pTempFileA;
-	RefPtr<QFile> mk_pTempFileB;
-	QFile* mk_TempFileA_;
-	QFile* mk_TempFileB_;
-	QFile* mk_IndexBufferBitWriterFile_;
 	
 	RefPtr<quint32> mui_pTagDirectionCount;
-	qint64 mi_PreIndexEntryCount;
-	RefPtr<quint8> muc_pOnePreIndexEntry;
 };
 
-void overwriteBitsInBuffer(quint8* auc_Buffer_, int ai_Offset, quint64 aui_Value, int ai_Size);
-quint64 readBitsFromBuffer(quint8* auc_Buffer_, int ai_Offset, int ai_Size);
-bool lessThanPreIndexEntry(const int ai_First, const int ai_Second);
+void overwriteBitsInBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, quint64 aui_Value, int ai_Size);
+quint64 readBitsFromBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, int ai_Size);
+void quickSortHmst(quint8* auc_Buffer_, int ai_First, int ai_Last, int ai_MassBits, int ai_OffsetBits);
+int quickSortHmstDivide(quint8* auc_Buffer_, int ai_First, int ai_Last, int ai_MassBits, int ai_OffsetBits);
+//bool lessThanPreIndexEntry(const int ai_First, const int ai_Second);
