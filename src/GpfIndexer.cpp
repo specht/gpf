@@ -401,8 +401,8 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 				while (lk_Iterator.hasNext())
 				{
 					lk_Iterator.next();
-					if (i == 574386 * 2 + 1)
-						printf("%d %d\n", (qint32)lk_Iterator.value().first, (qint32)(lk_Iterator.value().second & ~mui_GnoBackwardsBit));
+/*					if (i == 574386 * 2 + 1)
+						printf("%d %d\n", (qint32)lk_Iterator.value().first, (qint32)(lk_Iterator.value().second & ~mui_GnoBackwardsBit));*/
 					lk_pBitWriter->writeBits(lk_Iterator.value().first, mi_MassBits);
 				}
 
