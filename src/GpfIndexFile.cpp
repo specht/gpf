@@ -34,6 +34,7 @@ k_GpfIndexFile::k_GpfIndexFile(const QString& as_Path)
 		if (gk_GpfBase.mb_IsAminoAcid_[i])
 			mi_AminoAcidMasses_[i] = (qint64)(gk_GpfBase.md_AminoAcidMasses_[i] * mi_MassPrecision);
 	}
+	mi_WaterMass = (qint64)(WATER_MASS * mi_MassPrecision);
 }
 
 
@@ -95,7 +96,7 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
 			// determine tag bits
 			mi_TagCount =  1;
 			for (int i = 0; i < mi_TagSize; ++i)
-				mi_TagCount *= 20;
+				mi_TagCount *= 19;
 			
 			// read scaffold sizes and labels
 			qint32 li_ScaffoldCount;

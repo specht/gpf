@@ -21,6 +21,8 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QtCore>
 
+#define WATER_MASS 18.01057
+
 
 struct r_DnaIndexChunkType
 {

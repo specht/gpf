@@ -35,4 +35,6 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
 
 	k_GpfIndexer lk_GpfIndexer(ls_GenomeFilename, ls_IndexFilename, ls_GenomeTitle);
 	lk_GpfIndexer.compileIndex();
+/*	char* s = "VIHAR";
+	printf("%d\n", gk_GpfBase.aminoAcidPolymerCode(s, 5));*/
 }

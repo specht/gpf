@@ -82,7 +82,7 @@ void k_GpfIndexer::compileIndex()
 	// determine tag bits
 	mi_TagCount =  1;
 	for (int i = 0; i < mi_TagSize; ++i)
-		mi_TagCount *= 20;
+		mi_TagCount *= 19;
 	
 	mi_HmstBits = mi_OffsetBits + mi_MassBits;
 	mi_MaxMass = ((qint64)1 << mi_MassBits) - 1;
@@ -393,6 +393,7 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 				{
 					quint32 lui_Mass = readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), (li_Offset + k) * mi_HmstBits, mi_MassBits);
 					quint64 lui_Gno = readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), (li_Offset + k) * mi_HmstBits + mi_MassBits, mi_OffsetBits);
+					
 					lk_Map.insertMulti(lui_Mass, tk_MassGnoPair(lui_Mass, lui_Gno));
 				}
 				
@@ -400,6 +401,8 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 				while (lk_Iterator.hasNext())
 				{
 					lk_Iterator.next();
+					if (i == 574386 * 2 + 1)
+						printf("%d %d\n", (qint32)lk_Iterator.value().first, (qint32)(lk_Iterator.value().second & ~mui_GnoBackwardsBit));
 					lk_pBitWriter->writeBits(lk_Iterator.value().first, mi_MassBits);
 				}
 

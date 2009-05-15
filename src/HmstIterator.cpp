@@ -105,7 +105,6 @@ bool k_HmstIterator::advance(r_HmstIteratorLevel::Enumeration ae_Level)
 
 void k_HmstIterator::updateOrfAndCleavageSites()
 {
-	printf("\n");
 	char* lk_DnaTripletToAminoAcidTable_ = mk_Value_[r_HmstIteratorLevel::OrfDirection] == 0 ? 
 		gk_GpfBase.mk_DnaTripletToAminoAcid_ :
 		gk_GpfBase.mk_DnaTripletToAminoAcidReverse_;
@@ -153,9 +152,13 @@ void k_HmstIterator::updateTagOffset()
 	// cut off trailing STOP
 	if (mc_pOrf.get_Pointer()[mk_Last_[r_HmstIteratorLevel::TagOffset] + mk_GpfIndexer.mi_TagSize - 1] == '$')
 		--mk_Last_[r_HmstIteratorLevel::TagOffset];
+	if (mc_pOrf.get_Pointer()[mk_First_[r_HmstIteratorLevel::TagOffset]] == '$')
+		++mk_First_[r_HmstIteratorLevel::TagOffset];
 	
 	mk_Value_[r_HmstIteratorLevel::TagOffset] = mk_First_[r_HmstIteratorLevel::TagOffset];
 	mi_CurrentHalfMass = 0;
+	mi_CurrentAminoAcidSpanLength = 
+		(mk_Last_[r_HmstIteratorLevel::TagOffset] - mk_First_[r_HmstIteratorLevel::TagOffset] + mk_GpfIndexer.mi_TagSize);
 }
 
 
@@ -173,6 +176,7 @@ bool k_HmstIterator::goodState()
 	else
 		li_SpanOffset = mk_Last_[r_HmstIteratorLevel::TagOffset] - (mk_Value_[r_HmstIteratorLevel::TagOffset] - mk_First_[r_HmstIteratorLevel::TagOffset]);
 	mi_CurrentTag = gk_GpfBase.aminoAcidPolymerCode(mc_pOrf.get_Pointer() + li_SpanOffset, mk_GpfIndexer.mi_TagSize);
+	
 	if (mi_CurrentTag < 0)
 	{
 		mi_CurrentHalfMass = mk_GpfIndexer.mi_MaxMass + 1;
@@ -198,6 +202,8 @@ bool k_HmstIterator::goodState()
 			mk_GpfIndexer.mk_ScaffoldStart[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] + 
 			mk_CleavageSites[(int)mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex]] * 3 +
 			mk_Value_[r_HmstIteratorLevel::Frame];
+		if (mk_Value_[r_HmstIteratorLevel::MassDirection] == 1)
+			mui_CurrentGno += (mi_CurrentAminoAcidSpanLength - 1) * 3 + 2;
 	}
 	else
 	{
@@ -206,6 +212,8 @@ bool k_HmstIterator::goodState()
 			mk_GpfIndexer.mk_ScaffoldLength[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] -
 			mk_CleavageSites[(int)mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex]] * 3 -
 			mk_Value_[r_HmstIteratorLevel::Frame] - 1;
+		if (mk_Value_[r_HmstIteratorLevel::MassDirection] == 1)
+			mui_CurrentGno -= (mi_CurrentAminoAcidSpanLength - 1) * 3 + 2;
 		mui_CurrentGno |= mk_GpfIndexer.mui_GnoBackwardsBit;
 	}
 	return mi_CurrentTag >= 0;
@@ -229,7 +237,6 @@ bool k_HmstIterator::next(r_Hmst* ar_Hmst_)
 	ar_Hmst_->mui_TagDirectionIndex = mi_CurrentTag * 2 + mk_Value_[r_HmstIteratorLevel::MassDirection];
 	ar_Hmst_->mi_HalfMass = mi_CurrentHalfMass;
 	ar_Hmst_->mui_Gno = mui_CurrentGno;
-	printf("%d\n", mui_CurrentGno & ~ ((qint64)1 << (mk_GpfIndexer.mi_OffsetBits - 1)));
 	// advance at the end
 	bool lb_Result = advance((r_HmstIteratorLevel::Enumeration)(r_HmstIteratorLevel::Size - 1));
 	if (!lb_Result)

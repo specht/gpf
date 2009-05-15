@@ -63,6 +63,7 @@ public:
 	qint64 mi_IndexFilePosition;
 
 	qint64 mi_AminoAcidMasses_[256];
+	qint64 mi_WaterMass;
 	
 protected:
 	void parseGpfIndexFile(const QString& as_Path);

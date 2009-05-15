@@ -36,4 +36,5 @@ public:
 protected:
 	k_GpfIndexFile& mk_GpfIndexFile;
 	QString ms_Peptide;
+	qint64 mi_Mass, mi_MinMass, mi_MaxMass;
 };

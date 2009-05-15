@@ -74,4 +74,5 @@ protected:
 	int mi_CurrentTag;
 	qint64 mi_CurrentHalfMass;
 	quint64 mui_CurrentGno;
+	qint64 mi_CurrentAminoAcidSpanLength;
 };
