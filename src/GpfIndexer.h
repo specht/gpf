@@ -45,9 +45,7 @@ protected:
 	virtual void writeDnaChunk(QFile* ak_OutFile_);
 	virtual void writeIndexChunk(QFile* ak_OutFile_);
 	
-	quint16 readNucleotideTriplet(quint64 aui_Gno);
 	QString bytesToStr(qint64 ai_Size);
-	quint64 readBitsFromIndexBuffer(quint8 ai_Bits);
 	
 	QString ms_DnaPath;
 	QString ms_DnaIndexPath;
@@ -65,6 +63,7 @@ protected:
 	qint32 mi_TagSize;
 	qint32 mi_TagCount;
 	qint32 mi_HmstBits;
+	qint64 mi_MaxMass;
 	
 	qint64 mi_AminoAcidMasses_[256];
 	
@@ -78,14 +77,5 @@ protected:
 	qint32 mi_IndexBufferBitOffset;
 	
 	RefPtr<quint32> mui_pTagDirectionCount;
-	
-	quint32* mui_IndexBufferBitReader_;
-	quint32 mui_IndexBufferBitReaderCurrentByte;
-	quint8 mui_IndexBufferBitReaderOffset;
 };
 
-void overwriteBitsInBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, quint64 aui_Value, int ai_Size);
-quint64 readBitsFromBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, int ai_Size);
-void quickSortHmst(quint32* aui_Indices_, int ai_First, int ai_Last, quint8* auc_Buffer_, qint64 ai_Offset, int ai_MassBits, int ai_OffsetBits);
-int quickSortHmstDivide(quint32* aui_Indices_, int ai_First, int ai_Last, quint8* auc_Buffer_, qint64 ai_Offset, int ai_MassBits, int ai_OffsetBits);
-//bool lessThanPreIndexEntry(const int ai_First, const int ai_Second);

@@ -19,6 +19,7 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "HmstIterator.h"
+#include "GpfBase.h"
 
 
 k_HmstIterator::k_HmstIterator(k_GpfIndexer& ak_GpfIndexer)
@@ -104,6 +105,7 @@ bool k_HmstIterator::advance(r_HmstIteratorLevel::Enumeration ae_Level)
 
 void k_HmstIterator::updateOrfAndCleavageSites()
 {
+	printf("\n");
 	char* lk_DnaTripletToAminoAcidTable_ = mk_Value_[r_HmstIteratorLevel::OrfDirection] == 0 ? 
 		gk_GpfBase.mk_DnaTripletToAminoAcid_ :
 		gk_GpfBase.mk_DnaTripletToAminoAcidReverse_;
@@ -113,10 +115,10 @@ void k_HmstIterator::updateOrfAndCleavageSites()
 	qint64 li_ScaffoldStart = mk_GpfIndexer.mk_ScaffoldStart[mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]];
 	qint64 li_ScaffoldSize = mk_GpfIndexer.mk_ScaffoldLength[mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]];
 	qint64 li_NucleotideStart = li_ScaffoldStart + mk_Value_[r_HmstIteratorLevel::Frame];
-	qint64 li_NucleotideEnd = li_ScaffoldStart + li_ScaffoldSize - mk_GpfIndexer.mi_TagSize;
+	qint64 li_NucleotideEnd = li_ScaffoldStart + li_ScaffoldSize - 3;
 	if (mk_Value_[r_HmstIteratorLevel::OrfDirection] == 1)
 	{
-		li_NucleotideStart = li_ScaffoldStart + li_ScaffoldSize - mk_Value_[r_HmstIteratorLevel::Frame] - mk_GpfIndexer.mi_TagSize;
+		li_NucleotideStart = li_ScaffoldStart + li_ScaffoldSize - mk_Value_[r_HmstIteratorLevel::Frame] - 3;
 		li_NucleotideEnd = li_ScaffoldStart;
 	}
 	qint64 li_NucleotideStep = mk_Value_[r_HmstIteratorLevel::OrfDirection] == 0 ? 3 : -3;
@@ -127,9 +129,9 @@ void k_HmstIterator::updateOrfAndCleavageSites()
 			(i >= li_NucleotideEnd);
 			i += li_NucleotideStep)
 	{
-		quint16 lui_Triplet = mk_GpfIndexer.readNucleotideTriplet(i);
+		quint16 lui_Triplet = gk_GpfBase.readNucleotideTriplet(mk_GpfIndexer.muc_pDnaBuffer.get_Pointer(), i);
 		char lc_AminoAcid = lk_DnaTripletToAminoAcidTable_[lui_Triplet];
-			
+		
 		mc_pOrf.get_Pointer()[li_OrfLength] = lc_AminoAcid;
 		++li_OrfLength;
 		if (lc_AminoAcid == '$' || lc_AminoAcid == 'R' || lc_AminoAcid == 'K')
@@ -147,8 +149,11 @@ void k_HmstIterator::updateTagOffset()
 {
 	mk_First_[r_HmstIteratorLevel::TagOffset] = mk_CleavageSites[mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex]];
 	mk_Last_[r_HmstIteratorLevel::TagOffset] = mk_CleavageSites[mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex] + 1] - mk_GpfIndexer.mi_TagSize;
+
+	// cut off trailing STOP
 	if (mc_pOrf.get_Pointer()[mk_Last_[r_HmstIteratorLevel::TagOffset] + mk_GpfIndexer.mi_TagSize - 1] == '$')
 		--mk_Last_[r_HmstIteratorLevel::TagOffset];
+	
 	mk_Value_[r_HmstIteratorLevel::TagOffset] = mk_First_[r_HmstIteratorLevel::TagOffset];
 	mi_CurrentHalfMass = 0;
 }
@@ -168,8 +173,25 @@ bool k_HmstIterator::goodState()
 	else
 		li_SpanOffset = mk_Last_[r_HmstIteratorLevel::TagOffset] - (mk_Value_[r_HmstIteratorLevel::TagOffset] - mk_First_[r_HmstIteratorLevel::TagOffset]);
 	mi_CurrentTag = gk_GpfBase.aminoAcidPolymerCode(mc_pOrf.get_Pointer() + li_SpanOffset, mk_GpfIndexer.mi_TagSize);
-	char lc_CurrentAminoAcid = mc_pOrf.get_Pointer()[li_SpanOffset + (mk_Value_[r_HmstIteratorLevel::MassDirection] == 0 ? 0 : mk_GpfIndexer.mi_TagSize - 1)];
-	mi_CurrentHalfMass += mk_GpfIndexer.mi_AminoAcidMasses_[lc_CurrentAminoAcid];
+	if (mi_CurrentTag < 0)
+	{
+		mi_CurrentHalfMass = mk_GpfIndexer.mi_MaxMass + 1;
+		return false;
+	}
+	qint64 li_DeltaMass = 0;
+	if (mk_Value_[r_HmstIteratorLevel::TagOffset] != mk_First_[r_HmstIteratorLevel::TagOffset])
+	{
+		int li_CurrentAminoAcidIndex = li_SpanOffset + ((mk_Value_[r_HmstIteratorLevel::MassDirection] == 0) ? -1 : mk_GpfIndexer.mi_TagSize);
+		char lc_CurrentAminoAcid = mc_pOrf.get_Pointer()[li_CurrentAminoAcidIndex];
+		li_DeltaMass = mk_GpfIndexer.mi_AminoAcidMasses_[(int)lc_CurrentAminoAcid];
+	}
+	// increase half mass if not greater than maximum allowed mass
+	if (mi_CurrentHalfMass <= mk_GpfIndexer.mi_MaxMass)
+		mi_CurrentHalfMass += li_DeltaMass;
+	
+	if (mi_CurrentHalfMass > mk_GpfIndexer.mi_MaxMass)
+		return false;
+	
 	if (mk_Value_[r_HmstIteratorLevel::OrfDirection] == 0)
 	{
 		mui_CurrentGno = 
@@ -183,7 +205,7 @@ bool k_HmstIterator::goodState()
 			mk_GpfIndexer.mk_ScaffoldStart[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] +
 			mk_GpfIndexer.mk_ScaffoldLength[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] -
 			mk_CleavageSites[(int)mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex]] * 3 -
-			mk_Value_[r_HmstIteratorLevel::Frame];
+			mk_Value_[r_HmstIteratorLevel::Frame] - 1;
 		mui_CurrentGno |= mk_GpfIndexer.mui_GnoBackwardsBit;
 	}
 	return mi_CurrentTag >= 0;
@@ -207,6 +229,7 @@ bool k_HmstIterator::next(r_Hmst* ar_Hmst_)
 	ar_Hmst_->mui_TagDirectionIndex = mi_CurrentTag * 2 + mk_Value_[r_HmstIteratorLevel::MassDirection];
 	ar_Hmst_->mi_HalfMass = mi_CurrentHalfMass;
 	ar_Hmst_->mui_Gno = mui_CurrentGno;
+	printf("%d\n", mui_CurrentGno & ~ ((qint64)1 << (mk_GpfIndexer.mi_OffsetBits - 1)));
 	// advance at the end
 	bool lb_Result = advance((r_HmstIteratorLevel::Enumeration)(r_HmstIteratorLevel::Size - 1));
 	if (!lb_Result)

@@ -39,6 +39,7 @@ public:
 	k_GpfBase();
 	virtual ~k_GpfBase();
 	
+	quint16 readNucleotideTriplet(quint8* auc_Buffer_, quint64 aui_Gno);
 	int aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length);
 	
 	quint16 mk_DnaCharToNumber_[256];
@@ -52,3 +53,7 @@ public:
 
 
 extern k_GpfBase gk_GpfBase;
+
+
+void overwriteBitsInBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, quint64 aui_Value, int ai_Size);
+quint64 readBitsFromBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, int ai_Size);

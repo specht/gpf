@@ -127,6 +127,18 @@ k_GpfBase::~k_GpfBase()
 }
 
 
+quint16 k_GpfBase::readNucleotideTriplet(quint8* auc_Buffer_, quint64 aui_Gno)
+{
+	// 9 bits are always contained in at most 2 bytes!
+	quint64 lui_Offset = (aui_Gno * 3) / 8;
+	quint16 lui_Bit;
+	memcpy(&lui_Bit, auc_Buffer_ + lui_Offset, 2);
+	lui_Bit >>= ((aui_Gno * 3) & 7);
+	lui_Bit &= 511;
+	return lui_Bit;
+}
+
+
 int k_GpfBase::aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length)
 {
 	int li_Result = 0;
@@ -139,4 +151,52 @@ int k_GpfBase::aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length)
 		li_Result += li_AminoAcidNumber;
 	}
 	return li_Result;
+}
+
+
+#define READ_BITS 32
+#define READ_TYPE quint32
+
+
+void overwriteBitsInBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, quint64 aui_Value, int ai_Size)
+{
+	while (ai_Size > 0)
+	{
+		int li_ByteOffset = ai_BitOffset / READ_BITS;
+		int li_BitOffset = ai_BitOffset % READ_BITS;
+		int li_CopyBits = (READ_BITS - li_BitOffset);
+		if (li_CopyBits > ai_Size)
+			li_CopyBits = ai_Size;
+		READ_TYPE lui_CopyMask = ((((quint64)1) << li_CopyBits) - 1);
+		READ_TYPE lui_NullMask = ~(lui_CopyMask << li_BitOffset);
+		((READ_TYPE*)auc_Buffer_)[li_ByteOffset] &= lui_NullMask;
+		READ_TYPE lui_CopyByte = (aui_Value & lui_CopyMask) << li_BitOffset;
+		((READ_TYPE*)auc_Buffer_)[li_ByteOffset] |= lui_CopyByte;
+		ai_BitOffset += li_CopyBits;
+		aui_Value >>= li_CopyBits;
+		ai_Size -= li_CopyBits;
+	}
+}
+
+
+quint64 readBitsFromBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, int ai_Size)
+{
+	quint64 lui_Result = 0;
+	int li_BitsCopied = 0;
+	while (ai_Size > 0)
+	{
+		int li_ByteOffset = ai_BitOffset / READ_BITS;
+		int li_BitOffset = ai_BitOffset % READ_BITS;
+		int li_CopyBits = READ_BITS - li_BitOffset;
+		if (li_CopyBits > ai_Size)
+			li_CopyBits = ai_Size;
+		READ_TYPE lui_CopyMask = ((((quint64)1) << li_CopyBits) - 1);
+		//READ_TYPE lui_CopyByte = (auc_Buffer_[li_ByteOffset] >> li_BitOffset) & lui_CopyMask;
+		READ_TYPE lui_CopyByte = (*((READ_TYPE*)auc_Buffer_ + li_ByteOffset) >> li_BitOffset) & lui_CopyMask;
+		lui_Result |= (((quint64)lui_CopyByte) << li_BitsCopied);
+		ai_BitOffset += li_CopyBits;
+		ai_Size -= li_CopyBits;
+		li_BitsCopied += li_CopyBits;
+	}
+	return lui_Result;
 }
