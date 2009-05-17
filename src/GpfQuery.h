@@ -37,4 +37,8 @@ protected:
 	k_GpfIndexFile& mk_GpfIndexFile;
 	QString ms_Peptide;
 	qint64 mi_Mass, mi_MinMass, mi_MaxMass;
+	double md_MassAccuracy;
+	int mi_MaxIntronLength;
+	int mi_MaxNucleotideSpanLength;
+	RefPtr<quint8> muc_pNucleotideSpan;
 };
