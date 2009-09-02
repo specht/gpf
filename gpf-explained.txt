@@ -1,0 +1,20 @@
+- at least 1 anchor is required for a peptide to be found
+  - tryptic cleavage sites act as anchors
+  - scaffold start/end also acts as anchor
+  - stop codons?
+- resulting mass has to be correct within relative mass accuracy (ppm)
+- for intron split peptides, splice donor/acceptor consensus sequences 
+  must be correct
+
+
+differences to last version of GPF:
+
+- only one tryptic cleavage site is required (instead of two)
+- HMST size can be freely adjusted in the indexing step (fixed at 3 
+  before)
+- splice donor/acceptor site consensus sequences can be freely chosen 
+  during the search
+- for intron split peptides, a correctly predicted HMST is required for
+  one exon only (instead of one correct HMST in every exon)
+- big genomic sequences can be indexed with a minimum amount of RAM 
+  (which can be increased to speed up the indexing)

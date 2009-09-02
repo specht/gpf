@@ -38,7 +38,20 @@ protected:
 	QString ms_Peptide;
 	qint64 mi_Mass, mi_MinMass, mi_MaxMass;
 	double md_MassAccuracy;
+	int mi_MinIntronLength;
 	int mi_MaxIntronLength;
 	int mi_MaxNucleotideSpanLength;
-	RefPtr<quint8> muc_pNucleotideSpan;
+	QString ms_IntronSpliceSites;
+	
+	typedef QPair<int, int> tk_IntPair;
+
+	// GT/2: [AG/2]
+	// GC/2: [AG/2]
+	QHash<tk_IntPair, QList<tk_IntPair> > mk_IntronStart;
+	
+	// AG/2: [GT/2, GC/2]
+	QHash<tk_IntPair, QList<tk_IntPair> > mk_IntronEnd;
+	
+	int mi_IntronStartMaxLength;
+	int mi_IntronEndMaxLength;
 };
