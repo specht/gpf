@@ -123,13 +123,30 @@ QString k_Hit::description()
 	QString ls_Description = "{ ";
 	for (int i = 0; i < mk_ResultItems.size(); ++i)
 	{
-		ls_Description += QString("%1: %2").arg(mk_ResultItems[i].first, mk_ResultItems[i].second);
+        if (mk_ResultItems[i].first == "peptide" ||
+            mk_ResultItems[i].first == "assembly" ||
+            mk_ResultItems[i].first == "left" ||
+            mk_ResultItems[i].first == "right" ||
+            mk_ResultItems[i].first == "intronEnds")
+            ls_Description += QString("%1: '%2'").arg(mk_ResultItems[i].first, mk_ResultItems[i].second);
+        else
+            ls_Description += QString("%1: %2").arg(mk_ResultItems[i].first, mk_ResultItems[i].second);
 		if (i < mk_ResultItems.size() - 1)
 			ls_Description += ", ";
 	}
 	ls_Description += "}";
 
 	return ls_Description;
+}
+
+
+tk_StringHash k_Hit::descriptionHash()
+{
+    tk_StringHash lk_Result;
+    for (int i = 0; i < mk_ResultItems.size(); ++i)
+        lk_Result[mk_ResultItems[i].first] = mk_ResultItems[i].second;
+
+    return lk_Result;
 }
 
 
@@ -252,10 +269,10 @@ void k_Hit::Initialize()
 	// read peptide and left and right surrounding amino acids
 	mk_Query.get_GpfIndexFileInfo()->readAssembly(ms_Assembly, ms_Peptide, ms_Left, ms_Right);
 
-	mk_ResultItems.append(QPair<QString, QString>("peptide", "'" + ms_Peptide + "'"));
-	mk_ResultItems.append(QPair<QString, QString>("assembly", "'" + ms_Assembly + "'"));
-	mk_ResultItems.append(QPair<QString, QString>("left", "'" + ms_Left + "'"));
-	mk_ResultItems.append(QPair<QString, QString>("right", "'" + ms_Right + "'"));
+	mk_ResultItems.append(QPair<QString, QString>("peptide", ms_Peptide));
+	mk_ResultItems.append(QPair<QString, QString>("assembly", ms_Assembly));
+	mk_ResultItems.append(QPair<QString, QString>("left", ms_Left));
+	mk_ResultItems.append(QPair<QString, QString>("right", ms_Right));
 	mui_HitMass = mk_Query.get_GpfBase().CalculatePeptideMass(ms_Peptide);
 	mk_ResultItems.append(QPair<QString, QString>("mass", QString("%1").arg((double)mui_HitMass / gui_MassPrecision)));
 

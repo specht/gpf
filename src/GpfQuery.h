@@ -64,6 +64,7 @@ public:
 	k_GpfBase& get_GpfBase();
 	QFile& get_IndexFile();
 	k_GpfIndexFileInfo* get_GpfIndexFileInfo();
+    tk_ResultList& resultList();
 
 	void SetParameters(QMap<QString, QString> ak_Parameters);
 	unsigned int mui_QueryMass;
@@ -99,4 +100,5 @@ private:
 	double md_LeftGapMass;
 	double md_RightGapMass;
 	QString ms_Label;
+    tk_ResultList mk_Hits;
 };

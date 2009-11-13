@@ -33,6 +33,8 @@ struct r_ChainMarker
 	};
 };
 
+typedef QHash<QString, QString> tk_StringHash;
+
 
 class k_Hit
 {
@@ -53,6 +55,7 @@ public:
 	void MarkDiscarded();
 
 	virtual QString description();
+    virtual tk_StringHash descriptionHash();
 
 protected:
 	virtual void CalculateScore();

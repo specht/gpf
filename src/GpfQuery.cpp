@@ -113,22 +113,22 @@ void k_GpfQuery::Execute()
 		lb_Error = true;
 	}
 
-	tk_ResultList lk_Hits;
+	mk_Hits.clear();
 
 	if (!lb_Error)
 	{
-		lk_Hits = lk_Hits.unite(this->QueryImmediateHit());
+        mk_Hits = mk_Hits.unite(this->QueryImmediateHit());
 
 		if (GET_INT_PARAMETER(SearchIntrons) == r_YesNoOption::Yes)
 		{
 			//this->QueryIntronHit();
-			lk_Hits = lk_Hits.unite(this->QueryCsIntronHit());
+			mk_Hits = mk_Hits.unite(this->QueryCsIntronHit());
 		}
 	}
 
 	// finish all hits
-	tk_ResultList::iterator lk_Iter = lk_Hits.begin();
-	for (; lk_Iter != lk_Hits.end(); ++lk_Iter)
+	tk_ResultList::iterator lk_Iter = mk_Hits.begin();
+	for (; lk_Iter != mk_Hits.end(); ++lk_Iter)
 		lk_Iter->get_Pointer()->Finish();
 
 	/*
@@ -143,20 +143,20 @@ void k_GpfQuery::Execute()
 	*/
 
 	// erase all discarded hits
-	lk_Iter = lk_Hits.begin();
-	while (lk_Iter != lk_Hits.end())
+	lk_Iter = mk_Hits.begin();
+	while (lk_Iter != mk_Hits.end())
 	{
 		tk_ResultList::iterator lk_NextIter = lk_Iter + 1;
 		if (lk_Iter->get_Pointer()->get_IsDiscarded())
-			lk_Hits.erase(lk_Iter);
+			mk_Hits.erase(lk_Iter);
 
 		lk_Iter = lk_NextIter;
 	}
 
 	// write results
-	foreach (QString ls_Key, lk_Hits.uniqueKeys())
+	foreach (QString ls_Key, mk_Hits.uniqueKeys())
 	{
-		RefPtr<k_Hit> lk_pHit = lk_Hits[ls_Key];
+		RefPtr<k_Hit> lk_pHit = mk_Hits[ls_Key];
 		ms_Result += QString("- %1\n").arg(lk_pHit->description());
 	}
 
@@ -261,6 +261,12 @@ QFile& k_GpfQuery::get_IndexFile()
 k_GpfIndexFileInfo* k_GpfQuery::get_GpfIndexFileInfo()
 {
 	return mk_pIndexFileInfo.get_Pointer();
+}
+
+
+tk_ResultList& k_GpfQuery::resultList()
+{
+    return mk_Hits;
 }
 
 
@@ -1041,7 +1047,7 @@ tk_ResultList k_GpfQuery::AssembleHalfHits(tk_PeptideLocations ak_Locations, boo
 					ls_IntronEnds += QChar(mk_GpfBase.mc_NucleotideIntToChar_[luc_pNucleotides.get_Pointer()[ab_Left? (li_FixedPartSplit + 1): (li_VariablePartSplit + 1)]]);
 					ls_IntronEnds += QChar(mk_GpfBase.mc_NucleotideIntToChar_[luc_pNucleotides.get_Pointer()[ab_Left? (li_VariablePartSplit - 2): (li_FixedPartSplit - 2)]]);
 					ls_IntronEnds += QChar(mk_GpfBase.mc_NucleotideIntToChar_[luc_pNucleotides.get_Pointer()[ab_Left? (li_VariablePartSplit - 1): (li_FixedPartSplit - 1)]]);
-					lk_pHit->AddInformation("intronEnds", "'" + ls_IntronEnds + "'");
+					lk_pHit->AddInformation("intronEnds", ls_IntronEnds);
 				}
 			}
 		}
