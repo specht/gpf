@@ -2,7 +2,8 @@ TEMPLATE = app
 
 macx {
 	CONFIG -= app_bundle
-	CONFIG += x86
+	CONFIG += x86 ppc
+	QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.4
 }
 
 CONFIG += debug_and_release
