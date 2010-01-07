@@ -933,16 +933,18 @@ tk_ResultList k_GpfQuery::AssembleHalfHits(tk_PeptideLocations ak_Locations, boo
 			unsigned short* luw_Dinucleotide = (unsigned short*)(&luc_pNucleotides.get_Pointer()[li_Index]);
 			if (ab_Left)
 			{
-				if (li_Index <= li_MaxFixedPartLength && (*luw_Dinucleotide == 0x0302 || *luw_Dinucleotide == 0x0102)) // GT or GC
-					lk_FixedPartCuts.append(li_Index);
-				if (*luw_Dinucleotide == 0x0200) // AG
+				if (li_Index <= li_MaxFixedPartLength)
+                    //if (*luw_Dinucleotide == 0x0302 || *luw_Dinucleotide == 0x0102) // GT or GC
+                        lk_FixedPartCuts.append(li_Index);
+				//if (*luw_Dinucleotide == 0x0200) // AG
 					lk_VariablePartCuts.append(li_Index + 2);
 			}
 			else
 			{
-				if (*luw_Dinucleotide == 0x0302 || *luw_Dinucleotide == 0x0102) // GT or GC
+				//if (*luw_Dinucleotide == 0x0302 || *luw_Dinucleotide == 0x0102) // GT or GC
 					lk_VariablePartCuts.append(li_Index);
-				if (abs(li_Index - li_IndexStart) + 1 <= li_MaxFixedPartLength &&  (*luw_Dinucleotide == 0x0200)) // AG
+				if (abs(li_Index - li_IndexStart) + 1 <= li_MaxFixedPartLength)
+                    //if (*luw_Dinucleotide == 0x0200) // AG
 					lk_FixedPartCuts.append(li_Index + 2);
 			}
 		}

@@ -10,15 +10,13 @@ Showing <%= link_to @ms_PeptideShowing, { :controller => 'search', :action => 'q
 </p>
 <% end %>
 
-<!--
 <ul class='horizontalMenu'>
-<li><%= link_to 'reverse', {:action => 'show', :genome => params['genome'], :position => params['position'], :length => params['length'], :forward => lb_Forward ? 'false' : 'true', :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
+<!-- <li><%= link_to 'reverse', {:action => 'show', :genome => params['genome'], :position => params['position'], :length => params['length'], :forward => lb_Forward ? 'false' : 'true', :assembly => params['assembly'], :peptide => params['peptide'] } %></li> -->
 <li><%= link_to 'up', {:action => 'show', :genome => params['genome'], :position => params['position'].to_i + ($gi_BrowseWidth * (lb_Forward ? -1 : +1)), :length => params['length'], :forward => params['forward'], :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
 <li><%= link_to 'down', {:action => 'show', :genome => params['genome'], :position => params['position'].to_i + ($gi_BrowseWidth * (lb_Forward ? +1 : -1)), :length => params['length'], :forward => params['forward'], :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
-<li><%= link_to 'left', {:action => 'show', :genome => params['genome'], :position => params['position'].to_i + ((lb_Forward ? +3 : -3)), :length => params['length'], :forward => params['forward'], :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
-<li><%= link_to 'right', {:action => 'show', :genome => params['genome'], :position => params['position'].to_i + ((lb_Forward ? -3 : +3)), :length => params['length'], :forward => params['forward'], :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
+<li><%= link_to 'left', {:action => 'show', :genome => params['genome'], :position => params['position'].to_i + ((lb_Forward ? -3 : +3)), :length => params['length'], :forward => params['forward'], :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
+<li><%= link_to 'right', {:action => 'show', :genome => params['genome'], :position => params['position'].to_i + ((lb_Forward ? +3 : -3)), :length => params['length'], :forward => params['forward'], :assembly => params['assembly'], :peptide => params['peptide'] } %></li>
 </ul>
--->
 
 <% 
 li_Position = @mi_Position
