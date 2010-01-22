@@ -6,6 +6,10 @@ macx {
 	QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.4
 }
 
+linux {
+	CONFIG += static
+}
+
 CONFIG += debug_and_release
 
 CONFIG(debug, debug|release) {
