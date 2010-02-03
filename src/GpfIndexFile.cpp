@@ -45,6 +45,11 @@ k_GpfIndexFile::~k_GpfIndexFile()
 
 void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
 {
+    // generate short id from filename, remove colons and semicolons
+    ms_ShortId = QFileInfo(as_Path).baseName();
+    ms_ShortId.replace(":", "");
+    ms_ShortId.replace(";", "");
+    
 	QFile lk_File(as_Path);
 	if (!lk_File.open(QIODevice::ReadOnly))
 	{

@@ -38,6 +38,7 @@ public:
 	qint16 mi_VersionMinor;
 	
 	QString ms_Title;
+    QString ms_ShortId;
 	qint32 mi_OffsetBits;
 	qint32 mi_MassBits;
 	qint32 mi_MassPrecision;

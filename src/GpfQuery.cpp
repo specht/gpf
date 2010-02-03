@@ -21,14 +21,21 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #include "GpfIndexFile.h"
 #include "GpfBase.h"
 
-k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, const QString& as_Peptide)
+k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, QIODevice* ak_Output_)
 	: mk_GpfIndexFile(ak_GpfIndexFile)
-	, ms_Peptide(as_Peptide)
+	, mk_Output_(ak_Output_)
 	, md_MassAccuracy(5.0)
 	, mi_MinIntronLength(0)
 	, mi_MaxIntronLength(2100)
 	, ms_IntronSpliceSites("GT|AG,GC|AG")
+	, mb_SimilaritySearch(true)
+	, mb_ImmediateHitsSufficient(false)
+	, mk_pStdOutFile(new QFile())
 {
+    mk_pStdOutFile->open(stdout, QIODevice::WriteOnly);
+    if (!mk_Output_)
+        mk_Output_ = mk_pStdOutFile.get_Pointer();
+    
 	QStringList lk_IntronSpliceSites = ms_IntronSpliceSites.split(",");
 	
 	// convert human readable intron splice site consensus sequences 
@@ -81,20 +88,22 @@ k_GpfQuery::~k_GpfQuery()
 }
 
 
-void k_GpfQuery::execute()
+void k_GpfQuery::execute(const QString& as_Peptide)
 {
-	printf("Searching for %s...\n", ms_Peptide.toStdString().c_str());
+	printf("Searching for %s...\n", as_Peptide.toStdString().c_str());
+    
+    QTextStream lk_OutStream(mk_Output_);
 	
 	// check whether this is a valid peptide and determine mass
 	mi_Mass = mk_GpfIndexFile.mi_WaterMass;
-	for (int i = 0; i < ms_Peptide.length(); ++i)
+	for (int i = 0; i < as_Peptide.length(); ++i)
 	{
-		if (!gk_GpfBase.mb_IsAminoAcid_[(int)(ms_Peptide.at(i).toAscii())])
+		if (!gk_GpfBase.mb_IsAminoAcid_[(int)(as_Peptide.at(i).toAscii())])
 		{
-			printf("Error: Invalid amino acids in %s.\n", ms_Peptide.toStdString().c_str());
+			printf("Error: Invalid amino acids in %s.\n", as_Peptide.toStdString().c_str());
 			return;
 		}
-		mi_Mass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)ms_Peptide.at(i).toAscii()];
+		mi_Mass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)as_Peptide.at(i).toAscii()];
 	}
 	qint64 li_MassDelta = (qint64)(md_MassAccuracy * mi_Mass / 1000000.0);
 	mi_MinMass = mi_Mass - li_MassDelta;
@@ -106,40 +115,40 @@ void k_GpfQuery::execute()
 	// extract all HMST
 	QMultiMap<qint32, qint64> lk_AllHmst;
 	
-	bool lb_SimilaritySearch = true;
-
 	// extract all left HMST
 	qint64 li_HalfMass = 0;
-	for (int i = 0; i + mk_GpfIndexFile.mi_TagSize <= ms_Peptide.length() && li_HalfMass <= mk_GpfIndexFile.mi_MaxMass; ++i)
+	for (int i = 0; i + mk_GpfIndexFile.mi_TagSize <= as_Peptide.length() && li_HalfMass <= mk_GpfIndexFile.mi_MaxMass; ++i)
 	{
-		QString ls_Tag = ms_Peptide.mid(i, mk_GpfIndexFile.mi_TagSize);
+		QString ls_Tag = as_Peptide.mid(i, mk_GpfIndexFile.mi_TagSize);
 		qint32 li_Tag = gk_GpfBase.aminoAcidPolymerCode(ls_Tag.toStdString().c_str(), mk_GpfIndexFile.mi_TagSize) * 2;
+//         printf("tag: [%1.4f, %s] (%x)\n", (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision, ls_Tag.toStdString().c_str(), li_Tag);
 
 		//printf("%s %d %d\n", ls_Tag.toStdString().c_str(), li_Tag, (qint32)li_HalfMass);
 		lk_AllHmst.insert(li_Tag, li_HalfMass);
 		
 		// break loop if no similarity search
-		if (!lb_SimilaritySearch)
+		if (!mb_SimilaritySearch)
 			break;
 		
-		li_HalfMass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)(ms_Peptide.at(i).toAscii())];
+		li_HalfMass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)(as_Peptide.at(i).toAscii())];
 	}
 	
 	// extract all right HMST
 	li_HalfMass = 0;
-	for (int i = ms_Peptide.length() - mk_GpfIndexFile.mi_TagSize; i >= 0 && li_HalfMass <= mk_GpfIndexFile.mi_MaxMass; --i)
+	for (int i = as_Peptide.length() - mk_GpfIndexFile.mi_TagSize; i >= 0 && li_HalfMass <= mk_GpfIndexFile.mi_MaxMass; --i)
 	{
-		QString ls_Tag = ms_Peptide.mid(i, mk_GpfIndexFile.mi_TagSize);
+		QString ls_Tag = as_Peptide.mid(i, mk_GpfIndexFile.mi_TagSize);
 		qint32 li_Tag = gk_GpfBase.aminoAcidPolymerCode(ls_Tag.toStdString().c_str(), mk_GpfIndexFile.mi_TagSize) * 2 + 1;
+//         printf("tag: [%s, %1.4f] (%x)\n", ls_Tag.toStdString().c_str(), (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision, li_Tag);
 		
-// 		printf("%s %d %d\n", ls_Tag.toStdString().c_str(), li_Tag, (qint32)li_HalfMass);
+//  		printf("%s %d %d\n", ls_Tag.toStdString().c_str(), li_Tag, (qint32)li_HalfMass);
 		lk_AllHmst.insert(li_Tag, li_HalfMass);
 
 		// break loop if no similarity search
-		if (!lb_SimilaritySearch)
+		if (!mb_SimilaritySearch)
 			break;
 		
-		li_HalfMass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)(ms_Peptide.at(i + mk_GpfIndexFile.mi_TagSize - 1).toAscii())];
+		li_HalfMass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)(as_Peptide.at(i + mk_GpfIndexFile.mi_TagSize - 1).toAscii())];
 	}
 	
 	// mass direction: false == left, true == right
@@ -153,8 +162,9 @@ void k_GpfQuery::execute()
 		qint32 li_TagDirectionIndex = lk_Iter.key();
 		
 		qint64 li_HalfMass = lk_Iter.value();
-		qint64 li_MinMass = li_HalfMass;
-		qint64 li_MaxMass = li_HalfMass;
+        qint64 li_HalfMassDelta = (qint64)(md_MassAccuracy * li_HalfMass / 1000000.0);
+		qint64 li_MinMass = li_HalfMass - li_HalfMassDelta;
+        qint64 li_MaxMass = li_HalfMass + li_HalfMassDelta;
 		
 		// determine sub range in HMST list (via min and max masses)
 		//printf("tag/dir %8d: %d entries.\n", li_TagDirectionIndex, (qint32)mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]);
@@ -192,10 +202,12 @@ void k_GpfQuery::execute()
 					lk_GnoHash[lk_GnoMassDirection] = lk_Masses[i];
 		}
 	}
-	printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoHash.size());
+// 	printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoHash.size());
 	
 	// now have determined all interesting places in the genome, take a look at each
 	// of them and try to construct alignments with the correct mass
+    
+    QSet<QString> lk_FoundAssmeblies;
 	
 	foreach (tk_GnoMassDirection lk_GnoMassDirection, lk_GnoHash.keys())
 	{
@@ -279,7 +291,22 @@ void k_GpfQuery::execute()
 				// maybe we found an immediate hit already?
 				if (li_AssemblyMass >= mi_MinMass && li_AssemblyMass <= mi_MaxMass)
 				{
-					printf("IMMEDIATE HIT: %s %d %d\n", ls_Peptide.toStdString().c_str(), (qint32)(li_AssemblyGno & ~mk_GpfIndexFile.mi_GnoBackwardsBit), (qint32)li_AssemblyLength);
+					//printf("IMMEDIATE HIT: %s %d %d\n", ls_Peptide.toStdString().c_str(), (qint32)(li_AssemblyGno & ~mk_GpfIndexFile.mi_GnoBackwardsBit), (qint32)li_AssemblyLength);
+                    QString ls_Assembly = QString("%1:%2;%3%4:%5")
+                        .arg(mk_GpfIndexFile.ms_ShortId)
+                        .arg(mk_GpfIndexFile.mk_ScaffoldLabels[li_FirstScaffold])
+                        .arg((li_AssemblyGno & mk_GpfIndexFile.mi_GnoBackwardsBit) ? "-" : "+")
+                        .arg(li_AssemblyGno & ~mk_GpfIndexFile.mi_GnoBackwardsBit)
+                        .arg(li_AssemblyLength);
+                    if (!lk_FoundAssmeblies.contains(ls_Assembly))
+                    {
+                        lk_OutStream << QString("%1,%2,%3,\"%4\"\n")
+                            .arg(as_Peptide)
+                            .arg(ls_Peptide)
+                            .arg((double)li_AssemblyMass / mk_GpfIndexFile.mi_MassPrecision)
+                            .arg(ls_Assembly);
+                    }
+                    lk_FoundAssmeblies << ls_Assembly;
 				}
 				
 				// or maybe we find the start of an intron?
@@ -289,14 +316,14 @@ void k_GpfQuery::execute()
 					if (li_IntronStartOffset > 0)
 						li_SplitTriplet = readBitsFromBuffer(mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), (li_DnaOffset + li_Step3) * 3, li_IntronStartOffset * 3);
 					qint32 li_IntronStartNucleotides = readBitsFromBuffer(mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), (li_DnaOffset + li_Step3 + li_Step1 * li_IntronStartOffset) * 3, mi_IntronStartMaxLength * 3);
-					printf("%d %d\n", li_IntronStartOffset, li_IntronStartNucleotides);
+// 					printf("%d %d\n", li_IntronStartOffset, li_IntronStartNucleotides);
 					foreach (tk_IntPair lk_IntronStartSite, mk_IntronStart.keys())
 					{
 						qint32 li_ThisIntronStartNucleotides = li_IntronStartNucleotides & ((1 << (lk_IntronStartSite.second * 3)) - 1);
 						if (li_ThisIntronStartNucleotides == lk_IntronStartSite.first)
 						{
 							// yay! we found an intron start site
- 							printf("INTRON START: %s %d (%s%s)\n", ls_Peptide.toStdString().c_str(), li_IntronStartOffset, lb_BackwardsFrame ? "-" : "+", lb_RightHalfMass ? "R": "L");
+//  							printf("INTRON START: %s %d (%s%s)\n", ls_Peptide.toStdString().c_str(), li_IntronStartOffset, lb_BackwardsFrame ? "-" : "+", lb_RightHalfMass ? "R": "L");
 							if (!lb_RightHalfMass)
 							{
 								qint64 li_IntronEndOffset = li_DnaOffset + li_Step3 + li_Step1 * (li_IntronStartOffset + lk_IntronStartSite.second);
@@ -356,7 +383,7 @@ void k_GpfQuery::execute()
 												// check whether we have found an intron split hit
 												if (li_IntronSplitAssemblyMass >= mi_MinMass && li_IntronSplitAssemblyMass <= mi_MaxMass)
 												{
-													printf("INTRON SPLIT HIT: %s %d\n", ls_IntronSplitPeptide.toStdString().c_str(), (qint32)li_IntronSplitAssemblyLength);
+// 													printf("INTRON SPLIT HIT: %s %d\n", ls_IntronSplitPeptide.toStdString().c_str(), (qint32)li_IntronSplitAssemblyLength);
 												}
 												li_IntronSplitDnaOffset += li_Step3;
 												if (li_IntronSplitDnaOffset < li_ScaffoldStart || li_IntronSplitDnaOffset + 2 > li_ScaffoldEnd)

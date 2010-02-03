@@ -44,8 +44,8 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
 
 	{
 		k_StopWatch lk_StopWatch("Processing the query took %1.\n");
-		k_GpfQuery lk_Query(*(lk_pGpfIndexFile.get_Pointer()), ls_Peptide);
-		lk_Query.execute();
+		k_GpfQuery lk_Query(*(lk_pGpfIndexFile.get_Pointer()));
+		lk_Query.execute(ls_Peptide);
 	}
 	
 	/*

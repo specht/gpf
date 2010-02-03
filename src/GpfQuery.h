@@ -20,6 +20,7 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <QtCore>
+#include "RefPtr.h"
 
 
 class k_GpfIndexFile;
@@ -28,20 +29,22 @@ class k_GpfIndexFile;
 class k_GpfQuery
 {
 public:
-	k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, const QString& as_Peptide);
+	k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, QIODevice* ak_Output_ = NULL);
 	virtual ~k_GpfQuery();
 	
-	void execute();
+	void execute(const QString& as_Peptide);
 	
 protected:
 	k_GpfIndexFile& mk_GpfIndexFile;
-	QString ms_Peptide;
+    QIODevice* mk_Output_;
 	qint64 mi_Mass, mi_MinMass, mi_MaxMass;
 	double md_MassAccuracy;
 	int mi_MinIntronLength;
 	int mi_MaxIntronLength;
 	int mi_MaxNucleotideSpanLength;
 	QString ms_IntronSpliceSites;
+    bool mb_SimilaritySearch;
+    bool mb_ImmediateHitsSufficient;
 	
 	typedef QPair<int, int> tk_IntPair;
 
@@ -54,4 +57,5 @@ protected:
 	
 	int mi_IntronStartMaxLength;
 	int mi_IntronEndMaxLength;
+    RefPtr<QFile> mk_pStdOutFile;
 };

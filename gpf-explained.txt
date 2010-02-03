@@ -1,5 +1,8 @@
 - at least 1 anchor is required for a peptide to be found
   - tryptic cleavage sites act as anchors
+    - tryptic anchors could be optionally disabled with a higher tag size
+      (in this case, we would also find non-tryptic peptides, but slower)
+      OR CAN THEY? Maybe not, ponder this.
   - scaffold start/end also acts as anchor
   - stop codons?
 - resulting mass has to be correct within relative mass accuracy (ppm)
@@ -9,7 +12,8 @@
 
 differences to last version of GPF:
 
-- only one tryptic cleavage site is required (instead of two)
+- only one tryptic cleavage site is required (instead of two),
+  i. e. semitryptic peptides can be found
 - HMST size can be freely adjusted in the indexing step (fixed at 3 
   before)
 - splice donor/acceptor site consensus sequences can be freely chosen 
