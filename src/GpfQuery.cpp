@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2007-2008 Michael Specht
+Copyright (c) 2007-2010 Michael Specht
 
 This file is part of GPF.
 
@@ -20,6 +20,7 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #include "GpfQuery.h"
 #include "GpfIndexFile.h"
 #include "GpfBase.h"
+
 
 k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, QIODevice* ak_Output_)
 	: mk_GpfIndexFile(ak_GpfIndexFile)
@@ -90,6 +91,23 @@ k_GpfQuery::~k_GpfQuery()
 
 void k_GpfQuery::execute(const QString& as_Peptide)
 {
+/*    for (int li_TagDirectionIndex = 0; li_TagDirectionIndex < mk_GpfIndexFile.mi_TagCount * 2; ++li_TagDirectionIndex)
+    {
+        for (qint64 i = 0; i < mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]; ++i)
+        {
+            qint64 li_Mass = mk_GpfIndexFile.readIndexBits(mk_GpfIndexFile.mk_HmstOffset[li_TagDirectionIndex] * mk_GpfIndexFile.mi_HmstBits + i * mk_GpfIndexFile.mi_MassBits, mk_GpfIndexFile.mi_MassBits);
+            printf("%x M %d\n", li_TagDirectionIndex, (unsigned int)li_Mass);
+        }
+        for (qint64 i = 0; i < mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]; ++i)
+        {
+            qint64 li_Offset = mk_GpfIndexFile.readIndexBits(mk_GpfIndexFile.mk_HmstOffset[li_TagDirectionIndex] * mk_GpfIndexFile.mi_HmstBits + mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex] * mk_GpfIndexFile.mi_MassBits + i * mk_GpfIndexFile.mi_OffsetBits, mk_GpfIndexFile.mi_OffsetBits);
+            printf("%x O %d\n", li_TagDirectionIndex, (unsigned int)li_Offset);
+        }
+    }
+
+    return;*/
+    ////////////////////////////////////////////////
+    
 	printf("Searching for %s...\n", as_Peptide.toStdString().c_str());
     
     QTextStream lk_OutStream(mk_Output_);
@@ -121,7 +139,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 	{
 		QString ls_Tag = as_Peptide.mid(i, mk_GpfIndexFile.mi_TagSize);
 		qint32 li_Tag = gk_GpfBase.aminoAcidPolymerCode(ls_Tag.toStdString().c_str(), mk_GpfIndexFile.mi_TagSize) * 2;
-//         printf("tag: [%1.4f, %s] (%x)\n", (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision, ls_Tag.toStdString().c_str(), li_Tag);
+//          printf("tag: [%1.4f, %s] (%x)\n", (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision, ls_Tag.toStdString().c_str(), li_Tag);
 
 		//printf("%s %d %d\n", ls_Tag.toStdString().c_str(), li_Tag, (qint32)li_HalfMass);
 		lk_AllHmst.insert(li_Tag, li_HalfMass);
@@ -162,6 +180,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 		qint32 li_TagDirectionIndex = lk_Iter.key();
 		
 		qint64 li_HalfMass = lk_Iter.value();
+//         printf("li_HalfMass = %9.4f\n", (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision);
         qint64 li_HalfMassDelta = (qint64)(md_MassAccuracy * li_HalfMass / 1000000.0);
 		qint64 li_MinMass = li_HalfMass - li_HalfMassDelta;
         qint64 li_MaxMass = li_HalfMass + li_HalfMassDelta;
@@ -174,7 +193,11 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 		for (qint64 i = 0; i < mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]; ++i)
 		{
 			qint64 li_Mass = mk_GpfIndexFile.readIndexBits(mk_GpfIndexFile.mk_HmstOffset[li_TagDirectionIndex] * mk_GpfIndexFile.mi_HmstBits + i * mk_GpfIndexFile.mi_MassBits, mk_GpfIndexFile.mi_MassBits);
-// 			printf("[%d] %d %d %d\n", (qint32)li_TagDirectionIndex, (qint32)li_Mass, (qint32)li_MinMass, (qint32)li_MaxMass);
+/*			printf("[%x] %9.4f %9.4f %9.4f\n", 
+                   (qint32)li_TagDirectionIndex, 
+                   (double)li_Mass / mk_GpfIndexFile.mi_MassPrecision, 
+                   (double)li_MinMass / mk_GpfIndexFile.mi_MassPrecision, 
+                   (double)li_MaxMass / mk_GpfIndexFile.mi_MassPrecision);*/
 			if (li_Mass >= li_MinMass && li_Mass <= li_MaxMass && li_Start < 0)
 				li_Start = i;
 			if (li_Mass >= li_MinMass && li_Mass <= li_MaxMass)
@@ -202,7 +225,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 					lk_GnoHash[lk_GnoMassDirection] = lk_Masses[i];
 		}
 	}
-// 	printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoHash.size());
+//  	printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoHash.size());
 	
 	// now have determined all interesting places in the genome, take a look at each
 	// of them and try to construct alignments with the correct mass

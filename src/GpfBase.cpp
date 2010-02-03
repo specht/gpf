@@ -115,7 +115,14 @@ k_GpfBase::k_GpfBase()
 			QString ls_Mass = lk_Line[4];
 			mb_IsAminoAcid_[(int)ls_AminoAcid[0].toAscii()] = true;
 			md_AminoAcidMasses_[(int)ls_AminoAcid[0].toAscii()] = QVariant(ls_Mass).toDouble();
-			mi_AminoAcidToNumber_[(int)ls_AminoAcid[0].toAscii()] = QVariant(lk_Line[0]).toInt();
+            int li_Code = QVariant(lk_Line[0]).toInt();
+            if (li_Code > 18)
+            {
+                printf("Error: Something is wrong with this GPF.\n");
+                exit(1);
+            }
+			mi_AminoAcidToNumber_[(int)ls_AminoAcid[0].toAscii()] = li_Code;
+            mc_NumberToAminoAcid_[li_Code] = ls_AminoAcid[0].toAscii();
 		}
 		lk_File.close();
 	}
@@ -151,6 +158,18 @@ int k_GpfBase::aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length)
 		li_Result += li_AminoAcidNumber;
 	}
 	return li_Result;
+}
+
+
+QString k_GpfBase::aminoAcidSequenceForCode(int ai_Code, int ai_Length)
+{
+    QString ls_Result;
+    for (int i = 0; i < ai_Length; ++i)
+    {
+        ls_Result = QChar(mc_NumberToAminoAcid_[ai_Code % 19]) + ls_Result;
+        ai_Code /= 19;
+    }
+    return ls_Result;
 }
 
 

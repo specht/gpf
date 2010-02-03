@@ -22,3 +22,42 @@ differences to last version of GPF:
   one exon only (instead of one correct HMST in every exon)
 - big genomic sequences can be indexed with a minimum amount of RAM 
   (which can be increased to speed up the indexing)
+  
+gpfindex file format:
+---------------------
+
+8 b gpfindex
+4 b version major/minor
+
+INFO CHUNK
+==========
+
+4 b title length
+x b title
+
+4 b offset bits
+4 b mass bits
+4 b mass precision (e.g. 10000)
+4 b tag size (e.g. 3 or 5)
+
+4 b scaffold count
+
+[for every scaffold:]
+  8 b scaffold length
+  4 b scaffold title length
+  x b scaffold title
+  
+DNA CHUNK
+=========
+
+x b DNA buffer (3 bits/nucleotide)
+
+INDEX CHUNK
+===========
+
+4 b HMST count bits
+x b HMST counts
+
+[for every tag/direction index:]
+  mass entries
+  offset entries

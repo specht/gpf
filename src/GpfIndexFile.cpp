@@ -82,6 +82,7 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
 		memcpy(&li_ChunkSize, lk_File.read(8).constData(), 8);
 		if (lui_ChunkType == r_DnaIndexChunkType::Info)
 		{
+//             printf("Reading info chunk...\n");
 			// read genome title
 			qint32 li_TitleLength;
 			memcpy(&li_TitleLength, lk_File.read(4).constData(), 4);
@@ -123,6 +124,7 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
 		}
 		else if (lui_ChunkType == r_DnaIndexChunkType::Dna)
 		{
+//             printf("Reading DNA chunk...\n");
 			muc_pDnaBuffer = RefPtr<quint8>(new quint8[li_ChunkSize]);
 			// read DNA in 64M chunks
 			qint64 li_Remaining = li_ChunkSize;
@@ -139,6 +141,7 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
 		}
 		else if (lui_ChunkType == r_DnaIndexChunkType::Index)
 		{
+//             printf("Reading index chunk...\n");
 			qint64 li_OldPos = lk_File.pos();
 			qint32 li_HmstCountBits;
 			memcpy(&li_HmstCountBits, lk_File.read(4).constData(), 4);
@@ -152,6 +155,8 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
 				qint64 li_HmstCount = readBitsFromBuffer(luc_pHmstCountEncoded.get_Pointer(), i * li_HmstCountBits, li_HmstCountBits);
 				mk_HmstOffset.append(mi_TotalHmstCount);
 				mk_HmstCount.append(li_HmstCount);
+/*                if (li_HmstCount > 1)
+                    printf("HMST COUNT %d\n", (unsigned int)li_HmstCount);*/
 				mi_TotalHmstCount += li_HmstCount;
 				if (li_HmstCount > mi_BiggestHmstCount)
 					mi_BiggestHmstCount = li_HmstCount;

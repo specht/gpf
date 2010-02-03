@@ -51,7 +51,7 @@ k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString 
 	, mi_MassPrecision(10000)
 	, mi_TagSize(5)
 	, mi_DnaBufferLength(0)
-	, mi_IndexBufferMaxLength(768 * 1024 * 1024)
+	, mi_IndexBufferMaxLength(512 * 1024 * 1024)
 {
 }
 
@@ -97,7 +97,7 @@ void k_GpfIndexer::compileIndex()
 	memset(muc_pIndexBuffer.get_Pointer(), 0, mi_IndexBufferMaxLength);
 	mi_IndexBufferOffset = 0;
 	mi_IndexBufferBitOffset = 0;
-	
+    
 	writeIdentifierChunk(&lk_OutFile);
 	writeInfoChunk(&lk_OutFile);
 	writeDnaChunk(&lk_OutFile);
@@ -307,7 +307,7 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 	
 	// write HMST count bits
 	qint32 li_HmstCountBits = 1;
-	while (((qint64)1 << li_HmstCountBits) < li_BiggestBucketSize)
+	while ((((qint64)1 << li_HmstCountBits) - 1) < li_BiggestBucketSize)
 		++li_HmstCountBits;
 	
 	printf("HMST count bits: %d.\n", li_HmstCountBits);
@@ -315,7 +315,11 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 	// encode HMST counts
 	RefPtr<quint8> lui_pHmstCounts(new quint8[mi_TagCount * 2 * li_HmstCountBits / 8 + 1]);
 	for (qint64 i = 0; i < mi_TagCount * 2; ++i)
+    {
+/*        if (li_pTagDirectionCount.get_Pointer()[i] > 0)
+            printf("%x %d\n", (unsigned int)i, (unsigned int)li_pTagDirectionCount.get_Pointer()[i]);*/
 		overwriteBitsInBuffer(lui_pHmstCounts.get_Pointer(), i * li_HmstCountBits, li_pTagDirectionCount.get_Pointer()[i], li_HmstCountBits);
+    }
 	// write HMST counts
 	ak_OutFile_->write((char*)lui_pHmstCounts.get_Pointer(), mi_TagCount * 2 * li_HmstCountBits / 8 + 1);
 	
@@ -366,10 +370,15 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 		{
 			if (lr_Hmst.mui_TagDirectionIndex >= lui_FirstTagDirectionIndex && lr_Hmst.mui_TagDirectionIndex <= lui_LastTagDirectionIndex)
 			{
-				//printf("HMST: %d, %08x\n", (int)lr_Hmst.mi_HalfMass, lr_Hmst.mui_Gno);
+/*				printf("HMST: %10.4f, %8d (%s/%s)\n", 
+                       (double)lr_Hmst.mi_HalfMass / mi_MassPrecision, 
+                       (unsigned int)lr_Hmst.mui_Gno,
+                       gk_GpfBase.aminoAcidSequenceForCode(lr_Hmst.mui_TagDirectionIndex / 2, mi_TagSize).toStdString().c_str(),
+                       lr_Hmst.mui_TagDirectionIndex % 2 == 0 ? "L" : "R"
+                );*/
 				// puts HMST into right place
-				overwriteBitsInBuffer(muc_pIndexBuffer.get_Pointer(), li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits, lr_Hmst.mi_HalfMass, mi_MassBits);
-				overwriteBitsInBuffer(muc_pIndexBuffer.get_Pointer(), li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits + mi_MassBits, lr_Hmst.mui_Gno, mi_OffsetBits);
+                overwriteBitsInBuffer(muc_pIndexBuffer.get_Pointer(), li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits, lr_Hmst.mi_HalfMass, mi_MassBits);
+                overwriteBitsInBuffer(muc_pIndexBuffer.get_Pointer(), li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits + mi_MassBits, lr_Hmst.mui_Gno, mi_OffsetBits);
 /*				qint64 li_ControlMass = readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits, mi_MassBits);
 				qint64 li_ControlGno = readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits + mi_MassBits, mi_OffsetBits);
 				printf("%d/%d - %d/%d\n", (int)lr_Hmst.mi_HalfMass, (int)lr_Hmst.mui_Gno, 
@@ -386,6 +395,8 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 		{
 			if (li_pTagDirectionCount.get_Pointer()[i] > 0)
 			{
+/*                if (li_pTagDirectionCount.get_Pointer()[i] > 1)
+                    printf("HMST COUNT %d\n", (unsigned int)li_pTagDirectionCount.get_Pointer()[i]);*/
 				typedef QPair<quint32, quint64> tk_MassGnoPair;
 				QMap<quint32, tk_MassGnoPair> lk_Map;
 				
@@ -401,22 +412,26 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 				while (lk_Iterator.hasNext())
 				{
 					lk_Iterator.next();
-/*					if (i == 574386 * 2 + 1)
-						printf("%d %d\n", (qint32)lk_Iterator.value().first, (qint32)(lk_Iterator.value().second & ~mui_GnoBackwardsBit));*/
+/*                    if (i / 2 == gk_GpfBase.aminoAcidPolymerCode("QPAWQ", 5))
+                        printf("QPAWQ %9.4f\n", (double)lk_Iterator.value().first / mi_MassPrecision);
+                    if (i / 2 == gk_GpfBase.aminoAcidPolymerCode("QGEQG", 5))
+                        printf("QGEQG %9.4f\n", (double)lk_Iterator.value().first / mi_MassPrecision);*/
 					lk_pBitWriter->writeBits(lk_Iterator.value().first, mi_MassBits);
+//                     printf("%x M %d\n", i, (unsigned int)lk_Iterator.value().first);
 				}
-
 				lk_Iterator.toFront();
 				while (lk_Iterator.hasNext())
 				{
 					lk_Iterator.next();
 					lk_pBitWriter->writeBits(lk_Iterator.value().second, mi_OffsetBits);
+//                     printf("%x O %d\n", i, (unsigned int)lk_Iterator.value().second);
 				}
 				
 				li_Offset += li_pTagDirectionCount.get_Pointer()[i];
 			}
 		}
-	}
+	} 
+	// 2278.1066 2282.2233 QPAWQ QGEQG
 	
 	lk_pBitWriter->flush();
 	

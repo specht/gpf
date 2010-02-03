@@ -43,6 +43,7 @@ public:
 	
 	quint16 readNucleotideTriplet(quint8* auc_Buffer_, quint64 aui_Gno);
 	int aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length);
+    QString aminoAcidSequenceForCode(int ai_Code, int ai_Length);
 	
 	quint16 mk_DnaCharToNumber_[256];
 	char mk_DnaTripletToAminoAcid_[512];
@@ -51,6 +52,7 @@ public:
 	double md_AminoAcidMasses_[256];
 	bool mb_IsAminoAcid_[256];
 	int mi_AminoAcidToNumber_[256];
+    char mc_NumberToAminoAcid_[19];
 };
 
 
