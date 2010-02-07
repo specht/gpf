@@ -35,10 +35,13 @@ public:
 	void execute(const QString& as_Peptide);
 	
 protected:
+    int reverseSpliceSequence(int ai_Sequence, int ai_Length);
+    
 	k_GpfIndexFile& mk_GpfIndexFile;
     QIODevice* mk_Output_;
 	qint64 mi_Mass, mi_MinMass, mi_MaxMass;
 	double md_MassAccuracy;
+    // min intron length does not include slice donor/acceptor CS!
 	int mi_MinIntronLength;
 	int mi_MaxIntronLength;
 	int mi_MaxNucleotideSpanLength;
@@ -47,15 +50,16 @@ protected:
     bool mb_ImmediateHitsSufficient;
 	
 	typedef QPair<int, int> tk_IntPair;
+    typedef QHash<tk_IntPair, QList<tk_IntPair> > tk_IntPairListHash;
 
 	// GT/2: [AG/2]
 	// GC/2: [AG/2]
-	QHash<tk_IntPair, QList<tk_IntPair> > mk_IntronStart;
+	tk_IntPairListHash mk_IntronNTerm;
 	
 	// AG/2: [GT/2, GC/2]
-	QHash<tk_IntPair, QList<tk_IntPair> > mk_IntronEnd;
+	tk_IntPairListHash mk_IntronCTerm;
 	
-	int mi_IntronStartMaxLength;
-	int mi_IntronEndMaxLength;
+	int mi_IntronNTermMaxLength;
+	int mi_IntronCTermMaxLength;
     RefPtr<QFile> mk_pStdOutFile;
 };

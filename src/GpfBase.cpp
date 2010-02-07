@@ -173,6 +173,25 @@ QString k_GpfBase::aminoAcidSequenceForCode(int ai_Code, int ai_Length)
 }
 
 
+QString k_GpfBase::nucleotideSequenceForCode(int ai_Code, int ai_Length)
+{
+    QString ls_Result;
+    for (int i = 0; i < ai_Length; ++i)
+    {
+        switch (ai_Code & 7)
+        {
+            case 0: ls_Result += "A"; break;
+            case 1: ls_Result += "C"; break;
+            case 2: ls_Result += "G"; break;
+            case 3: ls_Result += "T"; break;
+            default: ls_Result += "X"; break;
+        };
+        ai_Code >>= 3;
+    }
+    return ls_Result;
+}
+
+
 #define READ_BITS 32
 #define READ_TYPE quint32
 
