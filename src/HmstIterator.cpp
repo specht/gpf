@@ -32,11 +32,11 @@ k_HmstIterator::k_HmstIterator(k_GpfIndexer& ak_GpfIndexer)
 	mk_First_[r_HmstIteratorLevel::Frame] = 0;
 	mk_Last_[r_HmstIteratorLevel::Frame] = 2;
 	// CleavageSiteIndex is dependent
-	mk_First_[r_HmstIteratorLevel::CleavageSiteIndex] = 0;
-	mk_Last_[r_HmstIteratorLevel::CleavageSiteIndex] = -1;
+	mk_First_[r_HmstIteratorLevel::SpanIndex] = 0;
+	mk_Last_[r_HmstIteratorLevel::SpanIndex] = -1;
 	mk_First_[r_HmstIteratorLevel::MassDirection] = 0;
 	mk_Last_[r_HmstIteratorLevel::MassDirection] = 1;
-	// TagOffset is dependent
+	// last TagOffset is dependent, start is always 0
 	mk_First_[r_HmstIteratorLevel::TagOffset] = 0;
 	mk_Last_[r_HmstIteratorLevel::TagOffset] = -1;
 	
@@ -59,9 +59,9 @@ k_HmstIterator::~k_HmstIterator()
 
 void k_HmstIterator::reset()
 {
-	// CleavageSiteIndex is dependent
-	mk_First_[r_HmstIteratorLevel::CleavageSiteIndex] = 0;
-	mk_Last_[r_HmstIteratorLevel::CleavageSiteIndex] = -1;
+	// SpanIndex is dependent
+	mk_First_[r_HmstIteratorLevel::SpanIndex] = 0;
+	mk_Last_[r_HmstIteratorLevel::SpanIndex] = -1;
 
 	// TagOffset is dependent
 	mk_First_[r_HmstIteratorLevel::TagOffset] = 0;
@@ -82,7 +82,7 @@ bool k_HmstIterator::advance(r_HmstIteratorLevel::Enumeration ae_Level)
 	if (mk_Value_[ae_Level] < mk_Last_[ae_Level])
 	{
 		++mk_Value_[ae_Level];
-		if ((int)ae_Level < r_HmstIteratorLevel::CleavageSiteIndex)
+		if ((int)ae_Level < r_HmstIteratorLevel::SpanIndex)
 			updateOrfAndCleavageSites();
 		if ((int)ae_Level < r_HmstIteratorLevel::TagOffset)
 			updateTagOffset();
@@ -109,8 +109,8 @@ void k_HmstIterator::updateOrfAndCleavageSites()
 		gk_GpfBase.mk_DnaTripletToAminoAcid_ :
 		gk_GpfBase.mk_DnaTripletToAminoAcidReverse_;
 		
-	mk_CleavageSites.clear();
-	mk_CleavageSites << 0;
+    QList<qint64> lk_CleavageSites;
+	lk_CleavageSites << 0;
 	qint64 li_ScaffoldStart = mk_GpfIndexer.mk_ScaffoldStart[mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]];
 	qint64 li_ScaffoldSize = mk_GpfIndexer.mk_ScaffoldLength[mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]];
 	qint64 li_NucleotideStart = li_ScaffoldStart + mk_Value_[r_HmstIteratorLevel::Frame];
@@ -134,31 +134,42 @@ void k_HmstIterator::updateOrfAndCleavageSites()
 		mc_pOrf.get_Pointer()[li_OrfLength] = lc_AminoAcid;
 		++li_OrfLength;
 		if (lc_AminoAcid == '$' || lc_AminoAcid == 'R' || lc_AminoAcid == 'K')
-				mk_CleavageSites << li_OrfLength;
+				lk_CleavageSites << li_OrfLength;
 	}
-	if (li_OrfLength != mk_CleavageSites.last())
-		mk_CleavageSites << li_OrfLength;
+	if (li_OrfLength != lk_CleavageSites.last())
+		lk_CleavageSites << li_OrfLength;
+    
+    mk_Spans.clear();
+    
+    for (int i = 0; i < lk_CleavageSites.size() - 1; ++i)
+    {
+        qint64 li_Start = lk_CleavageSites[i];
+        qint64 li_End = lk_CleavageSites[i + 1] - 1;
+        while (li_Start < li_OrfLength && mc_pOrf.get_Pointer()[li_Start] == '$')
+            ++li_Start;
+        while (li_End > 0 && mc_pOrf.get_Pointer()[li_End] == '$')
+            --li_End;
+        mk_Spans << tk_IntPair(li_Start, li_End);
+    }
 	
-	mk_Last_[r_HmstIteratorLevel::CleavageSiteIndex] = mk_CleavageSites.size() - 2;
-	mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex] = 0;
+    mk_First_[r_HmstIteratorLevel::SpanIndex] = 0;
+	mk_Last_[r_HmstIteratorLevel::SpanIndex] = mk_Spans.size() - 1;
+	mk_Value_[r_HmstIteratorLevel::SpanIndex] = 0;
 }
 
 
 void k_HmstIterator::updateTagOffset()
 {
-	mk_First_[r_HmstIteratorLevel::TagOffset] = mk_CleavageSites[mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex]];
-	mk_Last_[r_HmstIteratorLevel::TagOffset] = mk_CleavageSites[mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex] + 1] - mk_GpfIndexer.mi_TagSize;
-
-	// cut off trailing STOP
-	if (mc_pOrf.get_Pointer()[mk_Last_[r_HmstIteratorLevel::TagOffset] + mk_GpfIndexer.mi_TagSize - 1] == '$')
-		--mk_Last_[r_HmstIteratorLevel::TagOffset];
-	if (mc_pOrf.get_Pointer()[mk_First_[r_HmstIteratorLevel::TagOffset]] == '$')
-		++mk_First_[r_HmstIteratorLevel::TagOffset];
-	
+    /*
+    mk_First_[r_HmstIteratorLevel::TagOffset] = mk_CleavageSites[mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex]];
+    mk_Last_[r_HmstIteratorLevel::TagOffset] = mk_CleavageSites[mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex] + 1] - mk_GpfIndexer.mi_TagSize;
+    */
+    mk_First_[r_HmstIteratorLevel::TagOffset] = 0;
+    mk_Last_[r_HmstIteratorLevel::TagOffset] = mk_Spans[mk_Value_[r_HmstIteratorLevel::SpanIndex]].second - mk_Spans[mk_Value_[r_HmstIteratorLevel::SpanIndex]].first;
+    
 	mk_Value_[r_HmstIteratorLevel::TagOffset] = mk_First_[r_HmstIteratorLevel::TagOffset];
 	mi_CurrentHalfMass = 0;
-	mi_CurrentAminoAcidSpanLength = 
-		(mk_Last_[r_HmstIteratorLevel::TagOffset] - mk_First_[r_HmstIteratorLevel::TagOffset] + mk_GpfIndexer.mi_TagSize);
+	mi_CurrentAminoAcidSpanLength = mk_GpfIndexer.mi_TagSize;
 }
 
 
@@ -172,9 +183,9 @@ bool k_HmstIterator::goodState()
 	//  li_SpanEnd - (k - li_SpanStart) - mi_TagSize + 1
 	qint32 li_SpanOffset;
 	if (mk_Value_[r_HmstIteratorLevel::MassDirection] == 0)
-		li_SpanOffset = (int)mk_Value_[r_HmstIteratorLevel::TagOffset];
+		li_SpanOffset = (int)(mk_Spans[mk_Value_[r_HmstIteratorLevel::SpanIndex]].first + mk_Value_[r_HmstIteratorLevel::TagOffset]);
 	else
-		li_SpanOffset = mk_Last_[r_HmstIteratorLevel::TagOffset] - (mk_Value_[r_HmstIteratorLevel::TagOffset] - mk_First_[r_HmstIteratorLevel::TagOffset]);
+        li_SpanOffset = (int)(mk_Spans[mk_Value_[r_HmstIteratorLevel::SpanIndex]].second - mk_GpfIndexer.mi_TagSize - (mk_Value_[r_HmstIteratorLevel::TagOffset] - 1));
 	mi_CurrentTag = gk_GpfBase.aminoAcidPolymerCode(mc_pOrf.get_Pointer() + li_SpanOffset, mk_GpfIndexer.mi_TagSize);
 	
 	if (mi_CurrentTag < 0)
@@ -195,25 +206,25 @@ bool k_HmstIterator::goodState()
 	
 	if (mi_CurrentHalfMass > mk_GpfIndexer.mi_MaxMass)
 		return false;
+    
+    qint64 li_SpanAnchor = mk_Value_[r_HmstIteratorLevel::MassDirection] == 0 ? 
+        mk_Spans[(int)mk_Value_[r_HmstIteratorLevel::SpanIndex]].first :
+        mk_Spans[(int)mk_Value_[r_HmstIteratorLevel::SpanIndex]].second + 1;
 	
 	if (mk_Value_[r_HmstIteratorLevel::OrfDirection] == 0)
 	{
-		mui_CurrentGno = 
-			mk_GpfIndexer.mk_ScaffoldStart[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] + 
-			mk_CleavageSites[(int)mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex]] * 3 +
-			mk_Value_[r_HmstIteratorLevel::Frame];
-		if (mk_Value_[r_HmstIteratorLevel::MassDirection] == 1)
-			mui_CurrentGno += (mi_CurrentAminoAcidSpanLength - 1) * 3 + 2;
+        mui_CurrentGno = 
+            mk_GpfIndexer.mk_ScaffoldStart[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] + 
+            li_SpanAnchor * 3 +
+            mk_Value_[r_HmstIteratorLevel::Frame] - mk_Value_[r_HmstIteratorLevel::MassDirection];
 	}
 	else
 	{
 		mui_CurrentGno = 
 			mk_GpfIndexer.mk_ScaffoldStart[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] +
 			mk_GpfIndexer.mk_ScaffoldLength[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] -
-			mk_CleavageSites[(int)mk_Value_[r_HmstIteratorLevel::CleavageSiteIndex]] * 3 -
-			mk_Value_[r_HmstIteratorLevel::Frame] - 1;
-		if (mk_Value_[r_HmstIteratorLevel::MassDirection] == 1)
-			mui_CurrentGno -= (mi_CurrentAminoAcidSpanLength - 1) * 3 + 2;
+			li_SpanAnchor * 3 -
+			mk_Value_[r_HmstIteratorLevel::Frame] - 1 + mk_Value_[r_HmstIteratorLevel::MassDirection];
 		mui_CurrentGno |= mk_GpfIndexer.mui_GnoBackwardsBit;
 	}
 	return mi_CurrentTag >= 0;

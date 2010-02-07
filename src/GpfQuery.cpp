@@ -238,13 +238,13 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 					lk_GnoHash[lk_GnoMassDirection] = lk_Masses[i];
 		}
 	}
-//  	printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoHash.size());
+  	printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoHash.size());
 	
 	// now we have determined all interesting places in the genome, take a look at each
 	// of them and try to construct alignments with the correct mass
     
     QSet<QString> lk_FoundAssmeblies;
-	
+    
 	foreach (tk_GnoMassDirection lk_GnoMassDirection, lk_GnoHash.keys())
 	{
         // initialize numbers
@@ -252,11 +252,13 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 		qint64 li_Gno = lk_GnoMassDirection.first;
 		bool lb_RightHalfMass = lk_GnoMassDirection.second;
 		bool lb_BackwardsFrame = ((li_Gno & mk_GpfIndexFile.mi_GnoBackwardsBit) != 0);
+        // if lb_ProgressIncreasing, the DNA pointer is increased during the search
+        bool lb_ProgressIncreasing = !(lb_RightHalfMass ^ lb_BackwardsFrame);
         // li_DnaOffset is the current pointer, anchor is the first exon, hook
         // is the secondary exon, if any
-		qint64 li_DnaOffset = li_Gno & ~mk_GpfIndexFile.mi_GnoBackwardsBit;
-        qint64 li_AnchorExonOffset = li_DnaOffset;
-        qint64 li_AnchorExonLength = 0;
+		qint64 li_DnaOffset = li_Gno & (~mk_GpfIndexFile.mi_GnoBackwardsBit);
+        qint64 li_AnchorExonStart = li_DnaOffset;
+        qint64 li_AnchorExonEnd = li_AnchorExonStart;
         
         printf("STARTING SEARCH at %d\n", (unsigned int)li_DnaOffset);
         
@@ -281,6 +283,8 @@ void k_GpfQuery::execute(const QString& as_Peptide)
         
 		if (li_DnaOffset < li_ScaffoldStart || li_DnaOffset > li_ScaffoldEnd)
 			printf("WRONG scaffold borders: %d, %d (%d)\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd, (qint32)li_DnaOffset);
+        
+        printf("Scaffold range is %d - %d.\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd);
 		
 		char* lc_TripletToAminoAcid_ = lb_BackwardsFrame ? 
 			gk_GpfBase.mk_DnaTripletToAminoAcidReverse_ :
@@ -290,16 +294,11 @@ void k_GpfQuery::execute(const QString& as_Peptide)
         int li_IntronStartMaxLength = lb_RightHalfMass ? mi_IntronCTermMaxLength : mi_IntronNTermMaxLength;
         int li_IntronEndMaxLength = lb_RightHalfMass ? mi_IntronNTermMaxLength : mi_IntronCTermMaxLength;
         
-		if (lb_BackwardsFrame)
-			li_DnaOffset -= 2;
-		qint64 li_Step1 = (lb_BackwardsFrame ^ lb_RightHalfMass) ? -1 : 1;
+		qint64 li_Step1 = lb_ProgressIncreasing ? 1 : -1;
         qint64 li_Step2 = li_Step1 * 2;
 		qint64 li_Step3 = li_Step1 * 3;
-        qint64 li_BackwardsFactor = (lb_BackwardsFrame ^ lb_RightHalfMass) ? 1 : 0;
+        qint64 li_BackwardsFactor = lb_ProgressIncreasing ? 0 : 1;
         
-        printf("%s%s\n", lb_BackwardsFrame ? "-" : "+", lb_RightHalfMass ? "R" : "L");
-        printf("step is %d\n", (qint32)li_Step1);
-		
 		// try to assemble an alignment
 		
 		qint64 li_AssemblyMass = mk_GpfIndexFile.mi_WaterMass;
@@ -309,7 +308,22 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 
 		while (li_AssemblyMass < mi_MaxMass)
 		{
-			quint16 lui_Triplet = gk_GpfBase.readNucleotideTriplet(mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), li_DnaOffset + li_BackwardsFactor * li_Step2);
+            // break if out of scaffold
+            if (lb_ProgressIncreasing)
+            {
+                if (li_DnaOffset + 2 > li_ScaffoldEnd)
+                    break;
+            }
+            else
+            {
+                if (li_DnaOffset - 2 < li_ScaffoldStart)
+                    break;
+            }
+            
+			quint16 lui_Triplet = 
+                gk_GpfBase.readNucleotideTriplet(
+                    mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                    li_DnaOffset + li_BackwardsFactor * li_Step2);
 			char lc_AminoAcid = lc_TripletToAminoAcid_[lui_Triplet];
 			
 			// cancel if invalid amino acid
@@ -326,13 +340,14 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 			
 			li_AssemblyMass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)lc_AminoAcid];
 
-            li_DnaOffset += li_Step3;
-            li_AnchorExonLength += 3;
-            if (lb_RightHalfMass)
-                li_AnchorExonOffset += li_Step3;
-
             printf("%c %d\n", lc_AminoAcid, (unsigned int)li_DnaOffset);
             
+            li_DnaOffset += li_Step3;
+            if (lb_ProgressIncreasing)
+                li_AnchorExonEnd += 2;
+            else
+                li_AnchorExonStart -= 2;
+
 			if (li_TagAminoAcidsPassed >= mk_GpfIndexFile.mi_TagSize)
 			{
 				// we have passed the half mass and the tag, now we can create alignments!
@@ -345,8 +360,8 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                         .arg(mk_GpfIndexFile.ms_ShortId)
                         .arg(mk_GpfIndexFile.mk_ScaffoldLabels[li_FirstScaffold])
                         .arg(lb_BackwardsFrame ? "-" : "+")
-                        .arg(li_AnchorExonOffset - li_ScaffoldStart)
-                        .arg(li_AnchorExonLength);
+                        .arg(li_AnchorExonStart - li_ScaffoldStart)
+                        .arg((li_AnchorExonEnd - li_AnchorExonStart) + 1);
                     if (!lk_FoundAssmeblies.contains(ls_Assembly))
                     {
                         lk_OutStream << QString("%1,%2,%3,\"%4\"\n")
@@ -358,131 +373,12 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                     lk_FoundAssmeblies << ls_Assembly;
 				}
 				
-				// or maybe we find the start of an intron?
-				for (int li_IntronStartShift = 0; li_IntronStartShift < 3; ++li_IntronStartShift)
-				{
-					qint32 li_SplitTriplet = 0;
-					if (li_IntronStartShift > 0)
-						li_SplitTriplet = readBitsFromBuffer(mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), (li_DnaOffset + li_BackwardsFactor * (li_IntronStartShift - 1)) * 3, li_IntronStartShift * 3);
-					qint32 li_IntronStartNucleotides = readBitsFromBuffer(mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), (li_DnaOffset + li_Step1 * li_IntronStartShift + li_BackwardsFactor * (li_IntronStartMaxLength - 1)) * 3, li_IntronStartMaxLength * 3);
- 					printf("%d %s\n", li_IntronStartShift, gk_GpfBase.nucleotideSequenceForCode(li_IntronStartNucleotides, 2).toStdString().c_str());
-					foreach (tk_IntPair lk_IntronStartSite, lk_IntronStart_->keys())
-					{
-						qint32 li_ThisIntronStartNucleotides = li_IntronStartNucleotides & ((1 << (lk_IntronStartSite.second * 3)) - 1);
-						if (li_ThisIntronStartNucleotides == lk_IntronStartSite.first)
-						{
-							// yay! we found an intron start site
-                            qint64 li_IntronStartOffset = li_DnaOffset + li_Step1 * li_IntronStartShift;
-                            qint64 li_IntronEndOffset = li_IntronStartOffset + li_Step1 * (mi_MinIntronLength + lk_IntronStartSite.second);
- 							printf("INTRON START: %s %d (%s%s) %d @ %d\n", ls_Peptide.toStdString().c_str(), li_IntronStartShift, lb_BackwardsFrame ? "-" : "+", lb_RightHalfMass ? "R": "L", li_ThisIntronStartNucleotides, (unsigned int)li_IntronStartOffset);
-                            //qint64 li_FirstExonStart = li_IntronStartOffset;
-                            //qint64 li_FirstExonLength = li_AnchorExonLength - 3;
-                            // find matching intron end site
-                            while (true)
-                            {
-                                // look for matching intron end sites until max intron length is reached or scaffold ends
-                                qint32 li_IntronEndNucleotides = readBitsFromBuffer(mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), (li_IntronEndOffset + li_Step1 * li_BackwardsFactor * (li_IntronEndMaxLength - 1)) * 3, li_IntronEndMaxLength * 3);
-                                foreach (tk_IntPair lk_IntronEndSite, (*lk_IntronStart_)[lk_IntronStartSite])
-                                {
-                                    qint32 li_ThisIntronEndNucleotides = li_IntronEndNucleotides & ((1 << (lk_IntronEndSite.second * 3)) - 1);
-                                    if (li_ThisIntronEndNucleotides == lk_IntronEndSite.first)
-                                    {
-                                        QString ls_IntronSplitPeptide = ls_Peptide;
-                                        qint64 li_IntronSplitAssemblyMass = li_AssemblyMass;
-                                        qint64 li_HookExonOffset = li_IntronEndOffset + lk_IntronEndSite.second * li_Step1;
-                                        qint64 li_HookExonLength = (3 - li_IntronStartShift) % 3;
-                                        qint64 li_SecondExonStart = li_IntronEndOffset + lk_IntronEndSite.second * li_Step1;
-                                        qint64 li_SecondExonOffset = li_SecondExonStart;
-                                        printf("INTRON END: %d, length: %d (%x)\n", (unsigned int)li_SecondExonStart, (unsigned int)abs(li_SecondExonStart - li_IntronStartOffset), li_ThisIntronEndNucleotides);
-                                        
-                                        // try to complete a split triplet, if there is any
-                                        if (li_IntronStartShift > 0)
-                                        {
-                                            qint32 li_AssembledSplitTriplet = li_SplitTriplet;
-                                            li_AssembledSplitTriplet |= readBitsFromBuffer(mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), li_SecondExonOffset * li_Step1 * 3, (3 - li_IntronStartShift) * 3) << (li_IntronStartShift * 3);
-                                            li_SecondExonOffset += (3 - li_IntronStartShift) * li_Step1;
-                                            char lc_AminoAcid = lc_TripletToAminoAcid_[li_AssembledSplitTriplet];
-//                                             printf("COMPLETING SPLIT TRIPLET: %c\n", lc_AminoAcid);
-                                            if (gk_GpfBase.mb_IsAminoAcid_[(int)lc_AminoAcid])
-                                            {
-                                                ls_IntronSplitPeptide += QChar(lc_AminoAcid);
-                                                li_IntronSplitAssemblyMass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)lc_AminoAcid];
-                                            }
-                                            else
-                                                break;
-                                        }
-                                        
-                                        while (li_IntronSplitAssemblyMass <= mi_MaxMass)
-                                        {
-                                            if (li_IntronSplitAssemblyMass >= mi_MinMass && li_IntronSplitAssemblyMass <= mi_MaxMass)
-                                            {
-                                                // we found an intron hit!
-//                                                 printf("INTRON HIT: %s\n", ls_IntronSplitPeptide.toStdString().c_str());
-                                                tk_IntPair lk_StartExon(li_AnchorExonOffset, li_AnchorExonLength);
-                                                tk_IntPair lk_EndExon(li_HookExonOffset, li_HookExonLength);
-                                                    
-                                                if (lb_RightHalfMass)
-                                                {
-                                                    tk_IntPair lk_Temp = lk_StartExon;
-                                                    lk_StartExon = lk_EndExon;
-                                                    lk_EndExon = lk_Temp;
-                                                }
-                                                
-                                                QString ls_Assembly = QString("%1:%2;%3%4:%5,%6:%7")
-                                                    .arg(mk_GpfIndexFile.ms_ShortId)
-                                                    .arg(mk_GpfIndexFile.mk_ScaffoldLabels[li_FirstScaffold])
-                                                    .arg(lb_BackwardsFrame ? "-" : "+")
-                                                    .arg(lk_StartExon.first)
-                                                    .arg(lk_StartExon.second)
-                                                    .arg(lk_EndExon.first)
-                                                    .arg(lk_EndExon.second);
-                                                if (!lk_FoundAssmeblies.contains(ls_Assembly))
-                                                {
-                                                    lk_OutStream << QString("%1,%2,%3,\"%4\"\n")
-                                                        .arg(as_Peptide)
-                                                        .arg(ls_IntronSplitPeptide)
-                                                        .arg((double)li_IntronSplitAssemblyMass / mk_GpfIndexFile.mi_MassPrecision)
-                                                        .arg(ls_Assembly);
-                                                }
-                                                lk_FoundAssmeblies << ls_Assembly;
-                                            }
-                                            printf("reading from %d\n", (unsigned int)(li_SecondExonOffset - li_BackwardsFactor * 2));
-                                            quint32 li_Triplet = readBitsFromBuffer(mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), (li_SecondExonOffset - li_BackwardsFactor * 2) * 3, 9);
-                                            li_SecondExonOffset += li_Step3;
-                                            li_HookExonLength += 3;
-                                            if (lb_BackwardsFrame)
-                                                li_HookExonOffset += li_Step3;
-                                            char lc_AminoAcid = lc_TripletToAminoAcid_[li_Triplet];
-                                            if (gk_GpfBase.mb_IsAminoAcid_[(int)lc_AminoAcid])
-                                            {
-                                                if (lb_RightHalfMass)
-                                                    ls_IntronSplitPeptide.prepend(QChar(lc_AminoAcid));
-                                                else
-                                                    ls_IntronSplitPeptide.append(QChar(lc_AminoAcid));
-                                                li_IntronSplitAssemblyMass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)lc_AminoAcid];
-                                            }
-                                            else
-                                                break;
-                                        }
-                                        
-                                        // add amino acids while peptide mass is too small
-                                    }
-                                }
-                                li_IntronEndOffset += li_Step1;
-                                qint64 li_IntronLength = abs(li_IntronEndOffset - li_IntronStartOffset) + 1;
-                                if (li_IntronLength > mi_MaxIntronLength)
-                                    break;
-                            }
-						}
-					}
-				}
 			}
-			
-			// break if out of scaffold
-			if (li_DnaOffset < li_ScaffoldStart || li_DnaOffset + 2 > li_ScaffoldEnd)
-				break;
+            if (lb_ProgressIncreasing)
+                li_AnchorExonEnd += 1;
+            else
+                li_AnchorExonStart -= 1;
 		}
-		//printf("\n");
 	}
 }
 

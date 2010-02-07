@@ -39,7 +39,7 @@ struct r_HmstIteratorLevel
 		ScaffoldIndex = 0,
 		OrfDirection,
 		Frame,
-		CleavageSiteIndex,
+		SpanIndex,
 		MassDirection,
 		TagOffset,
 		Size
@@ -69,7 +69,10 @@ protected:
 	qint64 mk_Value_[(int)r_HmstIteratorLevel::Size];
 	
 	RefPtr<char> mc_pOrf;
-	QList<qint64> mk_CleavageSites;
+    
+    typedef QPair<qint64, qint64> tk_IntPair;
+    QList<tk_IntPair> mk_Spans;
+    
 	bool mb_AtEnd;
 	int mi_CurrentTag;
 	qint64 mi_CurrentHalfMass;

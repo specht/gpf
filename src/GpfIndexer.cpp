@@ -363,7 +363,7 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 			li_Offset += li_pTagDirectionCount.get_Pointer()[i];
 		}
 		
-		printf("range: %d - %d\n", lui_FirstTagDirectionIndex, lui_LastTagDirectionIndex);
+// 		printf("range: %d - %d\n", lui_FirstTagDirectionIndex, lui_LastTagDirectionIndex);
 		
 		lk_HmstIterator.reset();
 		while (lk_HmstIterator.next(&lr_Hmst))
