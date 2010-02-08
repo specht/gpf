@@ -39,7 +39,6 @@ protected:
     
 	k_GpfIndexFile& mk_GpfIndexFile;
     QIODevice* mk_Output_;
-	qint64 mi_Mass, mi_MinMass, mi_MaxMass;
 	double md_MassAccuracy;
     // min intron length does not include slice donor/acceptor CS!
 	int mi_MinIntronLength;

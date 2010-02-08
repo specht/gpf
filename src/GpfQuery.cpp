@@ -125,7 +125,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 	li_MaxMass = li_Mass + li_MassDelta;
 	
 	// determine maximum nucleotide count
-	mi_MaxNucleotideSpanLength = (mi_MaxMass / mk_GpfIndexFile.mi_AminoAcidMasses_[(int)'G'] + 1) * 3 + mi_MaxIntronLength;
+	mi_MaxNucleotideSpanLength = (li_MaxMass / mk_GpfIndexFile.mi_AminoAcidMasses_[(int)'G'] + 1) * 3 + mi_MaxIntronLength;
 		
 	// extract all HMST
 	QMultiMap<qint32, qint64> lk_AllHmst;
@@ -298,7 +298,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 		QString ls_Peptide;
 		int li_TagAminoAcidsPassed = 0;
 
-		while (li_AssemblyMass < mi_MaxMass)
+		while (li_AssemblyMass < li_MaxMass)
 		{
             // break if out of scaffold
             if (lb_ProgressIncreasing)
