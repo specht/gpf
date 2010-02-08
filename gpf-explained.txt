@@ -23,6 +23,13 @@ differences to last version of GPF:
 - big genomic sequences can be indexed with a minimum amount of RAM 
   (which can be increased to speed up the indexing)
   
+GNO rules:
+
++ or - denote the DNA reading direction
+offset:length pairs always reflect the first nucleotide and the length
+  of the alignment, always in respect to the amino acid sequence
+
+  
 gpfindex file format:
 ---------------------
 

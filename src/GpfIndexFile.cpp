@@ -27,12 +27,23 @@ k_GpfIndexFile::k_GpfIndexFile(const QString& as_Path)
 {
 	parseGpfIndexFile(as_Path);
 
+    mi_MinAminoAcidMass = 0;
 	// calculate mass according to mass accuracy
 	for (int i = 0; i < 256; ++i)
 	{
 		mi_AminoAcidMasses_[i] = 0;
 		if (gk_GpfBase.mb_IsAminoAcid_[i])
-			mi_AminoAcidMasses_[i] = (qint64)(gk_GpfBase.md_AminoAcidMasses_[i] * mi_MassPrecision);
+        {
+            qint64 li_Mass = (qint64)(gk_GpfBase.md_AminoAcidMasses_[i] * mi_MassPrecision);
+			mi_AminoAcidMasses_[i] = li_Mass;
+            if (mi_MinAminoAcidMass == 0)
+                mi_MinAminoAcidMass = li_Mass;
+            else
+            {
+                if (li_Mass < mi_MinAminoAcidMass)
+                    mi_MinAminoAcidMass = li_Mass;
+            }
+        }
 	}
 	mi_WaterMass = (qint64)(WATER_MASS * mi_MassPrecision);
 }

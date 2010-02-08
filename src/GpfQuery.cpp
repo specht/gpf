@@ -104,29 +104,13 @@ k_GpfQuery::~k_GpfQuery()
 
 void k_GpfQuery::execute(const QString& as_Peptide)
 {
-/*    for (int li_TagDirectionIndex = 0; li_TagDirectionIndex < mk_GpfIndexFile.mi_TagCount * 2; ++li_TagDirectionIndex)
-    {
-        for (qint64 i = 0; i < mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]; ++i)
-        {
-            qint64 li_Mass = mk_GpfIndexFile.readIndexBits(mk_GpfIndexFile.mk_HmstOffset[li_TagDirectionIndex] * mk_GpfIndexFile.mi_HmstBits + i * mk_GpfIndexFile.mi_MassBits, mk_GpfIndexFile.mi_MassBits);
-            printf("%x M %d\n", li_TagDirectionIndex, (unsigned int)li_Mass);
-        }
-        for (qint64 i = 0; i < mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]; ++i)
-        {
-            qint64 li_Offset = mk_GpfIndexFile.readIndexBits(mk_GpfIndexFile.mk_HmstOffset[li_TagDirectionIndex] * mk_GpfIndexFile.mi_HmstBits + mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex] * mk_GpfIndexFile.mi_MassBits + i * mk_GpfIndexFile.mi_OffsetBits, mk_GpfIndexFile.mi_OffsetBits);
-            printf("%x O %d\n", li_TagDirectionIndex, (unsigned int)li_Offset);
-        }
-    }
-
-    return;*/
-    ////////////////////////////////////////////////
-    
 	printf("Searching for %s...\n", as_Peptide.toStdString().c_str());
     
     QTextStream lk_OutStream(mk_Output_);
 	
 	// check whether this is a valid peptide and determine mass
-	mi_Mass = mk_GpfIndexFile.mi_WaterMass;
+    qint64 li_Mass, li_MinMass, li_MaxMass;
+	li_Mass = mk_GpfIndexFile.mi_WaterMass;
 	for (int i = 0; i < as_Peptide.length(); ++i)
 	{
 		if (!gk_GpfBase.mb_IsAminoAcid_[(int)(as_Peptide.at(i).toAscii())])
@@ -134,11 +118,11 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 			printf("Error: Invalid amino acids in %s.\n", as_Peptide.toStdString().c_str());
 			return;
 		}
-		mi_Mass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)as_Peptide.at(i).toAscii()];
+		li_Mass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)as_Peptide.at(i).toAscii()];
 	}
-	qint64 li_MassDelta = (qint64)(md_MassAccuracy * mi_Mass / 1000000.0);
-	mi_MinMass = mi_Mass - li_MassDelta;
-	mi_MaxMass = mi_Mass + li_MassDelta;
+	qint64 li_MassDelta = (qint64)(md_MassAccuracy * li_Mass / 1000000.0);
+	li_MinMass = li_Mass - li_MassDelta;
+	li_MaxMass = li_Mass + li_MassDelta;
 	
 	// determine maximum nucleotide count
 	mi_MaxNucleotideSpanLength = (mi_MaxMass / mk_GpfIndexFile.mi_AminoAcidMasses_[(int)'G'] + 1) * 3 + mi_MaxIntronLength;
@@ -184,8 +168,8 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 	
 	// mass direction: false == left, true == right
 	typedef QPair<qint64, bool> tk_GnoMassDirection;
-	// lk_GnoHash: GNO => minimum half mass
-	QHash<tk_GnoMassDirection, qint64> lk_GnoHash;
+	// lk_GnoMap: GNO => minimum half mass
+	QMap<tk_GnoMassDirection, qint64> lk_GnoMap;
 	
 	// iterate over all HMST
 	for (QMultiMap<qint32, qint64>::const_iterator lk_Iter = lk_AllHmst.begin(); lk_Iter != lk_AllHmst.end(); ++lk_Iter)
@@ -231,24 +215,29 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 			tk_GnoMassDirection lk_GnoMassDirection(li_Gno, li_TagDirectionIndex % 2 == 1);
 			
 			// insert or update this entry if current half mass is lower
-			if (!lk_GnoHash.contains(lk_GnoMassDirection))
-				lk_GnoHash[lk_GnoMassDirection] = lk_Masses[i];
+			if (!lk_GnoMap.contains(lk_GnoMassDirection))
+				lk_GnoMap.insert(lk_GnoMassDirection, lk_Masses[i]);
 			else
-				if (lk_Masses[i] < lk_GnoHash[lk_GnoMassDirection])
-					lk_GnoHash[lk_GnoMassDirection] = lk_Masses[i];
+				if (lk_Masses[i] < lk_GnoMap[lk_GnoMassDirection])
+					lk_GnoMap.insert(lk_GnoMassDirection, lk_Masses[i]);
 		}
 	}
-  	printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoHash.size());
+  	printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoMap.size());
 	
 	// now we have determined all interesting places in the genome, take a look at each
 	// of them and try to construct alignments with the correct mass
     
     QSet<QString> lk_FoundAssmeblies;
     
-	foreach (tk_GnoMassDirection lk_GnoMassDirection, lk_GnoHash.keys())
+    // using the map, we now jump to every anchor, first in the forward frames
+    // with increasing DNA offset, then back again in the backwards frames
+    // this way, we can exploit something like 'spatial coherency' because
+    // DNA progression is always 'forward'
+    for (QMap<tk_GnoMassDirection, qint64>::const_iterator lk_Iter = lk_GnoMap.constBegin(); lk_Iter != lk_GnoMap.constEnd(); ++lk_Iter)
 	{
+        tk_GnoMassDirection lk_GnoMassDirection = lk_Iter.key();
+		qint64 li_HalfMass = lk_Iter.value();
         // initialize numbers
-		qint64 li_HalfMass = lk_GnoHash[lk_GnoMassDirection];
 		qint64 li_Gno = lk_GnoMassDirection.first;
 		bool lb_RightHalfMass = lk_GnoMassDirection.second;
 		bool lb_BackwardsFrame = ((li_Gno & mk_GpfIndexFile.mi_GnoBackwardsBit) != 0);
@@ -257,6 +246,8 @@ void k_GpfQuery::execute(const QString& as_Peptide)
         // li_DnaOffset is the current pointer, anchor is the first exon, hook
         // is the secondary exon, if any
 		qint64 li_DnaOffset = li_Gno & (~mk_GpfIndexFile.mi_GnoBackwardsBit);
+        // contrary to the GNO offset and length,
+        // start and end are in such a way that start <= end
         qint64 li_AnchorExonStart = li_DnaOffset;
         qint64 li_AnchorExonEnd = li_AnchorExonStart;
         
@@ -299,6 +290,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 		qint64 li_Step3 = li_Step1 * 3;
         qint64 li_BackwardsFactor = lb_ProgressIncreasing ? 0 : 1;
         
+        printf("progress increasing: %d, step: %d\n", lb_ProgressIncreasing, (qint32)li_Step1);
 		// try to assemble an alignment
 		
 		qint64 li_AssemblyMass = mk_GpfIndexFile.mi_WaterMass;
@@ -340,8 +332,6 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 			
 			li_AssemblyMass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)lc_AminoAcid];
 
-            printf("%c %d\n", lc_AminoAcid, (unsigned int)li_DnaOffset);
-            
             li_DnaOffset += li_Step3;
             if (lb_ProgressIncreasing)
                 li_AnchorExonEnd += 2;
@@ -353,15 +343,19 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 				// we have passed the half mass and the tag, now we can create alignments!
 
 				// maybe we found an immediate hit already?
-				if (li_AssemblyMass >= mi_MinMass && li_AssemblyMass <= mi_MaxMass)
+				if (li_AssemblyMass >= li_MinMass && li_AssemblyMass <= li_MaxMass)
 				{
 					//printf("IMMEDIATE HIT: %s %d %d\n", ls_Peptide.toStdString().c_str(), (qint32)(li_AssemblyGno & ~mk_GpfIndexFile.mi_GnoBackwardsBit), (qint32)li_AssemblyLength);
+                    qint64 li_PrintAnchorExonStart = li_AnchorExonStart - li_ScaffoldStart;
+                    qint64 li_PrintAnchorExonLength = (li_AnchorExonEnd - li_AnchorExonStart) + 1;
+                    if (lb_BackwardsFrame)
+                        li_PrintAnchorExonStart += li_PrintAnchorExonLength - 1;
                     QString ls_Assembly = QString("%1:%2;%3%4:%5")
                         .arg(mk_GpfIndexFile.ms_ShortId)
                         .arg(mk_GpfIndexFile.mk_ScaffoldLabels[li_FirstScaffold])
                         .arg(lb_BackwardsFrame ? "-" : "+")
-                        .arg(li_AnchorExonStart - li_ScaffoldStart)
-                        .arg((li_AnchorExonEnd - li_AnchorExonStart) + 1);
+                        .arg(li_PrintAnchorExonStart)
+                        .arg(li_PrintAnchorExonLength);
                     if (!lk_FoundAssmeblies.contains(ls_Assembly))
                     {
                         lk_OutStream << QString("%1,%2,%3,\"%4\"\n")
@@ -372,6 +366,16 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                     }
                     lk_FoundAssmeblies << ls_Assembly;
 				}
+				
+				// cancel if any other amino acid would make this assembly too heavy
+                if (li_AssemblyMass + mk_GpfIndexFile.mi_MinAminoAcidMass > li_MaxMass)
+                    break;
+                
+				// Now scan the next few nucleotides for intron splice donor/acceptor
+                // site consensus sequences. Collect sites and re-use them.
+                // Remember: The anchors are processed forward first, in ascending order,
+                // and then back again in the reverse reading frames
+				printf("%d look for CS start sequence!\n", (qint32)li_DnaOffset);
 				
 			}
             if (lb_ProgressIncreasing)
