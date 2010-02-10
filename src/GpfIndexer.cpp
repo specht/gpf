@@ -49,7 +49,7 @@ k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString 
 	, mui_GnoBackwardsBit(0)
 	, mi_MassBits(27)
 	, mi_MassPrecision(10000)
-	, mi_TagSize(5)
+	, mi_TagSize(3)
 	, mi_DnaBufferLength(0)
 	, mi_IndexBufferMaxLength(512 * 1024 * 1024)
 {

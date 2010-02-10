@@ -43,12 +43,14 @@ protected:
     // min intron length does not include slice donor/acceptor CS!
 	int mi_MinIntronLength;
 	int mi_MaxIntronLength;
+    int mi_MinExonLength;
 	int mi_MaxNucleotideSpanLength;
 	QString ms_IntronSpliceSites;
     bool mb_SimilaritySearch;
     bool mb_ImmediateHitsSufficient;
 	
 	typedef QPair<int, int> tk_IntPair;
+    typedef QPair<qint64, qint64> tk_QInt64Pair;
     typedef QHash<tk_IntPair, QList<tk_IntPair> > tk_IntPairListHash;
 
 	// GT/2: [AG/2]
@@ -57,7 +59,14 @@ protected:
 	
 	// AG/2: [GT/2, GC/2]
 	tk_IntPairListHash mk_IntronCTerm;
-	
+    
+    // TG/2: [GA/2]
+    // CG/2: [GA/2]
+    tk_IntPairListHash mk_IntronNTermReverse;
+    
+    // GA/2: [TG/2, CG/2]
+    tk_IntPairListHash mk_IntronCTermReverse;
+    
 	int mi_IntronNTermMaxLength;
 	int mi_IntronCTermMaxLength;
     RefPtr<QFile> mk_pStdOutFile;

@@ -45,6 +45,9 @@ public:
 	int aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length);
     QString aminoAcidSequenceForCode(int ai_Code, int ai_Length);
     QString nucleotideSequenceForCode(int ai_Code, int ai_Length);
+    qint64 reverseNucleotides(qint64 ai_Nucleotides, int ai_Length);
+    qint64 invertNucleotides(qint64 ai_Nucleotides, int ai_Length);
+    qint64 transposeNucleotides(qint64 ai_Nucleotides, int ai_Length);
 	
 	quint16 mk_DnaCharToNumber_[256];
 	char mk_DnaTripletToAminoAcid_[512];

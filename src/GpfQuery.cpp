@@ -28,7 +28,8 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, QIODevice* ak_Output_)
 	, md_MassAccuracy(5.0)
 	, mi_MinIntronLength(1)
 	, mi_MaxIntronLength(2100)
-	, ms_IntronSpliceSites("GT|AG,GC|AG")
+	, mi_MinExonLength(1)
+	, ms_IntronSpliceSites("GT|AG,GCC|AG")
 	, mb_SimilaritySearch(true)
 	, mb_ImmediateHitsSufficient(false)
 	, mk_pStdOutFile(new QFile())
@@ -72,6 +73,8 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, QIODevice* ak_Output_)
 		}
 		tk_IntPair lk_NTermCode = lk_SpliceSitesNumbers.first();
         tk_IntPair lk_CTermCode = lk_SpliceSitesNumbers.last();
+        tk_IntPair lk_NTermCodeReverse(gk_GpfBase.reverseNucleotides(lk_NTermCode.first, lk_NTermCode.second), lk_NTermCode.second);
+        tk_IntPair lk_CTermCodeReverse(gk_GpfBase.reverseNucleotides(lk_CTermCode.first, lk_CTermCode.second), lk_CTermCode.second);
         
 		if (!mk_IntronNTerm.contains(lk_NTermCode))
 			mk_IntronNTerm[lk_NTermCode] = QList<tk_IntPair>();
@@ -81,19 +84,21 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, QIODevice* ak_Output_)
 			mk_IntronCTerm[lk_CTermCode] = QList<tk_IntPair>();
         mk_IntronCTerm[lk_CTermCode].append(lk_NTermCode);
         
+        if (!mk_IntronNTermReverse.contains(lk_NTermCodeReverse))
+            mk_IntronNTermReverse[lk_NTermCodeReverse] = QList<tk_IntPair>();
+        mk_IntronNTermReverse[lk_NTermCodeReverse].append(lk_CTermCodeReverse);
+        
+        if (!mk_IntronCTermReverse.contains(lk_CTermCodeReverse))
+            mk_IntronCTermReverse[lk_CTermCodeReverse] = QList<tk_IntPair>();
+        mk_IntronCTermReverse[lk_CTermCodeReverse].append(lk_NTermCodeReverse);
+
+        // update C- and N-term max length
 		if (lk_NTermCode.second > mi_IntronNTermMaxLength)
 			mi_IntronNTermMaxLength = lk_NTermCode.second;
         
 		if (lk_CTermCode.second > mi_IntronCTermMaxLength)
 			mi_IntronCTermMaxLength = lk_CTermCode.second;
 	}
-	
-/*	foreach (tk_IntPair lk_Key, mk_IntronEnd.keys())
-    {
-        printf("%x/%d:\n", lk_Key.first, lk_Key.second);
-        foreach (tk_IntPair lk_Value, mk_IntronEnd[lk_Key])
-            printf("  - %x/%d\n", lk_Value.first, lk_Value.second);
-    }*/
 }
 
 
@@ -212,7 +217,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 				mk_GpfIndexFile.mk_HmstOffset[li_TagDirectionIndex] * mk_GpfIndexFile.mi_HmstBits +
 				mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex] * mk_GpfIndexFile.mi_MassBits + 
 				(i + li_Start) * mk_GpfIndexFile.mi_OffsetBits, mk_GpfIndexFile.mi_OffsetBits);
-			tk_GnoMassDirection lk_GnoMassDirection(li_Gno, li_TagDirectionIndex % 2 == 1);
+			tk_GnoMassDirection lk_GnoMassDirection(li_Gno, (li_TagDirectionIndex % 2) == 1);
 			
 			// insert or update this entry if current half mass is lower
 			if (!lk_GnoMap.contains(lk_GnoMassDirection))
@@ -229,10 +234,6 @@ void k_GpfQuery::execute(const QString& as_Peptide)
     
     QSet<QString> lk_FoundAssmeblies;
     
-    // using the map, we now jump to every anchor, first in the forward frames
-    // with increasing DNA offset, then back again in the backwards frames
-    // this way, we can exploit something like 'spatial coherency' because
-    // DNA progression is always 'forward'
     for (QMap<tk_GnoMassDirection, qint64>::const_iterator lk_Iter = lk_GnoMap.constBegin(); lk_Iter != lk_GnoMap.constEnd(); ++lk_Iter)
 	{
         tk_GnoMassDirection lk_GnoMassDirection = lk_Iter.key();
@@ -281,7 +282,18 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 			gk_GpfBase.mk_DnaTripletToAminoAcidReverse_ :
 			gk_GpfBase.mk_DnaTripletToAminoAcid_;
 		
-        tk_IntPairListHash* lk_IntronStart_ = lb_RightHalfMass ? &mk_IntronCTerm : &mk_IntronNTerm;
+        tk_IntPairListHash* lk_IntronStart_ = NULL;
+        tk_IntPairListHash* lk_IntronEnd_ = NULL;
+        if (lb_BackwardsFrame)
+        {
+            lk_IntronStart_ = lb_RightHalfMass ? &mk_IntronCTermReverse : &mk_IntronNTermReverse;
+            lk_IntronEnd_ = lb_RightHalfMass ? &mk_IntronNTermReverse : &mk_IntronCTermReverse;
+        }
+        else
+        {
+            lk_IntronStart_ = lb_RightHalfMass ? &mk_IntronCTerm : &mk_IntronNTerm;
+            lk_IntronEnd_ = lb_RightHalfMass ? &mk_IntronNTerm : &mk_IntronCTerm;
+        }
         int li_IntronStartMaxLength = lb_RightHalfMass ? mi_IntronCTermMaxLength : mi_IntronNTermMaxLength;
         int li_IntronEndMaxLength = lb_RightHalfMass ? mi_IntronNTermMaxLength : mi_IntronCTermMaxLength;
         
@@ -372,11 +384,73 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                     break;
                 
 				// Now scan the next few nucleotides for intron splice donor/acceptor
-                // site consensus sequences. Collect sites and re-use them.
-                // Remember: The anchors are processed forward first, in ascending order,
-                // and then back again in the reverse reading frames
-				printf("%d look for CS start sequence!\n", (qint32)li_DnaOffset);
-				
+                // site consensus sequences. 
+/*                qint64 li_SeekStart = li_DnaOffset;
+                qint64 li_SeekEnd = li_SeekStart + li_Step1 * (mi_MaxIntronLength - 1);
+                if (lb_ProgressIncreasing)
+                    li_SeekEnd = std::min(li_SeekEnd, li_ScaffoldEnd - mi_MinExonLength);
+                else
+                    li_SeekEnd = std::max(li_SeekEnd, li_ScaffoldStart + mi_MinExonLength);*/
+                       
+                qint64 li_IntronScanPointer = li_DnaOffset;
+                printf("starting intron search at %d\n", (qint32)li_IntronScanPointer);
+
+                for (int li_IntronStartOffset = 0; li_IntronStartOffset < 3; ++li_IntronStartOffset)
+                {
+                    qint64 li_ReadLength = li_IntronStartMaxLength;
+                    if (lb_ProgressIncreasing)
+                        li_ReadLength = std::min<qint64>(li_ReadLength, li_ScaffoldEnd - li_IntronScanPointer + 1);
+                    else
+                        li_ReadLength = std::min<qint64>(li_ReadLength, li_IntronScanPointer - li_ScaffoldStart + 1);
+                    qint32 li_Bit = 
+                        readBitsFromBuffer(
+                        mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                        ((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor)) * 3, 
+                        li_ReadLength * 3);
+                    qint32 li_BitLength = li_ReadLength;
+                    li_Bit &= (1 << (li_BitLength * 3)) - 1;
+                    // invert nucleotides if backwards frame
+                    if (lb_BackwardsFrame)
+                        li_Bit = gk_GpfBase.invertNucleotides(li_Bit, li_BitLength);
+                    printf("%s ", gk_GpfBase.nucleotideSequenceForCode(li_Bit, li_BitLength).toStdString().c_str());
+                    foreach (tk_IntPair lk_Site, lk_IntronStart_->keys())
+                    {
+                        qint32 li_CutBit = li_Bit;
+                        qint32 li_CutBitLength = li_BitLength;
+                        if (lk_Site.second < li_CutBitLength)
+                        {
+                            // throw away some nucleotides of the bit
+                            // (mk_AllIntronCS is sorted by decreasing pattern size)
+                            //li_StartSiteBit &= ((1 << (lk_Site.second * 3)) - 1);
+                            //li_EndSiteBit >>= (li_BitLength - lk_Site.second) * 3;
+                            if (lb_BackwardsFrame)
+                                li_CutBit >>= (li_CutBitLength - lk_Site.second) * 3;
+                            else
+                                li_CutBit &= ((1 << (lk_Site.second * 3)) - 1);
+                            li_CutBitLength = lk_Site.second;
+                        }
+                        if ((lk_Site.first == li_CutBit) && (lk_Site.second == li_CutBitLength))
+                        {
+                            // found a start site!
+                            printf("[FOUND %s/%s at %d]",
+                               gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str(),
+                               gk_GpfBase.nucleotideSequenceForCode(li_CutBit, li_CutBitLength).toStdString().c_str(),
+                               (qint32)li_IntronScanPointer
+                               );
+                        }
+                        else
+                        {
+                            printf("(%s/%s %o/%o) ",
+                                gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str(),
+                                gk_GpfBase.nucleotideSequenceForCode(li_CutBit, li_CutBitLength).toStdString().c_str(),
+                                (qint32)lk_Site.first,
+                                (qint32)li_CutBit
+                                );
+                        }
+                    }
+                    li_IntronScanPointer += li_Step1;
+                }
+                printf("\n");
 			}
             if (lb_ProgressIncreasing)
                 li_AnchorExonEnd += 1;
