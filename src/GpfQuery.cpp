@@ -29,7 +29,7 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, QIODevice* ak_Output_)
 	, mi_MinIntronLength(1)
 	, mi_MaxIntronLength(2100)
 	, mi_MinExonLength(1)
-	, ms_IntronSpliceSites("GT|AG,GCC|AG")
+	, ms_IntronSpliceSites("GT|AG,GC|AG")
 	, mb_SimilaritySearch(true)
 	, mb_ImmediateHitsSufficient(false)
 	, mk_pStdOutFile(new QFile())
@@ -393,7 +393,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                     li_SeekEnd = std::max(li_SeekEnd, li_ScaffoldStart + mi_MinExonLength);*/
                        
                 qint64 li_IntronScanPointer = li_DnaOffset;
-                printf("starting intron search at %d\n", (qint32)li_IntronScanPointer);
+//                 printf("starting intron search at %d\n", (qint32)li_IntronScanPointer);
 
                 for (int li_IntronStartOffset = 0; li_IntronStartOffset < 3; ++li_IntronStartOffset)
                 {
@@ -402,55 +402,127 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                         li_ReadLength = std::min<qint64>(li_ReadLength, li_ScaffoldEnd - li_IntronScanPointer + 1);
                     else
                         li_ReadLength = std::min<qint64>(li_ReadLength, li_IntronScanPointer - li_ScaffoldStart + 1);
-                    qint32 li_Bit = 
-                        readBitsFromBuffer(
-                        mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
-                        ((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor)) * 3, 
-                        li_ReadLength * 3);
-                    qint32 li_BitLength = li_ReadLength;
-                    li_Bit &= (1 << (li_BitLength * 3)) - 1;
-                    // invert nucleotides if backwards frame
-                    if (lb_BackwardsFrame)
-                        li_Bit = gk_GpfBase.invertNucleotides(li_Bit, li_BitLength);
-                    printf("%s ", gk_GpfBase.nucleotideSequenceForCode(li_Bit, li_BitLength).toStdString().c_str());
-                    foreach (tk_IntPair lk_Site, lk_IntronStart_->keys())
+                    if (li_ReadLength > 0)
                     {
-                        qint32 li_CutBit = li_Bit;
-                        qint32 li_CutBitLength = li_BitLength;
-                        if (lk_Site.second < li_CutBitLength)
+//                         printf("check %d/%d\n", (qint32)(((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor))), (qint32)li_ReadLength);
+                        qint32 li_Bit = 
+                            readBitsFromBuffer(
+                            mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                            ((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor)) * 3, 
+                            li_ReadLength * 3);
+                        qint32 li_BitLength = li_ReadLength;
+                        li_Bit &= (1 << (li_BitLength * 3)) - 1;
+                        // invert nucleotides if backwards frame
+                        if (lb_BackwardsFrame)
+                            li_Bit = gk_GpfBase.invertNucleotides(li_Bit, li_BitLength);
+                        foreach (tk_IntPair lk_Site, lk_IntronStart_->keys())
                         {
-                            // throw away some nucleotides of the bit
-                            // (mk_AllIntronCS is sorted by decreasing pattern size)
-                            //li_StartSiteBit &= ((1 << (lk_Site.second * 3)) - 1);
-                            //li_EndSiteBit >>= (li_BitLength - lk_Site.second) * 3;
-                            if (lb_BackwardsFrame)
-                                li_CutBit >>= (li_CutBitLength - lk_Site.second) * 3;
-                            else
-                                li_CutBit &= ((1 << (lk_Site.second * 3)) - 1);
-                            li_CutBitLength = lk_Site.second;
-                        }
-                        if ((lk_Site.first == li_CutBit) && (lk_Site.second == li_CutBitLength))
-                        {
-                            // found a start site!
-                            printf("[FOUND %s/%s at %d]",
-                               gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str(),
-                               gk_GpfBase.nucleotideSequenceForCode(li_CutBit, li_CutBitLength).toStdString().c_str(),
-                               (qint32)li_IntronScanPointer
-                               );
-                        }
-                        else
-                        {
-                            printf("(%s/%s %o/%o) ",
-                                gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str(),
-                                gk_GpfBase.nucleotideSequenceForCode(li_CutBit, li_CutBitLength).toStdString().c_str(),
-                                (qint32)lk_Site.first,
-                                (qint32)li_CutBit
+                            qint32 li_CutBit = li_Bit;
+                            qint32 li_CutBitLength = li_BitLength;
+                            if (lk_Site.second < li_CutBitLength)
+                            {
+                                // throw away some nucleotides of the bit
+                                if (lb_BackwardsFrame)
+                                    li_CutBit >>= (li_CutBitLength - lk_Site.second) * 3;
+                                else
+                                    li_CutBit &= ((1 << (lk_Site.second * 3)) - 1);
+                                li_CutBitLength = lk_Site.second;
+                            }
+                            if ((lk_Site.first == li_CutBit) && (lk_Site.second == li_CutBitLength))
+                            {
+                                qint64 li_IntronAnchorOffset = li_IntronScanPointer;
+                                // we found an intron start site!
+                                printf("[START %s/%s at %d]\n",
+                                    gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str(),
+                                    gk_GpfBase.nucleotideSequenceForCode(li_CutBit, li_CutBitLength).toStdString().c_str(),
+                                    (qint32)li_IntronAnchorOffset
                                 );
+                                printf("intron start offset is %d.\n", (qint32)li_IntronStartOffset);
+                                // fetch first part of split triplet, if any, from right before 
+                                // the start sequence
+                                qint32 li_SplitTriplet = 0;
+                                if (li_IntronStartOffset > 0)
+                                {
+                                    li_SplitTriplet = 
+                                        readBitsFromBuffer(
+                                        mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                                        ((li_IntronScanPointer - li_IntronStartOffset * li_Step1 - (li_IntronStartOffset - 1) * li_BackwardsFactor)) * 3, 
+                                        li_IntronStartOffset * 3);
+                                    if (lb_BackwardsFrame)
+                                        li_SplitTriplet = gk_GpfBase.invertNucleotides(li_SplitTriplet, li_IntronStartOffset);
+                                }
+                                printf("start nucleotides are '%s'.\n", gk_GpfBase.nucleotideSequenceForCode(li_SplitTriplet, li_IntronStartOffset).toStdString().c_str());
+                                
+                                // now scan the next few nucleotides for an appropriate intron end sequence
+                                qint64 li_SubIntronScanPointer = li_IntronScanPointer;
+//                                 printf("starting intron search at %d\n", (qint32)li_IntronScanPointer);
+
+                                for (int li_SubIntronOffset = 0; li_SubIntronOffset < mi_MaxIntronLength - li_IntronStartOffset; ++li_SubIntronOffset)
+                                {
+                                    qint64 li_SubReadLength = li_IntronEndMaxLength;
+                                    if (lb_ProgressIncreasing)
+                                        li_ReadLength = std::min<qint64>(li_ReadLength, li_ScaffoldEnd - li_SubIntronScanPointer + 1);
+                                    else
+                                        li_ReadLength = std::min<qint64>(li_ReadLength, li_SubIntronScanPointer - li_ScaffoldStart + 1);
+                                    if (li_ReadLength > 0)
+                                    {
+                //                         printf("check %d/%d\n", (qint32)(((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor))), (qint32)li_ReadLength);
+                                        qint32 li_SubBit = 
+                                            readBitsFromBuffer(
+                                            mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                                            ((li_SubIntronScanPointer - (li_SubReadLength - 1) * li_BackwardsFactor)) * 3, 
+                                            li_SubReadLength * 3);
+                                        qint32 li_SubBitLength = li_SubReadLength;
+                                        li_SubBit &= (1 << (li_SubBitLength * 3)) - 1;
+                                        // invert nucleotides if backwards frame
+                                        if (lb_BackwardsFrame)
+                                            li_SubBit = gk_GpfBase.invertNucleotides(li_SubBit, li_SubBitLength);
+                                        foreach (tk_IntPair lk_SubSite, lk_IntronEnd_->keys())
+                                        {
+                                            qint32 li_SubCutBit = li_SubBit;
+                                            qint32 li_SubCutBitLength = li_SubBitLength;
+                                            if (lk_SubSite.second < li_SubCutBitLength)
+                                            {
+                                                // throw away some nucleotides of the bit
+                                                if (lb_BackwardsFrame)
+                                                    li_SubCutBit >>= (li_SubCutBitLength - lk_SubSite.second) * 3;
+                                                else
+                                                    li_SubCutBit &= ((1 << (lk_SubSite.second * 3)) - 1);
+                                                li_SubCutBitLength = lk_SubSite.second;
+                                            }
+                                            if ((lk_SubSite.first == li_SubCutBit) && (lk_SubSite.second == li_SubCutBitLength))
+                                            {
+                                                qint64 li_IntronHookOffset = li_SubIntronScanPointer + li_Step1 * (li_SubCutBitLength - 1);
+                                                // we found an intron start site!
+                                                printf("[END %s/%s at %d]\n",
+                                                    gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second).toStdString().c_str(),
+                                                    gk_GpfBase.nucleotideSequenceForCode(li_SubCutBit, li_SubCutBitLength).toStdString().c_str(),
+                                                    (qint32)li_IntronHookOffset
+                                                );
+                                                // fetch remaining part of split triplet
+                                                
+                                            }
+                                        }
+                                    }
+                                    li_SubIntronScanPointer += li_Step1;
+                                    // break if we run out of the scaffold
+                                    if (li_SubIntronScanPointer < li_ScaffoldStart)
+                                        break;
+                                    if (li_SubIntronScanPointer > li_ScaffoldEnd)
+                                        break;
+                                }
+                                
+                            }
                         }
                     }
                     li_IntronScanPointer += li_Step1;
+                    // break if we run out of the scaffold
+                    if (li_IntronScanPointer < li_ScaffoldStart)
+                        break;
+                    if (li_IntronScanPointer > li_ScaffoldEnd)
+                        break;
                 }
-                printf("\n");
+//                 printf("\n");
 			}
             if (lb_ProgressIncreasing)
                 li_AnchorExonEnd += 1;
