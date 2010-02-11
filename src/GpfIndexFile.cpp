@@ -46,6 +46,7 @@ k_GpfIndexFile::k_GpfIndexFile(const QString& as_Path)
         }
 	}
 	mi_WaterMass = (qint64)(WATER_MASS * mi_MassPrecision);
+    mi_MassDecimalDigits = (int)ceil(log(mi_MassPrecision) / log(10.0));
 }
 
 

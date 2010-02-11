@@ -373,7 +373,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                         lk_OutStream << QString("%1,%2,%3,\"%4\"\n")
                             .arg(as_Peptide)
                             .arg(ls_Peptide)
-                            .arg((double)li_AssemblyMass / mk_GpfIndexFile.mi_MassPrecision)
+                            .arg((double)li_AssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
                             .arg(ls_Assembly);
                     }
                     lk_FoundAssmeblies << ls_Assembly;
@@ -492,15 +492,104 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                                             }
                                             if ((lk_SubSite.first == li_SubCutBit) && (lk_SubSite.second == li_SubCutBitLength))
                                             {
-                                                qint64 li_IntronHookOffset = li_SubIntronScanPointer + li_Step1 * (li_SubCutBitLength - 1);
+                                                qint64 li_IntronHookOffset = li_SubIntronScanPointer + li_Step1 * li_SubCutBitLength;
                                                 // we found an intron start site!
                                                 printf("[END %s/%s at %d]\n",
                                                     gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second).toStdString().c_str(),
                                                     gk_GpfBase.nucleotideSequenceForCode(li_SubCutBit, li_SubCutBitLength).toStdString().c_str(),
                                                     (qint32)li_IntronHookOffset
                                                 );
-                                                // fetch remaining part of split triplet
+                                                qint64 li_HookExonEnd = li_IntronHookOffset;
+                                                qint64 li_HookExonStart = li_IntronHookOffset;
+                                                qint64 li_SubDnaOffset = li_IntronHookOffset;
+                                                qint64 li_SubAssemblyMass = li_AssemblyMass;
                                                 
+                                                QString ls_SubPeptide = ls_Peptide;
+                                                // :TODO: fetch remaining part of split triplet
+                                                // now continue the peptide
+
+                                                while (li_SubAssemblyMass < li_MaxMass)
+                                                {
+                                                    // break if out of scaffold
+                                                    if (lb_ProgressIncreasing)
+                                                    {
+                                                        if (li_SubDnaOffset + 2 > li_ScaffoldEnd)
+                                                            break;
+                                                    }
+                                                    else
+                                                    {
+                                                        if (li_SubDnaOffset - 2 < li_ScaffoldStart)
+                                                            break;
+                                                    }
+                                                    
+                                                    quint16 lui_SubTriplet = 
+                                                        gk_GpfBase.readNucleotideTriplet(
+                                                            mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                                                            li_SubDnaOffset + li_BackwardsFactor * li_Step2);
+                                                    char lc_SubAminoAcid = lc_TripletToAminoAcid_[lui_SubTriplet];
+                                                    
+                                                    // cancel if invalid amino acid
+                                                    if (!gk_GpfBase.mb_IsAminoAcid_[(int)lc_SubAminoAcid])
+                                                        break;
+                                                    
+                                                    if (lb_RightHalfMass)
+                                                        ls_SubPeptide.prepend(QChar(lc_SubAminoAcid));
+                                                    else
+                                                        ls_SubPeptide.append(QChar(lc_SubAminoAcid));
+                                                    
+                                                    li_SubAssemblyMass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)lc_SubAminoAcid];
+
+                                                    li_SubDnaOffset += li_Step3;
+                                                    if (lb_ProgressIncreasing)
+                                                        li_HookExonEnd += 2;
+                                                    else
+                                                        li_HookExonStart -= 2;
+                                                    
+                                                    if (li_SubAssemblyMass >= li_MinMass && li_SubAssemblyMass <= li_MaxMass)
+                                                    {
+                                                        qint64 li_PrintAnchorExonStart = li_AnchorExonStart - li_ScaffoldStart;
+                                                        qint64 li_PrintAnchorExonLength = (li_AnchorExonEnd - li_AnchorExonStart) + 1;
+                                                        qint64 li_PrintHookExonStart = li_HookExonStart - li_ScaffoldStart;
+                                                        qint64 li_PrintHookExonLength = (li_HookExonEnd - li_HookExonStart) + 1;
+                                                        if (lb_BackwardsFrame)
+                                                        {
+                                                            li_PrintAnchorExonStart += li_PrintAnchorExonLength - 1;
+                                                            li_PrintHookExonStart += li_PrintHookExonLength - 1;
+                                                        }
+                                                        if (lb_RightHalfMass)
+                                                        {
+                                                            // swap exons if right half mass, so that exons are ordered by amino acid sequence
+                                                            qint64 li_Temp = li_PrintAnchorExonStart;
+                                                            li_PrintAnchorExonStart = li_PrintHookExonStart;
+                                                            li_PrintHookExonStart = li_Temp;
+                                                            li_Temp = li_PrintAnchorExonLength;
+                                                            li_PrintAnchorExonLength = li_PrintHookExonLength;
+                                                            li_PrintHookExonLength = li_Temp;
+                                                        }
+                                                        QString ls_Assembly = QString("%1:%2;%3%4:%5,%6:%7")
+                                                            .arg(mk_GpfIndexFile.ms_ShortId)
+                                                            .arg(mk_GpfIndexFile.mk_ScaffoldLabels[li_FirstScaffold])
+                                                            .arg(lb_BackwardsFrame ? "-" : "+")
+                                                            .arg(li_PrintAnchorExonStart)
+                                                            .arg(li_PrintAnchorExonLength)
+                                                            .arg(li_PrintHookExonStart)
+                                                            .arg(li_PrintHookExonLength);
+                                                        if (!lk_FoundAssmeblies.contains(ls_Assembly))
+                                                        {
+                                                            lk_OutStream << QString("%1,%2,%3,\"%4\"\n")
+                                                                .arg(as_Peptide)
+                                                                .arg(ls_SubPeptide)
+                                                                .arg((double)li_SubAssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
+                                                                .arg(ls_Assembly);
+                                                        }
+                                                        lk_FoundAssmeblies << ls_Assembly;
+                                                    }
+                                                    
+                                                    if (lb_ProgressIncreasing)
+                                                        li_HookExonEnd += 1;
+                                                    else
+                                                        li_HookExonStart -= 1;
+                                                }
                                             }
                                         }
                                     }
