@@ -456,7 +456,14 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                                 // now scan the next few nucleotides for an appropriate intron end sequence
                                 qint64 li_SubIntronScanPointer = li_IntronScanPointer;
 //                                 printf("starting intron search at %d\n", (qint32)li_IntronScanPointer);
-
+                                qint64 li_SubAnchorExonStart = li_AnchorExonStart;
+                                qint64 li_SubAnchorExonEnd = li_AnchorExonEnd;
+                                
+                                if (lb_ProgressIncreasing)
+                                    li_SubAnchorExonEnd += li_IntronStartOffset;
+                                else
+                                    li_SubAnchorExonStart -= li_IntronStartOffset;
+                                
                                 for (int li_SubIntronOffset = 0; li_SubIntronOffset < mi_MaxIntronLength - li_IntronStartOffset; ++li_SubIntronOffset)
                                 {
                                     qint64 li_SubReadLength = li_IntronEndMaxLength;
@@ -582,8 +589,8 @@ void k_GpfQuery::execute(const QString& as_Peptide)
 
                                                     if (li_SubAssemblyMass >= li_MinMass && li_SubAssemblyMass <= li_MaxMass)
                                                     {
-                                                        qint64 li_PrintAnchorExonStart = li_AnchorExonStart - li_ScaffoldStart;
-                                                        qint64 li_PrintAnchorExonLength = (li_AnchorExonEnd - li_AnchorExonStart) + 1;
+                                                        qint64 li_PrintAnchorExonStart = li_SubAnchorExonStart - li_ScaffoldStart;
+                                                        qint64 li_PrintAnchorExonLength = (li_SubAnchorExonEnd - li_SubAnchorExonStart) + 1;
                                                         qint64 li_PrintHookExonStart = li_HookExonStart - li_ScaffoldStart;
                                                         qint64 li_PrintHookExonLength = (li_HookExonEnd - li_HookExonStart) + 1;
                                                         if (lb_BackwardsFrame)
