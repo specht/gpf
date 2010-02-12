@@ -1,0 +1,6 @@
+Makefile*
+obj/*
+*_debug
+gpfindex
+gpfquery
+

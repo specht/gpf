@@ -4,20 +4,21 @@
       (in this case, we would also find non-tryptic peptides, but slower)
       OR CAN THEY? Maybe not, ponder this.
   - scaffold start/end also acts as anchor
-  - stop codons?
+  - stop codons also act as anchors
 - resulting mass has to be correct within relative mass accuracy (ppm)
 - for intron split peptides, splice donor/acceptor consensus sequences 
   must be correct
 
 
-differences to last version of GPF:
+differences to previous version of GPF:
 
-- only one tryptic cleavage site is required (instead of two),
-  i. e. semitryptic peptides can be found
-- HMST size can be freely adjusted in the indexing step (fixed at 3 
+- tag size can be freely adjusted in the indexing step (fixed at 3 
   before)
+- only one tryptic cleavage site (or protein start/end/stop codon site)
+  is required (instead of two), i. e. semitryptic peptides can be found
+- missed cleavages are not an issue anymore, an unlimited number of
+  missed cleavages is allowed
 - splice donor/acceptor site consensus sequences can be freely chosen 
-  during the search
 - for intron split peptides, a correctly predicted HMST is required for
   one exon only (instead of one correct HMST in every exon)
 - big genomic sequences can be indexed with a minimum amount of RAM 
@@ -68,3 +69,21 @@ x b HMST counts
 [for every tag/direction index:]
   mass entries
   offset entries
+  
+Search Parameters
+-----------------
+
+Similarity search: yes* / no
+Distinguish I/L: yes / no*
+Search immediate alignments: yes* / no
+Search intron-split alignments: yes / no / conditional*
+Max intron length: 2100
+Splice donor/acceptor site consensus sequences: GT|AG,GC|AG
+Mass accuracy: 5 ppm
+Intron search type: quick / intensive*
+  - quick: require a tag in every exon, finds less alignments,
+    but will find all correctly predicted immediate hits plus
+    all correctly predicted intron-split hits that are fully
+    tryptic and have a complete tag in every exon
+  - intensive: require only one tag, finds most alignments
+  

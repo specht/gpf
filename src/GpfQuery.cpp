@@ -25,7 +25,7 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, QIODevice* ak_Output_)
 	: mk_GpfIndexFile(ak_GpfIndexFile)
 	, mk_Output_(ak_Output_)
-	, md_MassAccuracy(10.0)
+	, md_MassAccuracy(5.0)
 	, mi_MinIntronLength(1)
 	, mi_MaxIntronLength(2100)
 	, mi_MinExonLength(1)
@@ -432,12 +432,12 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                             {
                                 qint64 li_IntronAnchorOffset = li_IntronScanPointer;
                                 // we found an intron start site!
-                                printf("[START %s/%s at %d]\n",
+/*                                printf("[START %s/%s at %d]\n",
                                     gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str(),
                                     gk_GpfBase.nucleotideSequenceForCode(li_CutBit, li_CutBitLength).toStdString().c_str(),
                                     (qint32)li_IntronAnchorOffset
                                 );
-                                printf("intron start offset is %d.\n", (qint32)li_IntronStartOffset);
+                                printf("intron start offset is %d.\n", (qint32)li_IntronStartOffset);*/
                                 // fetch first part of split triplet, if any, from right before 
                                 // the start sequence
                                 qint32 li_SplitTriplet = 0;
@@ -451,7 +451,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                                     if (lb_BackwardsFrame)
                                         li_SplitTriplet = transposeNucleotides(li_SplitTriplet, li_IntronStartOffset);
                                 }
-                                printf("start nucleotides are '%s' %08o.\n", gk_GpfBase.nucleotideSequenceForCode(li_SplitTriplet, li_IntronStartOffset).toStdString().c_str(), li_SplitTriplet);
+//                                 printf("start nucleotides are '%s' %08o.\n", gk_GpfBase.nucleotideSequenceForCode(li_SplitTriplet, li_IntronStartOffset).toStdString().c_str(), li_SplitTriplet);
                                 
                                 // now scan the next few nucleotides for an appropriate intron end sequence
                                 qint64 li_SubIntronScanPointer = li_IntronScanPointer;
@@ -501,11 +501,11 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                                             {
                                                 qint64 li_IntronHookOffset = li_SubIntronScanPointer + li_Step1 * li_SubCutBitLength;
                                                 // we found an intron start site!
-                                                printf("[END %s/%s at %d]\n",
+/*                                                printf("[END %s/%s at %d]\n",
                                                     gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second).toStdString().c_str(),
                                                     gk_GpfBase.nucleotideSequenceForCode(li_SubCutBit, li_SubCutBitLength).toStdString().c_str(),
                                                     (qint32)(li_IntronHookOffset - li_Step1)
-                                                );
+                                                );*/
                                                 qint64 li_HookExonEnd = li_IntronHookOffset;
                                                 qint64 li_HookExonStart = li_IntronHookOffset;
                                                 qint64 li_SubDnaOffset = li_IntronHookOffset;
@@ -555,11 +555,11 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                                                         // make sure it's only the lower 9 bits!
                                                         li_CombinedTriplet &= 511;
                                                         lc_SubAminoAcid = gk_GpfBase.mk_DnaTripletToAminoAcid_[li_CombinedTriplet];
-                                                        printf("remaining: %s %08o/ combined: %s / makes %c.\n", 
+/*                                                        printf("remaining: %s %08o/ combined: %s / makes %c.\n", 
                                                                gk_GpfBase.nucleotideSequenceForCode(li_RemainingNucleotides, li_ReadLength).toStdString().c_str(), 
                                                                li_RemainingNucleotides,
                                                                gk_GpfBase.nucleotideSequenceForCode(li_CombinedTriplet, 3).toStdString().c_str(), 
-                                                               lc_SubAminoAcid);
+                                                               lc_SubAminoAcid);*/
                                                     }
                                                     else
                                                     {
