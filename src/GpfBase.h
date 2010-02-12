@@ -45,9 +45,6 @@ public:
 	int aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length);
     QString aminoAcidSequenceForCode(int ai_Code, int ai_Length);
     QString nucleotideSequenceForCode(int ai_Code, int ai_Length);
-    qint64 reverseNucleotides(qint64 ai_Nucleotides, int ai_Length);
-    qint64 invertNucleotides(qint64 ai_Nucleotides, int ai_Length);
-    qint64 transposeNucleotides(qint64 ai_Nucleotides, int ai_Length);
 	
 	quint16 mk_DnaCharToNumber_[256];
 	char mk_DnaTripletToAminoAcid_[512];
@@ -63,5 +60,53 @@ public:
 extern k_GpfBase gk_GpfBase;
 
 
-void overwriteBitsInBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, quint64 aui_Value, int ai_Size);
+void overwriteBitsInBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, 
+                           quint64 aui_Value, int ai_Size);
 quint64 readBitsFromBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, int ai_Size);
+
+
+inline qint32 maskNucleotides(qint32 ai_Nucleotides, int ai_Length)
+{
+    return ai_Nucleotides & ((1 << (ai_Length * 3)) - 1);
+}
+
+
+inline qint32 reverseNucleotides(qint32 ai_Nucleotides, int ai_Length)
+{
+    // take all triplets and reverse their order
+    qint32 li_Result = 0;
+    for (int i = 0; i < ai_Length; ++i)
+    {
+        li_Result <<= 3;
+        li_Result |= ai_Nucleotides & 7;
+        ai_Nucleotides >>= 3;
+    }
+    return li_Result;
+}
+
+
+inline qint32 invertNucleotides(qint32 ai_Nucleotides, int ai_Length)
+{
+    qint32 li_Mask = 0;
+    for (int i = 0; i < ai_Length; ++i)
+    {
+        li_Mask <<= 3;
+        li_Mask |= 3;
+    }
+    return ai_Nucleotides ^ li_Mask;
+}
+
+
+inline qint32 transposeNucleotides(qint32 ai_Nucleotides, int ai_Length)
+{
+    return invertNucleotides(reverseNucleotides(ai_Nucleotides, ai_Length), ai_Length);
+}
+
+
+inline qint32 concatNucleotides(qint32 ai_FirstNucleotides, int ai_FirstLength,
+                                qint32 ai_AppendNucleotides, int ai_AppendLength)
+{
+    qint32 li_Result = maskNucleotides(ai_FirstNucleotides, ai_FirstLength);
+    ai_AppendNucleotides = maskNucleotides(ai_AppendNucleotides, ai_AppendLength);
+    return li_Result | (ai_AppendNucleotides << (ai_FirstLength) * 3);
+}

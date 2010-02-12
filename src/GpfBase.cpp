@@ -192,38 +192,6 @@ QString k_GpfBase::nucleotideSequenceForCode(int ai_Code, int ai_Length)
 }
 
 
-qint64 k_GpfBase::reverseNucleotides(qint64 ai_Nucleotides, int ai_Length)
-{
-    // take all triplets and reverse their order
-    qint64 li_Result = 0;
-    for (int i = 0; i < ai_Length; ++i)
-    {
-        li_Result <<= 3;
-        li_Result |= ai_Nucleotides & 7;
-        ai_Nucleotides >>= 3;
-    }
-    return li_Result;
-}
-
-
-qint64 k_GpfBase::invertNucleotides(qint64 ai_Nucleotides, int ai_Length)
-{
-    qint64 li_Mask = 0;
-    for (int i = 0; i < ai_Length; ++i)
-    {
-        li_Mask <<= 3;
-        li_Mask |= 3;
-    }
-    return ai_Nucleotides ^ li_Mask;
-}
-
-
-qint64 k_GpfBase::transposeNucleotides(qint64 ai_Nucleotides, int ai_Length)
-{
-    return invertNucleotides(reverseNucleotides(ai_Nucleotides, ai_Length), ai_Length);
-}
-
-
 #define READ_BITS 32
 #define READ_TYPE quint32
 

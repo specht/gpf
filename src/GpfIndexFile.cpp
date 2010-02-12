@@ -209,7 +209,7 @@ quint64 k_GpfIndexFile::readIndexBits(qint64 ai_BitOffset, qint32 ai_Size)
 	int li_BitsCopied = 0;
 	while (ai_Size > 0)
 	{
-		int li_ByteOffset = ai_BitOffset / READ_BITS;
+		qint64 li_ByteOffset = ai_BitOffset / READ_BITS;
 		int li_BitOffset = ai_BitOffset % READ_BITS;
 		int li_CopyBits = READ_BITS - li_BitOffset;
 		if (li_CopyBits > ai_Size)
