@@ -91,9 +91,9 @@ void k_GpfIndexer::compileIndex()
 	mui_pTagDirectionCount = RefPtr<quint32>(new quint32[mi_TagCount * 2]);
 	memset(mui_pTagDirectionCount.get_Pointer(), 0, mi_TagCount * 2 * 4);
 	
-	printf("Allocating %s for index buffer (max allocation size is %s).\n", 
+	printf("Allocating %s for index buffer (this appears to be a %d bit system).\n", 
            bytesToStr(mi_IndexBufferMaxLength).toStdString().c_str(),
-           bytesToStr(((qint64)1) << (sizeof(size_t) * 8)).toStdString().c_str());
+           sizeof(size_t) * 8);
 	// allocate 9 extra bytes so that we're always safe if we should read several bytes at once
 	muc_pIndexBuffer = RefPtr<quint8>(new quint8[mi_IndexBufferMaxLength + 9]);
 	memset(muc_pIndexBuffer.get_Pointer(), 0, mi_IndexBufferMaxLength);
