@@ -351,9 +351,14 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 	
 	// perform iterations!
 	printf("Required iterations: %d.\n", lk_IterationRanges.size());
+    fflush(stdout);
 	typedef QPair<int, int> tk_IntPair;
+    int li_IterationCount = 0;
 	foreach (tk_IntPair lk_Pair, lk_IterationRanges)
 	{
+        ++li_IterationCount;
+        printf("Performing iteration %d of %d.\n", li_IterationCount, lk_IterationRanges.size());
+        fflush(stdout);
 		unsigned int lui_FirstTagDirectionIndex = lk_Pair.first;
 		unsigned int lui_LastTagDirectionIndex = lk_Pair.second;
 		
