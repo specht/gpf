@@ -69,12 +69,12 @@ protected:
 	
 	// this buffer contains the nucleotides as 3-bit-entities
 	RefPtr<quint8> muc_pDnaBuffer;
-	qint64 mi_DnaBufferLength;
+	size_t mi_DnaBufferLength;
 	
 	RefPtr<quint8> muc_pIndexBuffer;
-	qint32 mi_IndexBufferMaxLength;
-	qint32 mi_IndexBufferOffset;
-	qint32 mi_IndexBufferBitOffset;
+	size_t mi_IndexBufferMaxLength;
+	size_t mi_IndexBufferOffset;
+	size_t mi_IndexBufferBitOffset;
 	
 	RefPtr<quint32> mui_pTagDirectionCount;
 };
