@@ -93,7 +93,7 @@ void k_GpfIndexer::compileIndex()
 	
 	printf("Allocating %s for index buffer (this appears to be a %d bit system).\n", 
            bytesToStr(mi_IndexBufferMaxLength).toStdString().c_str(),
-           sizeof(size_t) * 8);
+           (int)(sizeof(size_t) * 8));
 	// allocate 9 extra bytes so that we're always safe if we should read several bytes at once
 	muc_pIndexBuffer = RefPtr<quint8>(new quint8[mi_IndexBufferMaxLength + 9]);
 	memset(muc_pIndexBuffer.get_Pointer(), 0, mi_IndexBufferMaxLength);
