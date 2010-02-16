@@ -1,5 +1,6 @@
 TEMPLATE = app
-
+; CXXFLAGS += pg
+    
 macx {
 	CONFIG -= app_bundle
 	CONFIG += x86 ppc

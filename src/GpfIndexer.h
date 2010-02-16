@@ -29,7 +29,9 @@ class k_GpfIndexer
 	friend class k_HmstIterator;
 	
 public:
-	k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString as_Title);
+	k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString as_Title,
+                 qint32 ai_TagSize, qint64 ai_IndexBufferAllocSize,
+                 qint32 ai_MassPrecision, qint32 ai_MassBits);
 	virtual ~k_GpfIndexer();
 	
 	virtual void compileIndex();

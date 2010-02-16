@@ -40,18 +40,20 @@ quint8* guc_MassesBuffer_;
 qint32 gi_MassBits;
 
 
-k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString as_Title)
+k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString as_Title,
+                           qint32 ai_TagSize, qint64 ai_IndexBufferAllocSize,
+                           qint32 ai_MassPrecision, qint32 ai_MassBits)
 	: ms_DnaPath(as_DnaPath)
 	, ms_DnaIndexPath(as_DnaIndexPath)
 	, ms_Title(as_Title)
 	, mi_TotalNucleotideCount(0)
 	, mi_OffsetBits(0)
 	, mui_GnoBackwardsBit(0)
-	, mi_MassBits(27)
-	, mi_MassPrecision(10000)
-	, mi_TagSize(3)
+	, mi_MassBits(ai_MassBits)
+	, mi_MassPrecision(ai_MassPrecision)
+	, mi_TagSize(ai_TagSize)
 	, mi_DnaBufferLength(0)
-	, mi_IndexBufferMaxLength(512 * 1024 * 1024)
+	, mi_IndexBufferMaxLength(ai_IndexBufferAllocSize)
 {
 }
 
@@ -64,6 +66,14 @@ k_GpfIndexer::~k_GpfIndexer()
 void k_GpfIndexer::compileIndex()
 {
 	k_StopWatch lk_StopWatch("Compiling the DNA index took %1.\n");
+    
+    printf("Genome title is '%s', indexing with a tag size of %d.\n", 
+           ms_Title.toStdString().c_str(),
+           mi_TagSize);
+    printf("Using a mass precision of %d, this corresponds to %1.2f decimal places.\n",
+           mi_MassPrecision, log((double)mi_MassPrecision) / log(10.0));
+    printf("Using %d bits for mass entries, the highest mass possible is %1.2f kDa.\n",
+           mi_MassBits, (double)(((qint64)1 << mi_MassBits) - 1) / mi_MassPrecision / 1000.0);
 	
 	QFile lk_OutFile(ms_DnaIndexPath);
 	lk_OutFile.open(QIODevice::WriteOnly);
@@ -132,15 +142,25 @@ void k_GpfIndexer::parseDna(QString as_DnaPath)
 	int li_DnaBufferLength = 0;
 	QString ls_CurrentLabel = "";
 	mi_TotalNucleotideCount = 0;
-
+    
+    int li_Percent = -1;
+    
 	while (!lk_Stream.atEnd())
 	{
+        int li_NowPercent = lk_DnaFile.pos() * 100 / lk_DnaFile.size();
+        if (li_NowPercent != li_Percent)
+        {
+            printf("\rReading DNA... %d%%", li_NowPercent);
+            li_Percent = li_NowPercent;
+        }
 		QString ls_Line = lk_Stream.readLine();
 		ls_Line = ls_Line.trimmed();
 		if (ls_Line[0] == QChar('>'))
 		{
 			ls_Line.remove(0, 1);
 			QString ls_Label = ls_Line.trimmed();
+            fflush(stdout);
+
 			ls_CurrentLabel = ls_Label;
 			mk_ScaffoldLabels.push_back(ls_Label);
 			mk_ScaffoldLength.push_back(0);
@@ -174,7 +194,7 @@ void k_GpfIndexer::parseDna(QString as_DnaPath)
 		++li_DnaBufferOffset;
 		++mi_DnaBufferLength;
 	}
-	//printf(" done.\n");
+	printf(" done.\n");
 }
 
 
@@ -285,6 +305,8 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 	qint64 li_BiggestBucketSize = 0;
 	{
 		k_StopWatch lk_SubStopWatch("One iteration took %1.\n");
+        printf("Doing first iteration, counting HMST occurences...");
+        fflush(stdout);
 		while (lk_HmstIterator.next(&lr_Hmst))
 		{
 			//printf("%d %d %d\n", (unsigned int)lr_Hmst.mui_TagDirectionIndex, (int)lr_Hmst.mi_HalfMass, (unsigned int)lr_Hmst.mui_Gno);
@@ -294,6 +316,7 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 			if (li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] > li_BiggestBucketSize)
 				li_BiggestBucketSize = li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex];
 		} 
+        printf("done.\n");
 	}
 	
 	qint64 li_MaxHmstPerIteration = ((qint64)mi_IndexBufferMaxLength * 8) / mi_HmstBits;
@@ -453,12 +476,12 @@ QString k_GpfIndexer::bytesToStr(qint64 ai_Size)
 	if (ai_Size < (qint64)1024)
 		return QString("%1 bytes").arg(ai_Size);
 	else if (ai_Size < (qint64)1024 * 1024)
-		return QString("%1 KB").arg(ai_Size / 1024);
+		return QString("%1.%2 KB").arg(ai_Size / 1024).arg((ai_Size * 10 / 1024) % 10);
 	else if (ai_Size < (qint64)1024 * 1024 * 1024)
-		return QString("%1 MB").arg(ai_Size / 1024 / 1024);
+		return QString("%1.%2 MB").arg(ai_Size / 1024 / 1024).arg((ai_Size * 10 / 1024 / 1024) % 10);
 	else if (ai_Size < (qint64)1024 * 1024 * 1024 * 1024)
-		return QString("%1 GB").arg(ai_Size / 1024 / 1024 / 1024);
+		return QString("%1.%2 GB").arg(ai_Size / 1024 / 1024 / 1024).arg((ai_Size * 10 / 1024 / 1024 / 1024) % 10);
 	else 
-		return QString("%1 TB").arg(ai_Size / 1024 / 1024 / 1024 / 1024);
+		return QString("%1.%2 TB").arg(ai_Size / 1024 / 1024 / 1024 / 1024).arg((ai_Size * 10 / 1024 / 1024 / 1024 / 1024) % 10);
 		
 }

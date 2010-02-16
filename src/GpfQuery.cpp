@@ -430,7 +430,6 @@ void k_GpfQuery::execute(const QString& as_Peptide)
                             }
                             if ((lk_Site.first == li_CutBit) && (lk_Site.second == li_CutBitLength))
                             {
-                                qint64 li_IntronAnchorOffset = li_IntronScanPointer;
                                 // we found an intron start site!
 /*                                printf("[START %s/%s at %d]\n",
                                     gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str(),
