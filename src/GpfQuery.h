@@ -22,7 +22,6 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #include <QtCore>
 #include "RefPtr.h"
 
-
 class k_GpfIndexFile;
 
 struct r_SearchIntronSplitAlignments
@@ -44,6 +43,11 @@ struct r_IntronSearchType
     };
 };
 
+// mass direction: false == left, true == right
+typedef QPair<qint64, bool> tk_GnoMassDirection;
+typedef QMap<tk_GnoMassDirection, qint64> tk_GnoMap;
+typedef QSet<QString> tk_StringSet;
+
 
 class k_GpfQuery
 {
@@ -61,6 +65,10 @@ public:
     void execute(const QStringList ak_Peptides);
 	
 protected:
+    void findAlignments(const tk_GnoMap& ak_GnoMap,
+                        bool ab_SearchImmediate,
+                        bool ab_SearchIntronSplit,
+                        tk_StringSet& ak_FoundAssemblies);
     int reverseSpliceSequence(int ai_Sequence, int ai_Length);
     
     k_GpfIndexFile& mk_GpfIndexFile;
@@ -76,6 +84,7 @@ protected:
     QString ms_IntronSpliceSites;
     bool mb_Quiet;
     QIODevice* mk_Output_;
+    QTextStream mk_CsvOutStream;
 	
 	typedef QPair<int, int> tk_IntPair;
     typedef QPair<qint64, qint64> tk_QInt64Pair;
@@ -97,4 +106,10 @@ protected:
     
 	int mi_IntronNTermMaxLength;
 	int mi_IntronCTermMaxLength;
+    
+    // per-query class variables
+    int mi_AlignmentMinMass;
+    int mi_AlignmentMaxMass;
+    QString ms_QueryPeptide;
+    QString ms_QueryPeptideIL;
 };
