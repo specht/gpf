@@ -10,6 +10,6 @@ HEADERS += \
 	../../src/GpfQuery.h \
 	
 SOURCES += \
-	../../src/gpfquery.cpp \
+	../../src/gpfquery_.cpp \
 	../../src/GpfIndexFile.cpp \
 	../../src/GpfQuery.cpp \

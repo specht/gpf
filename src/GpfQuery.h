@@ -25,29 +25,57 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 
 class k_GpfIndexFile;
 
+struct r_SearchIntronSplitAlignments
+{
+    enum Enumeration
+    {
+        Yes,
+        No,
+        Conditional
+    };
+};
+
+struct r_IntronSearchType
+{
+    enum Enumeration
+    {
+        Exhaustive,
+        Quick
+    };
+};
+
 
 class k_GpfQuery
 {
 public:
-	k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, QIODevice* ak_Output_ = NULL);
+	k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
+               bool ab_SimilaritySearch, bool ab_DistinguishIL,
+               bool ab_SearchImmediate, r_SearchIntronSplitAlignments::Enumeration 
+               ae_SearchIntronSplitAlignments, r_IntronSearchType::Enumeration
+               ae_IntronSearchType, int ai_MaxIntronLength, 
+               QString as_IntronSpliceSites, bool ab_Quiet, 
+               QIODevice* ak_Output_);
 	virtual ~k_GpfQuery();
 	
 	void execute(const QString& as_Peptide);
+    void execute(const QStringList ak_Peptides);
 	
 protected:
     int reverseSpliceSequence(int ai_Sequence, int ai_Length);
     
-	k_GpfIndexFile& mk_GpfIndexFile;
-    QIODevice* mk_Output_;
+    k_GpfIndexFile& mk_GpfIndexFile;
 	double md_MassAccuracy;
-    // min intron length does not include slice donor/acceptor CS!
+    bool mb_SimilaritySearch;
+    bool mb_DistinguishIL;
+    bool mb_SearchImmediateAlignments;
+    r_SearchIntronSplitAlignments::Enumeration me_SearchIntronSplitAlignments;
+    r_IntronSearchType::Enumeration me_IntronSearchType;
 	int mi_MinIntronLength;
 	int mi_MaxIntronLength;
     int mi_MinExonLength;
-	int mi_MaxNucleotideSpanLength;
-	QString ms_IntronSpliceSites;
-    bool mb_SimilaritySearch;
-    bool mb_ImmediateHitsSufficient;
+    QString ms_IntronSpliceSites;
+    bool mb_Quiet;
+    QIODevice* mk_Output_;
 	
 	typedef QPair<int, int> tk_IntPair;
     typedef QPair<qint64, qint64> tk_QInt64Pair;
@@ -69,5 +97,4 @@ protected:
     
 	int mi_IntronNTermMaxLength;
 	int mi_IntronCTermMaxLength;
-    RefPtr<QFile> mk_pStdOutFile;
 };
