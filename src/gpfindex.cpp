@@ -31,7 +31,12 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         printf("    Genome title, is input filename by default.\n");
         printf("  --tagSize <int> (default: 5)\n");
         printf("    Tag size.\n");
-        printf("  --alloc <amount> (default: 512M)\n");
+        printf("  --enzyme <string> (default: 'RK|')\n");
+        printf("    Specify the enzyme for creating peptides. The | symbol denotes the\n");
+        printf("    cleavage site. RK| means that the enzyme cleaves after R or K.\n");
+        printf("    Inhibitory amino acids do not play a role, because missed cleavages\n");
+        printf("    are handled by GPF.\n");
+        printf("  --alloc <amount> (default: 512M)\n"); 
         printf("    Amount of RAM to allocate for the index buffer. A bigger index\n");
         printf("    buffer leads to faster execution of this program. The amount may\n");
         printf("    be specified as a number, optionally followed by any of the\n");
@@ -59,6 +64,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     QString ls_Title = QFileInfo(ls_GenomeFilename).baseName();
     
     qint32 li_TagSize = 5;
+    QString ls_Enzyme = "RK|";
     qint64 li_IndexBufferAllocSize = 512 * 1024 * 1024;
     qint32 li_MassPrecision = 10000;
     qint32 li_MassBits = 27;
@@ -80,6 +86,10 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
                 printf("Error: Invalid tag size specified: %s.\n", ls_Value.toStdString().c_str());
                 exit(1);
             }
+        }
+        else if (ls_Key == "--enzyme")
+        {
+            ls_Enzyme = lk_Arguments.takeFirst().toUpper().trimmed();
         }
         else if (ls_Key == "--alloc")
         {
@@ -136,7 +146,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     }
     
 	k_GpfIndexer lk_GpfIndexer(ls_GenomeFilename, ls_IndexFilename, ls_Title,
-                               li_TagSize, li_IndexBufferAllocSize,
+                               li_TagSize, ls_Enzyme, li_IndexBufferAllocSize,
                                li_MassPrecision, li_MassBits);
 	lk_GpfIndexer.compileIndex();
 /*	char* s = "VIHAR";

@@ -30,7 +30,7 @@ class k_GpfIndexer
 	
 public:
 	k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString as_Title,
-                 qint32 ai_TagSize, qint64 ai_IndexBufferAllocSize,
+                 qint32 ai_TagSize, QString as_Enzyme, qint64 ai_IndexBufferAllocSize,
                  qint32 ai_MassPrecision, qint32 ai_MassBits);
 	virtual ~k_GpfIndexer();
 	
@@ -79,5 +79,7 @@ protected:
 	size_t mi_IndexBufferBitOffset;
 	
 	RefPtr<quint32> mui_pTagDirectionCount;
+    bool mb_CleaveBefore_[256];
+    bool mb_CleaveAfter_[256];
 };
 

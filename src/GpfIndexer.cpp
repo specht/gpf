@@ -40,8 +40,9 @@ quint8* guc_MassesBuffer_;
 qint32 gi_MassBits;
 
 
-k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString as_Title,
-                           qint32 ai_TagSize, qint64 ai_IndexBufferAllocSize,
+k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, 
+                           QString as_Title, qint32 ai_TagSize, 
+                           QString as_Enzyme, qint64 ai_IndexBufferAllocSize,
                            qint32 ai_MassPrecision, qint32 ai_MassBits)
 	: ms_DnaPath(as_DnaPath)
 	, ms_DnaIndexPath(as_DnaIndexPath)
@@ -55,6 +56,35 @@ k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString 
 	, mi_DnaBufferLength(0)
 	, mi_IndexBufferMaxLength(ai_IndexBufferAllocSize)
 {
+    // parse enzyme
+    QStringList lk_EnzymeList = as_Enzyme.split("|");
+    if (lk_EnzymeList.size() < 2)
+    {
+        printf("Error: Pipe character (|) missing in specified enzyme: %s.\n",
+               as_Enzyme.toStdString().c_str());
+        exit(1);
+    }
+    if (lk_EnzymeList.size() > 2)
+    {
+        printf("Error: More than one pipe character (|) in specified enzyme: %s.\n",
+               as_Enzyme.toStdString().c_str());
+        exit(1);
+    }
+    for (int i = 0; i < 256; ++i)
+    {
+        mb_CleaveBefore_[i] = false;
+        mb_CleaveAfter_[i] = false;
+    }
+    for (int i = 0; i < lk_EnzymeList[0].length(); ++i)
+    {
+        char lc_AminoAcid = (lk_EnzymeList[0].at(i).toAscii()) & 0xff;
+        mb_CleaveAfter_[(int)lc_AminoAcid] = true;
+    }
+    for (int i = 0; i < lk_EnzymeList[1].length(); ++i)
+    {
+        char lc_AminoAcid = (lk_EnzymeList[1].at(i).toAscii()) & 0xff;
+        mb_CleaveBefore_[(int)lc_AminoAcid] = true;
+    }
 }
 
 

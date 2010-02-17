@@ -109,7 +109,7 @@ void k_HmstIterator::updateOrfAndCleavageSites()
 		gk_GpfBase.mk_DnaTripletToAminoAcid_ :
 		gk_GpfBase.mk_DnaTripletToAminoAcidReverse_;
 		
-    QList<qint64> lk_CleavageSites;
+    QSet<qint64> lk_CleavageSites;
 	lk_CleavageSites << 0;
 	qint64 li_ScaffoldStart = mk_GpfIndexer.mk_ScaffoldStart[mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]];
 	qint64 li_ScaffoldSize = mk_GpfIndexer.mk_ScaffoldLength[mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]];
@@ -133,18 +133,25 @@ void k_HmstIterator::updateOrfAndCleavageSites()
 		
 		mc_pOrf.get_Pointer()[li_OrfLength] = lc_AminoAcid;
 		++li_OrfLength;
-		if (lc_AminoAcid == '$' || lc_AminoAcid == 'R' || lc_AminoAcid == 'K')
-				lk_CleavageSites << li_OrfLength;
+        // always cleave after a STOP codon
+		if (lc_AminoAcid == '$')
+            lk_CleavageSites << li_OrfLength;
+        if (mk_GpfIndexer.mb_CleaveAfter_[(int)lc_AminoAcid])
+            lk_CleavageSites << li_OrfLength;
+        if (mk_GpfIndexer.mb_CleaveBefore_[(int)lc_AminoAcid])
+            lk_CleavageSites << (li_OrfLength - 1);
 	}
-	if (li_OrfLength != lk_CleavageSites.last())
-		lk_CleavageSites << li_OrfLength;
+    lk_CleavageSites << li_OrfLength;
+    
+    QList<qint64> lk_CleavageSitesSorted = lk_CleavageSites.toList();
+    qSort(lk_CleavageSitesSorted.begin(), lk_CleavageSitesSorted.end());
     
     mk_Spans.clear();
     
-    for (int i = 0; i < lk_CleavageSites.size() - 1; ++i)
+    for (int i = 0; i < lk_CleavageSitesSorted.size() - 1; ++i)
     {
-        qint64 li_Start = lk_CleavageSites[i];
-        qint64 li_End = lk_CleavageSites[i + 1] - 1;
+        qint64 li_Start = lk_CleavageSitesSorted[i];
+        qint64 li_End = lk_CleavageSitesSorted[i + 1] - 1;
         while (li_Start < li_OrfLength && mc_pOrf.get_Pointer()[li_Start] == '$')
             ++li_Start;
         while (li_End > 0 && mc_pOrf.get_Pointer()[li_End] == '$')
