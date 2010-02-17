@@ -70,6 +70,11 @@ protected:
                         bool ab_SearchIntronSplit,
                         tk_StringSet& ak_FoundAssemblies);
     int reverseSpliceSequence(int ai_Sequence, int ai_Length);
+    void readFlankingAminoAcids(qint64 ai_Start, qint64 ai_Stop,
+                                QString& as_Left, QString& as_Right,
+                                int ai_BStep1, qint64 ai_ScaffoldStart,
+                                qint64 ai_ScaffoldEnd,
+                                char* ac_TripletToAminoAcid_);
     
     k_GpfIndexFile& mk_GpfIndexFile;
 	double md_MassAccuracy;
@@ -81,6 +86,7 @@ protected:
 	int mi_MinIntronLength;
 	int mi_MaxIntronLength;
     int mi_MinExonLength;
+    int mi_FlankingSequenceLength;
     QString ms_IntronSpliceSites;
     bool mb_Quiet;
     QIODevice* mk_Output_;
