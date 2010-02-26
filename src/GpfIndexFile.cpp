@@ -18,6 +18,7 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "GpfIndexFile.h"
+#include <math.h>
 #include "GpfBase.h"
 #include <QtCore>
 
