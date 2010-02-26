@@ -435,9 +435,9 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                     .arg(ls_RightAminoAcids)
                                     .arg((double)li_AssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
                                     .arg(ls_Assembly);
+                                ak_FoundAssemblies << ls_Assembly;
                             }
                         }
-                        ak_FoundAssemblies << ls_Assembly;
                     }
                 }
                 
@@ -726,16 +726,16 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                                     int li_IntronLength = abs((li_FirstExonBegin + li_BStep1 * li_FirstExonLength) - 
                                                                         (li_SecondExonBegin));
                                                                     mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",%7\n")
-                                                                    .arg(ms_QueryPeptide)
-                                                                    .arg(ls_LeftAminoAcids)
-                                                                    .arg(ls_SubPeptide)
-                                                                    .arg(ls_RightAminoAcids)
-                                                                    .arg((double)li_SubAssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
-                                                                    .arg(ls_Assembly)
-                                                                    .arg(li_IntronLength);
+                                                                        .arg(ms_QueryPeptide)
+                                                                        .arg(ls_LeftAminoAcids)
+                                                                        .arg(ls_SubPeptide)
+                                                                        .arg(ls_RightAminoAcids)
+                                                                        .arg((double)li_SubAssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
+                                                                        .arg(ls_Assembly)
+                                                                        .arg(li_IntronLength);
+                                                                    ak_FoundAssemblies << ls_Assembly;
                                                                 }
                                                             }
-                                                            ak_FoundAssemblies << ls_Assembly;
                                                         }
                                                         
                                                         if (lb_ProgressIncreasing)
@@ -781,8 +781,18 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
 
 void k_GpfQuery::execute(const QStringList ak_Peptides)
 {
+    int i = 0;
     foreach (QString ls_Peptide, ak_Peptides)
+    {
+        if (!mb_Quiet)
+        {
+            ++i;
+            printf("\rProcessing query %d of %d... ", i, ak_Peptides.size());
+        }
         this->execute(ls_Peptide);
+    }
+    if (!mb_Quiet)
+        printf(" done.\n");
 }
 
 
