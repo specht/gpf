@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "math.h"
 #include "GpfIndexer.h"
 #include "BitWriter.h"
 #include "GpfBase.h"
