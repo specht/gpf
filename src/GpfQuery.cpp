@@ -116,7 +116,7 @@ k_GpfQuery::~k_GpfQuery()
 }
 
 
-void k_GpfQuery::execute(const QString& as_Peptide)
+void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
 {
     QTextStream lk_OutStream(mk_Output_);
     
@@ -125,17 +125,7 @@ void k_GpfQuery::execute(const QString& as_Peptide)
     ms_QueryPeptideIL.replace("I", "L");
     
     // check whether this is a valid peptide and determine mass
-    qint64 li_Mass;
-    li_Mass = mk_GpfIndexFile.mi_WaterMass;
-    for (int i = 0; i < as_Peptide.length(); ++i)
-    {
-        if (!gk_GpfBase.mb_IsAminoAcid_[(int)(as_Peptide.at(i).toAscii())])
-        {
-            printf("Error: Invalid amino acids in %s.\n", as_Peptide.toStdString().c_str());
-            return;
-        }
-        li_Mass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)as_Peptide.at(i).toAscii()];
-    }
+    qint64 li_Mass = ai_PrecursorMass;
     qint64 li_MassDelta = (qint64)(md_MassAccuracy * li_Mass / 1000000.0);
     mi_AlignmentMinMass = li_Mass - li_MassDelta;
     mi_AlignmentMaxMass = li_Mass + li_MassDelta;
@@ -779,17 +769,17 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
 }
 
 
-void k_GpfQuery::execute(const QStringList ak_Peptides)
+void k_GpfQuery::execute(const QList<tk_StringIntPair> ak_Peptides)
 {
     int i = 0;
-    foreach (QString ls_Peptide, ak_Peptides)
+    foreach (tk_StringIntPair lk_Peptide, ak_Peptides)
     {
         if (!mb_Quiet)
         {
             ++i;
             printf("\rProcessing query %d of %d... ", i, ak_Peptides.size());
         }
-        this->execute(ls_Peptide);
+        this->execute(lk_Peptide.first, lk_Peptide.second);
     }
     if (!mb_Quiet)
         printf(" done.\n");

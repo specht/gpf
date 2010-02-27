@@ -47,6 +47,7 @@ struct r_IntronSearchType
 typedef QPair<qint64, bool> tk_GnoMassDirection;
 typedef QMap<tk_GnoMassDirection, qint64> tk_GnoMap;
 typedef QSet<QString> tk_StringSet;
+typedef QPair<QString, qint64> tk_StringIntPair;
 
 
 class k_GpfQuery
@@ -61,8 +62,8 @@ public:
                QIODevice* ak_Output_);
 	virtual ~k_GpfQuery();
 	
-	void execute(const QString& as_Peptide);
-    void execute(const QStringList ak_Peptides);
+	void execute(const QString& as_Peptide, qint64 ai_PrecursorMass);
+    void execute(const QList<tk_StringIntPair> ak_Peptides);
 	
 protected:
     void findAlignments(const tk_GnoMap& ak_GnoMap,

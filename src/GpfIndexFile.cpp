@@ -201,6 +201,21 @@ bool k_GpfIndexFile::isGood()
 	return mb_IsGood;
 }
 
+
+qint64 k_GpfIndexFile::peptideMass(const QString& as_Peptide)
+{
+    qint64 li_Mass = mi_WaterMass;
+    for (int i = 0; i < as_Peptide.length(); ++i)
+    {
+        // :TODO: silently return 0 here, is this good?
+        if (!gk_GpfBase.mb_IsAminoAcid_[(int)(as_Peptide.at(i).toAscii())])
+            return 0;
+        li_Mass += mi_AminoAcidMasses_[(int)as_Peptide.at(i).toAscii()];
+    }
+    return li_Mass;
+}
+
+
 #define READ_BITS 32
 #define READ_TYPE quint32
 

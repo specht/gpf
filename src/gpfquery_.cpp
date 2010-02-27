@@ -41,7 +41,12 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
 {
 	if (ai_ArgumentCount < 3)
 	{
-		printf("Usage: gpfquery [options] [GPF index file] [peptide 1] [peptide 2] ...\n");
+		printf("Usage: gpfquery [options] [GPF index file] [peptide 1] [precursor mass 1 (optional)] [peptide 2] ...\n");
+        printf("\n");
+        printf("For every query peptide, an uncharged precursor mass can be specified, this is useful\n");
+        printf("if the peptide sequence comes from de novo prediction. If no precursor mass is\n");
+        printf("specified, an appropriate precursor mass is calculated from the peptide sequence.\n");
+        printf("\n");
         printf("Options:\n");
         printf("  --massAccuracy <float> (default: 10.0)\n");
         printf("    Specify the mass accuracy in ppm.\n");
@@ -77,7 +82,9 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         // 1. implement this 
         // 2. find out whether this is slower (it should be, right?)
         printf("  --peptidesFile <path>\n");
-        printf("    Specify a text file containing the query peptides.\n");
+        printf("    Specify a text file containing the query peptides, one peptide per line.\n");
+        printf("    Optionally, each peptide may be followed by the precursor mass, separated\n");
+        printf("    by a comma, semicolon, or whitespace.\n");
         printf("  --csvOutputPath <path>\n");
         printf("    Specify a target file for CSV output. By default, the CSV output\n");
         printf("    goes to stdout. Caution: If the file exists, it will be overwritten.\n");
@@ -101,7 +108,6 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         le_IntronSearchType = r_IntronSearchType::Exhaustive;
     int li_MaxIntronLength = 2100;
     QString ls_IntronSpliceSites = "GT|AG,GC|AG";
-    QStringList lk_QueryPeptides;
     bool lb_Quiet = false;
 
     QFile lk_StdOut;
@@ -110,6 +116,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     RefPtr<QFile> lk_pCsvOutFile;
     
     QIODevice* lk_CsvDevice_ = &lk_StdOut;
+    QStringList lk_PeptideFiles;
     
     while (!lk_Arguments.empty())
     {
@@ -201,22 +208,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         else if (ls_Key == "--peptidesFile")
         {
             QString ls_Path = lk_Arguments.takeFirst();
-            QFile lk_File(ls_Path);
-            if (lk_File.open(QIODevice::ReadOnly))
-            {
-                QTextStream lk_Stream(&lk_File);
-                while (!lk_Stream.atEnd())
-                {
-                    QString ls_Peptide = lk_Stream.readLine();
-                    lk_QueryPeptides << ls_Peptide;
-                }
-                lk_File.close();
-            }
-            else
-            {
-                printf("Error: Unable to open peptides file %s.\n", ls_Path.toStdString().c_str());
-                exit(1);
-            }
+            lk_PeptideFiles.append(ls_Path);
         }
         else if (ls_Key == "--csvOutputPath")
         {
@@ -242,9 +234,67 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
 		exit(1);
 	}
 	
+    QList<tk_StringIntPair> lk_QueryPeptides;
+    
+    foreach (QString ls_Path, lk_PeptideFiles)
+    {
+        QFile lk_File(ls_Path);
+        if (lk_File.open(QIODevice::ReadOnly))
+        {
+            QTextStream lk_Stream(&lk_File);
+            QRegExp lk_RegExp("[\\s,;]+");
+            int li_LineCount = 0;
+            while (!lk_Stream.atEnd())
+            {
+                QString ls_Line = lk_Stream.readLine();
+                ++li_LineCount;
+                QStringList lk_Line = ls_Line.split(lk_RegExp);
+                QString ls_Peptide = lk_Line[0];
+                qint64 li_Mass = 0;
+                if (lk_Line.size() > 1)
+                {
+                    bool lb_Ok = false;
+                    double ld_Mass = lk_Line[1].toDouble(&lb_Ok);
+                    if (!lb_Ok)
+                    {
+                        printf("Error: Invalid precursor mass in %s, line %d.\n", ls_Path.toStdString().c_str(), li_LineCount);
+                        exit(1);
+                    }
+                    li_Mass = (qint64)(ld_Mass * lk_pGpfIndexFile->mi_MassPrecision);
+                }
+                else
+                    li_Mass = lk_pGpfIndexFile->peptideMass(ls_Peptide);
+                lk_QueryPeptides << tk_StringIntPair(ls_Peptide, li_Mass);
+            }
+            lk_File.close();
+        }
+        else
+        {
+            printf("Error: Unable to open peptides file %s.\n", ls_Path.toStdString().c_str());
+            exit(1);
+        }
+    }
+
     // append remaining command line args to query peptides list
     while (!lk_Arguments.empty())
-        lk_QueryPeptides << lk_Arguments.takeFirst();
+    {
+        QString ls_Peptide = lk_Arguments.takeFirst();
+        qint64 li_Mass = 0;
+        // try to convert next item to mass if there is more
+        if (!lk_Arguments.empty())
+        {
+            bool lb_Ok = false;
+            double ld_PrecursorMass = lk_Arguments.first().toDouble(&lb_Ok);
+            if (lb_Ok)
+            {
+                lk_Arguments.takeFirst();
+                li_Mass = (qint64)(ld_PrecursorMass * lk_pGpfIndexFile->mi_MassPrecision);
+            }
+        }
+        if (li_Mass == 0)
+            li_Mass = lk_pGpfIndexFile->peptideMass(ls_Peptide);
+        lk_QueryPeptides << tk_StringIntPair(ls_Peptide, li_Mass);
+    }
 
     // open new scope for stop watch
 	{

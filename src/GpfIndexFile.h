@@ -31,6 +31,7 @@ public:
 	
 	bool isGood();
 	quint64 readIndexBits(qint64 ai_Offset, qint32 ai_Size);
+    qint64 peptideMass(const QString& as_Peptide);
 	
 	QFile mk_File;
 
