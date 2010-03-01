@@ -134,7 +134,11 @@ void k_GpfIndexer::compileIndex()
 	printf("Allocating %s for tag/direction count (32 bits) list.\n", bytesToStr(mi_TagCount * 2 * 4).toStdString().c_str());
 	mui_pTagDirectionCount = RefPtr<quint32>(new quint32[mi_TagCount * 2]);
 	memset(mui_pTagDirectionCount.get_Pointer(), 0, mi_TagCount * 2 * 4);
-	
+
+    // file size * 2 (all six reading frames) * 2 (left and right HMST)
+    qint64 li_IndexBufferMaxRequiredSize = (QFileInfo(ms_DnaPath).size() * 2 * 2 * mi_HmstBits / 8) + 1;
+    if (li_IndexBufferMaxRequiredSize < mi_IndexBufferMaxLength)
+        mi_IndexBufferMaxLength = li_IndexBufferMaxRequiredSize;
 	printf("Allocating %s for index buffer (this appears to be a %d bit system).\n", 
            bytesToStr(mi_IndexBufferMaxLength).toStdString().c_str(),
            (int)(sizeof(size_t) * 8));
