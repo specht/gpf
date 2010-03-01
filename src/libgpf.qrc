@@ -1,6 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-  <file>res/AminoAcids.csv</file>
-  <file>res/DnaToAminoAcid.csv</file>
+  <file>../ext/proteomics-knowledge-base/amino-acids.csv</file>
+  <file>../ext/proteomics-knowledge-base/genetic-codes.txt</file>
 </qresource>
 </RCC>

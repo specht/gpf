@@ -44,7 +44,8 @@ qint32 gi_MassBits;
 k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, 
                            QString as_Title, qint32 ai_TagSize, 
                            QString as_Enzyme, qint64 ai_IndexBufferAllocSize,
-                           qint32 ai_MassPrecision, qint32 ai_MassBits)
+                           qint32 ai_MassPrecision, qint32 ai_MassBits,
+                           qint32 ai_GeneticCode)
 	: ms_DnaPath(as_DnaPath)
 	, ms_DnaIndexPath(as_DnaIndexPath)
 	, ms_Title(as_Title)
@@ -54,6 +55,7 @@ k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath,
 	, mi_MassBits(ai_MassBits)
 	, mi_MassPrecision(ai_MassPrecision)
 	, mi_TagSize(ai_TagSize)
+    , mi_GeneticCode(ai_GeneticCode)
 	, mi_DnaBufferLength(0)
 	, mi_IndexBufferMaxLength(ai_IndexBufferAllocSize)
 {
@@ -101,6 +103,7 @@ void k_GpfIndexer::compileIndex()
     printf("Genome title is '%s', indexing with a tag size of %d.\n", 
            ms_Title.toStdString().c_str(),
            mi_TagSize);
+    printf("Using %s for triplet translation.\n", gk_GpfBase.mk_TranslationTableTitle[mi_GeneticCode].toStdString().c_str());
     printf("Using a mass precision of %d, this corresponds to %1.2f decimal places.\n",
            mi_MassPrecision, log((double)mi_MassPrecision) / log(10.0));
     printf("Using %d bits for mass entries, the highest mass possible is %1.2f kDa.\n",
@@ -143,6 +146,9 @@ void k_GpfIndexer::compileIndex()
     
 	writeIdentifierChunk(&lk_OutFile);
 	writeInfoChunk(&lk_OutFile);
+    // only write genetic code chunk if not standard code
+    if (mi_GeneticCode != 1)
+        writeGeneticCodeChunk(&lk_OutFile);
 	writeDnaChunk(&lk_OutFile);
 	
 	writeIndexChunk(&lk_OutFile);
@@ -291,6 +297,20 @@ void k_GpfIndexer::writeInfoChunk(QFile* ak_OutFile_)
 	// finish info chunk
 	li_ChunkSize = ak_OutFile_->pos() - li_ChunkSize;
 	writeChunkSize(ak_OutFile_, li_SizeLocation, li_ChunkSize);
+}
+
+
+void k_GpfIndexer::writeGeneticCodeChunk(QFile* ak_OutFile_)
+{
+    qint64 li_SizeLocation = writeChunkHeader(ak_OutFile_, r_DnaIndexChunkType::GeneticCode);
+    qint64 li_ChunkSize = ak_OutFile_->pos();
+    
+    // write genome title
+    ak_OutFile_->write((char*)&mi_GeneticCode, 4);
+    
+    // finish info chunk
+    li_ChunkSize = ak_OutFile_->pos() - li_ChunkSize;
+    writeChunkSize(ak_OutFile_, li_SizeLocation, li_ChunkSize);
 }
 
 

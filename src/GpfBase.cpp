@@ -39,13 +39,85 @@ k_GpfBase::k_GpfBase()
 	mk_DnaCharToNumber_[(unsigned char)'t'] = 3;
 	
 	{
-		QFile lk_File(":res/DnaToAminoAcid.csv");
-		lk_File.open(QIODevice::ReadOnly);
+		QFile lk_File(":ext/proteomics-knowledge-base/genetic-codes.txt");
+        if (!lk_File.open(QIODevice::ReadOnly))
+        {
+            printf("Internal error: Unable to open translation table.\n");
+            exit(1);
+        }
 		QTextStream lk_Stream(&lk_File);
-		memset(mk_DnaTripletToAminoAcid_, 'X', 512);
 		while (!lk_Stream.atEnd())
 		{
 			QString ls_Line = lk_Stream.readLine().trimmed();
+            // skip comments or empty lines
+            if (ls_Line.startsWith("#") || ls_Line.isEmpty())
+                continue;
+            
+            // expect "1. The Standard Code (transl_table=1)"
+            QString ls_Title = ls_Line;
+            ls_Title = ls_Title.replace(QRegExp("\\d+\\.\\s+"), "");
+            
+            QRegExp lk_RegExp("\\(transl_table=(\\d+)\\)");
+            if (lk_RegExp.indexIn(ls_Title) == -1)
+            {
+                printf("Internal error: Unable to extract transl_table id.\n");
+                exit(1);
+            }
+            int li_Id = lk_RegExp.cap(1).toInt();
+            ls_Title = ls_Title.replace(lk_RegExp, "").trimmed();
+            
+            int li_LinesRead = 0;
+            // read five non-empty lines now
+            QHash<QString, QString> lk_Lines;
+            while (!lk_Stream.atEnd())
+            {
+                ls_Line = lk_Stream.readLine().trimmed();
+                // skip comments or empty lines
+                if (ls_Line.startsWith("#") || ls_Line.isEmpty())
+                    continue;
+                ++li_LinesRead;
+                QStringList lk_Line = ls_Line.split("=");
+                QString ls_Key = lk_Line[0].trimmed();
+                QString ls_Value = lk_Line[1].trimmed();
+                if (ls_Value.length() != 64)
+                {
+                    printf("Internal error: line length is not 64 chars in translation table.\n");
+                    printf("The offending line is %s.\n", ls_Value.toStdString().c_str());
+                    exit(1);
+                }
+                lk_Lines[ls_Key.toLower()] = ls_Value;
+                if (li_LinesRead >= 5)
+                    break;
+            }
+            
+            mk_TranslationTableTitle[li_Id] = ls_Title;
+            mk_TranslationTables[li_Id] = RefPtr<char>(new char[512]);
+            memset(mk_TranslationTables[li_Id].get_Pointer(), 'X', 512);
+            
+            for (int i = 0; i < 64; ++i)
+            {
+                int a = mk_DnaCharToNumber_[(unsigned char)lk_Lines["base1"].at(i).toAscii()];
+                int b = mk_DnaCharToNumber_[(unsigned char)lk_Lines["base2"].at(i).toAscii()];
+                int c = mk_DnaCharToNumber_[(unsigned char)lk_Lines["base3"].at(i).toAscii()];
+                char lc_AminoAcid = lk_Lines["aas"].at(i).toAscii();
+                mk_TranslationTables[li_Id].get_Pointer()[(a) | (b << 3) | (c << 6)] = lc_AminoAcid;
+            }
+            
+            // :TODO: add those triplets that still yield useful amino acids
+
+            // add reverse table
+            mk_TranslationTablesReverse[li_Id] = RefPtr<char>(new char[512]);
+            memset(mk_TranslationTablesReverse[li_Id].get_Pointer(), 'X', 512);
+            for (int i = 0; i < 512; ++i)
+            {
+                int a = i & 7;
+                int b = (i >> 3) & 7;
+                int c = (i >> 6) & 7;
+                int li_Reverse = (a << 6) | (b << 3) | c;
+                li_Reverse ^= 219;
+                mk_TranslationTablesReverse[li_Id].get_Pointer()[i] = mk_TranslationTables[li_Id].get_Pointer()[li_Reverse];
+            }
+/*
 			QStringList lk_Line = ls_Line.split(";");
 			QString ls_Triplet = lk_Line[0];
 			ls_Triplet.replace("U", "T");
@@ -79,27 +151,21 @@ k_GpfBase::k_GpfBase()
 				for (int ib = b0; ib <= b1; ++ib)
 					for (int ic = c0; ic <= c1; ++ic)
 						mk_DnaTripletToAminoAcid_[(ia) | (ib << 3) | (ic << 6)] = ls_AminoAcid.at(0).toAscii();
+                    */
 		}
 		lk_File.close();
-	}
-	
-	// build reverse triplet translation table
-	for (int i = 0; i < 512; ++i)
-	{
-		int a = i & 7;
-		int b = (i >> 3) & 7;
-		int c = (i >> 6) & 7;
-		int li_Reverse = (a << 6) | (b << 3) | c;
-		li_Reverse ^= 219;
-		mk_DnaTripletToAminoAcidReverse_[i] = mk_DnaTripletToAminoAcid_[li_Reverse];
 	}
 	
 	for (int i = 0; i < 256; ++i)
 		mi_AminoAcidToNumber_[i] = -1;
 	
 	{
-		QFile lk_File(":res/AminoAcids.csv");
-		lk_File.open(QIODevice::ReadOnly);
+		QFile lk_File(":ext/proteomics-knowledge-base/amino-acids.csv");
+        if (!lk_File.open(QIODevice::ReadOnly))
+        {
+            printf("Internal error: Unable to open amino acid table.\n");
+            exit(1);
+        }
 		QTextStream lk_Stream(&lk_File);
 		lk_Stream.readLine();
 		for (int i = 0; i < 256; ++i)
@@ -110,19 +176,19 @@ k_GpfBase::k_GpfBase()
 		while (!lk_Stream.atEnd())
 		{
 			QString ls_Line = lk_Stream.readLine().trimmed();
-			QStringList lk_Line = ls_Line.split(";");
+			QStringList lk_Line = ls_Line.split(",");
 			QString ls_AminoAcid = lk_Line[3];
 			QString ls_Mass = lk_Line[4];
 			mb_IsAminoAcid_[(int)ls_AminoAcid[0].toAscii()] = true;
 			md_AminoAcidMasses_[(int)ls_AminoAcid[0].toAscii()] = QVariant(ls_Mass).toDouble();
             int li_Code = QVariant(lk_Line[0]).toInt();
-            if (li_Code > 18)
+            if (li_Code > 7)
+                li_Code -= 1;
+            if (li_Code <= 18)
             {
-                printf("Error: Something is wrong with this GPF.\n");
-                exit(1);
+                mi_AminoAcidToNumber_[(int)ls_AminoAcid[0].toAscii()] = li_Code;
+                mc_NumberToAminoAcid_[li_Code] = ls_AminoAcid[0].toAscii();
             }
-			mi_AminoAcidToNumber_[(int)ls_AminoAcid[0].toAscii()] = li_Code;
-            mc_NumberToAminoAcid_[li_Code] = ls_AminoAcid[0].toAscii();
 		}
 		lk_File.close();
 	}

@@ -20,6 +20,7 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <QtCore>
+#include "RefPtr.h"
 
 #define WATER_MASS 18.01057
 
@@ -30,7 +31,8 @@ struct r_DnaIndexChunkType
 	{
 		Info = 100,
 		Dna,
-		Index
+		Index,
+        GeneticCode
 	};
 };
 
@@ -47,9 +49,15 @@ public:
     QString nucleotideSequenceForCode(int ai_Code, int ai_Length);
 	
 	quint16 mk_DnaCharToNumber_[256];
-	char mk_DnaTripletToAminoAcid_[512];
+    
+    QHash<int, QString> mk_TranslationTableTitle;
+    QHash<int, RefPtr<char> > mk_TranslationTables;
+    QHash<int, RefPtr<char> > mk_TranslationTablesReverse;
+    
+/*	char mk_DnaTripletToAminoAcid_[512];
 	// takes the same triplet as the array above, but reverses and transposes
-	char mk_DnaTripletToAminoAcidReverse_[512];
+	char mk_DnaTripletToAminoAcidReverse_[512];*/
+    
 	double md_AminoAcidMasses_[256];
 	bool mb_IsAminoAcid_[256];
 	int mi_AminoAcidToNumber_[256];

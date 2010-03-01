@@ -31,7 +31,7 @@ class k_GpfIndexer
 public:
 	k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath, QString as_Title,
                  qint32 ai_TagSize, QString as_Enzyme, qint64 ai_IndexBufferAllocSize,
-                 qint32 ai_MassPrecision, qint32 ai_MassBits);
+                 qint32 ai_MassPrecision, qint32 ai_MassBits, qint32 ai_GeneticCode);
 	virtual ~k_GpfIndexer();
 	
 	virtual void compileIndex();
@@ -44,6 +44,7 @@ protected:
 	
 	virtual void writeIdentifierChunk(QFile* ak_OutFile_);
 	virtual void writeInfoChunk(QFile* ak_OutFile_);
+    virtual void writeGeneticCodeChunk(QFile* ak_OutFile_);
 	virtual void writeDnaChunk(QFile* ak_OutFile_);
 	virtual void writeIndexChunk(QFile* ak_OutFile_);
 	
@@ -63,6 +64,7 @@ protected:
 	qint32 mi_MassBits;
 	qint32 mi_MassPrecision;
 	qint32 mi_TagSize;
+    qint32 mi_GeneticCode;
 	qint32 mi_TagCount;
 	qint32 mi_HmstBits;
 	qint64 mi_MaxMass;

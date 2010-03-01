@@ -18,10 +18,27 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "GpfIndexer.h"
+#include "GpfBase.h"
 
 
 int main(int ai_ArgumentCount, char **ac_Arguments__) 
 {
+    k_GpfBase lk_GpfBase;
+    
+    QStringList lk_Arguments;
+    for (int i = 1; i < ai_ArgumentCount; ++i)
+        lk_Arguments << ac_Arguments__[i];
+    
+    if (lk_Arguments.contains("--geneticCodeList"))
+    {
+        printf("The following genetic codes may be specified.\n");
+        QList<int> lk_Ids = lk_GpfBase.mk_TranslationTableTitle.keys();
+        qSort(lk_Ids.begin(), lk_Ids.end());
+        foreach (int li_Id, lk_Ids)
+            printf("%d: %s\n", li_Id, lk_GpfBase.mk_TranslationTableTitle[li_Id].toStdString().c_str());
+        exit(0);
+    }
+    
 	if (ai_ArgumentCount < 3)
 	{
 		printf("Usage: gpfindex [options] [Genomic DNA sequence file] [GPF index out file]\n");
@@ -50,17 +67,24 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         printf("    Specify how many bits should be used to encode masses. Together\n");
         printf("    with the mass precision specified, this defines the highest mass\n");
         printf("    that can be encoded in the index file.\n");
+        printf("  --geneticCode <int> (default: 1)\n");
+        printf("    Specify the genetic code which should be used for the provided\n");
+        printf("    genome. Genetic codes have been fetched from NCBI. For a complete\n");
+        printf("    list of genetic codes, specify --geneticCodeList.\n");
+        
         
 		exit(1);
 	}
-	
-    QStringList lk_Arguments;
-    for (int i = 1; i < ai_ArgumentCount; ++i)
-        lk_Arguments << ac_Arguments__[i];
-
+    
     QString ls_IndexFilename = lk_Arguments.takeLast();
     QString ls_GenomeFilename = lk_Arguments.takeLast();
     
+    if (!QFileInfo(ls_GenomeFilename).exists())
+    {
+        printf("Error: Unable to open %s.\n", ls_GenomeFilename.toStdString().c_str());
+        exit(1);
+    }
+	
     QString ls_Title = QFileInfo(ls_GenomeFilename).baseName();
     
     qint32 li_TagSize = 5;
@@ -68,6 +92,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     qint64 li_IndexBufferAllocSize = 512 * 1024 * 1024;
     qint32 li_MassPrecision = 10000;
     qint32 li_MassBits = 27;
+    qint32 li_GeneticCode = 1;
     
     while (!lk_Arguments.empty())
     {
@@ -84,6 +109,18 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
             if (!lb_Ok)
             {
                 printf("Error: Invalid tag size specified: %s.\n", ls_Value.toStdString().c_str());
+                exit(1);
+            }
+        }
+        else if (ls_Key == "--geneticCode")
+        {
+            bool lb_Ok = false;
+            QString ls_Value = lk_Arguments.takeFirst();
+            li_GeneticCode = ls_Value.toInt(&lb_Ok);
+            if ((!lb_Ok) || (!lk_GpfBase.mk_TranslationTableTitle.contains(li_GeneticCode)))
+            {
+                printf("Error: Invalid genetic code specified: %s.\n", ls_Value.toStdString().c_str());
+                printf("Call with --geneticCodeList for a list of valid genetic codes.\n");
                 exit(1);
             }
         }
@@ -147,7 +184,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     
 	k_GpfIndexer lk_GpfIndexer(ls_GenomeFilename, ls_IndexFilename, ls_Title,
                                li_TagSize, ls_Enzyme, li_IndexBufferAllocSize,
-                               li_MassPrecision, li_MassBits);
+                               li_MassPrecision, li_MassBits, li_GeneticCode);
 	lk_GpfIndexer.compileIndex();
 /*	char* s = "VIHAR";
 	printf("%d\n", gk_GpfBase.aminoAcidPolymerCode(s, 5));*/

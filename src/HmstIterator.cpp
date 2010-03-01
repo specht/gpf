@@ -106,8 +106,8 @@ bool k_HmstIterator::advance(r_HmstIteratorLevel::Enumeration ae_Level)
 void k_HmstIterator::updateOrfAndCleavageSites()
 {
 	char* lk_DnaTripletToAminoAcidTable_ = mk_Value_[r_HmstIteratorLevel::OrfDirection] == 0 ? 
-		gk_GpfBase.mk_DnaTripletToAminoAcid_ :
-		gk_GpfBase.mk_DnaTripletToAminoAcidReverse_;
+		gk_GpfBase.mk_TranslationTables[mk_GpfIndexer.mi_GeneticCode].get_Pointer() :
+		gk_GpfBase.mk_TranslationTablesReverse[mk_GpfIndexer.mi_GeneticCode].get_Pointer();
 		
     QSet<qint64> lk_CleavageSites;
 	lk_CleavageSites << 0;
@@ -134,7 +134,7 @@ void k_HmstIterator::updateOrfAndCleavageSites()
 		mc_pOrf.get_Pointer()[li_OrfLength] = lc_AminoAcid;
 		++li_OrfLength;
         // always cleave after a STOP codon
-		if (lc_AminoAcid == '$')
+		if (lc_AminoAcid == '*')
             lk_CleavageSites << li_OrfLength;
         if (mk_GpfIndexer.mb_CleaveAfter_[(int)lc_AminoAcid])
             lk_CleavageSites << li_OrfLength;
@@ -152,9 +152,9 @@ void k_HmstIterator::updateOrfAndCleavageSites()
     {
         qint64 li_Start = lk_CleavageSitesSorted[i];
         qint64 li_End = lk_CleavageSitesSorted[i + 1] - 1;
-        while (li_Start < li_OrfLength && mc_pOrf.get_Pointer()[li_Start] == '$')
+        while (li_Start < li_OrfLength && mc_pOrf.get_Pointer()[li_Start] == '*')
             ++li_Start;
-        while (li_End > 0 && mc_pOrf.get_Pointer()[li_End] == '$')
+        while (li_End > 0 && mc_pOrf.get_Pointer()[li_End] == '*')
             --li_End;
         mk_Spans << tk_IntPair(li_Start, li_End);
     }
