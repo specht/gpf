@@ -739,9 +739,27 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                                 }
                                                                 if (lb_Print)
                                                                 {
-                                                                    QString ls_SpliceSite = QString("%1|%2")
-                                                                        .arg(gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second))
-                                                                        .arg(gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second));
+                                                                    QString ls_FirstSite = gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second);
+                                                                    QString ls_SecondSite = gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second);
+                                                                    if (lb_RightHalfMass)
+                                                                    {
+                                                                        QString ls_Temp = ls_FirstSite;
+                                                                        ls_FirstSite = ls_SecondSite;
+                                                                        ls_SecondSite = ls_Temp;
+                                                                    }
+                                                                    if (lb_BackwardsFrame)
+                                                                    {
+                                                                        // WTF??! There's no QString::reverse()
+                                                                        QString ls_Temp;
+                                                                        for (int i = ls_FirstSite.length() - 1; i >= 0; --i)
+                                                                            ls_Temp.append(ls_FirstSite.at(i));
+                                                                        ls_FirstSite = ls_Temp;
+                                                                        ls_Temp = QString();
+                                                                        for (int i = ls_SecondSite.length() - 1; i >= 0; --i)
+                                                                            ls_Temp.append(ls_SecondSite.at(i));
+                                                                        ls_SecondSite = ls_Temp;
+                                                                    }
+                                                                    QString ls_SpliceSite = QString("%1|%2").arg(ls_FirstSite).arg(ls_SecondSite);
                                                                         
                                                                     QString ls_LeftAminoAcids;
                                                                     QString ls_RightAminoAcids;
