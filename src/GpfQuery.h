@@ -43,11 +43,16 @@ struct r_IntronSearchType
     };
 };
 
+
 // mass direction: false == left, true == right
 typedef QPair<qint64, bool> tk_GnoMassDirection;
 typedef QMap<tk_GnoMassDirection, qint64> tk_GnoMap;
 typedef QSet<QString> tk_StringSet;
 typedef QPair<QString, qint64> tk_StringIntPair;
+typedef QPair<int, int> tk_IntPair;
+typedef QPair<qint64, qint64> tk_QInt64Pair;
+typedef QHash<tk_IntPair, QList<tk_IntPair> > tk_IntPairListHash;
+typedef QList<tk_IntPair> tk_IntPairList;
 
 
 class k_GpfQuery
@@ -93,23 +98,24 @@ protected:
     QIODevice* mk_Output_;
     QTextStream mk_CsvOutStream;
 	
-	typedef QPair<int, int> tk_IntPair;
-    typedef QPair<qint64, qint64> tk_QInt64Pair;
-    typedef QHash<tk_IntPair, QList<tk_IntPair> > tk_IntPairListHash;
-
 	// GT/2: [AG/2]
 	// GC/2: [AG/2]
 	tk_IntPairListHash mk_IntronNTerm;
+    // the sorted key list, sorted by descending splice site length
+    tk_IntPairList mk_IntronNTermKeys;
 	
 	// AG/2: [GT/2, GC/2]
 	tk_IntPairListHash mk_IntronCTerm;
+    tk_IntPairList mk_IntronCTermKeys;
     
     // TG/2: [GA/2]
     // CG/2: [GA/2]
     tk_IntPairListHash mk_IntronNTermReverse;
+    tk_IntPairList mk_IntronNTermReverseKeys;
     
     // GA/2: [TG/2, CG/2]
     tk_IntPairListHash mk_IntronCTermReverse;
+    tk_IntPairList mk_IntronCTermReverseKeys;
     
 	int mi_IntronNTermMaxLength;
 	int mi_IntronCTermMaxLength;
@@ -120,3 +126,6 @@ protected:
     QString ms_QueryPeptide;
     QString ms_QueryPeptideIL;
 };
+
+
+int sortByDecreasingLength(const tk_IntPair& ak_First, const tk_IntPair& ak_Second);

@@ -47,7 +47,7 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
 {
 	QStringList lk_IntronSpliceSites = ms_IntronSpliceSites.split(",");
     
-    mk_CsvOutStream << "Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length\n";
+    mk_CsvOutStream << "Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site\n";
 	
 	// convert human readable intron splice site consensus sequences 
 	// into a form which is useful for GPF
@@ -62,6 +62,14 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
 			printf("Error: Invalid intron splice donor/acceptor site consensus sequence: %s.\n", ls_SpliceSite.toStdString().c_str());
 			exit(1);
 		}
+        for (int i = 0; i < 2; ++i)
+        {
+            if (lk_SpliceSites[i].length() > 10)
+            {
+                printf("Error: A splice site consensus sequence must not be longer than 10 nucleotides.\n");
+                exit(1);
+            }
+        }
 		QList<tk_IntPair> lk_SpliceSitesNumbers;
 		while (!lk_SpliceSites.empty())
 		{
@@ -108,6 +116,24 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
 		if (lk_CTermCode.second > mi_IntronCTermMaxLength)
 			mi_IntronCTermMaxLength = lk_CTermCode.second;
 	}
+    mk_IntronNTermKeys = mk_IntronNTerm.keys();
+    qSort(mk_IntronNTermKeys.begin(), mk_IntronNTermKeys.end(), &sortByDecreasingLength);
+    mk_IntronCTermKeys = mk_IntronCTerm.keys();
+    qSort(mk_IntronCTermKeys.begin(), mk_IntronCTermKeys.end(), &sortByDecreasingLength);
+    mk_IntronNTermReverseKeys = mk_IntronNTermReverse.keys();
+    qSort(mk_IntronNTermReverseKeys.begin(), mk_IntronNTermReverseKeys.end(), &sortByDecreasingLength);
+    mk_IntronCTermReverseKeys = mk_IntronCTermReverse.keys();
+    qSort(mk_IntronCTermReverseKeys.begin(), mk_IntronCTermReverseKeys.end(), &sortByDecreasingLength);
+    
+    foreach (tk_IntPair lk_IntPair, mk_IntronNTerm.keys())
+        qSort(mk_IntronNTerm[lk_IntPair].begin(), mk_IntronNTerm[lk_IntPair].end(), &sortByDecreasingLength);
+    foreach (tk_IntPair lk_IntPair, mk_IntronCTerm.keys())
+        qSort(mk_IntronCTerm[lk_IntPair].begin(), mk_IntronCTerm[lk_IntPair].end(), &sortByDecreasingLength);
+    foreach (tk_IntPair lk_IntPair, mk_IntronNTermReverse.keys())
+        qSort(mk_IntronNTermReverse[lk_IntPair].begin(), mk_IntronNTermReverse[lk_IntPair].end(), &sortByDecreasingLength);
+    foreach (tk_IntPair lk_IntPair, mk_IntronCTermReverse.keys())
+        qSort(mk_IntronCTermReverse[lk_IntPair].begin(), mk_IntronCTermReverse[lk_IntPair].end(), &sortByDecreasingLength);
+    
 }
 
 
@@ -299,15 +325,22 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
         
         tk_IntPairListHash* lk_IntronStart_ = NULL;
         tk_IntPairListHash* lk_IntronEnd_ = NULL;
+        tk_IntPairList* lk_IntronStartKeys_ = NULL;
+        tk_IntPairList* lk_IntronEndKeys_ = NULL;
+        
         if (lb_BackwardsFrame)
         {
             lk_IntronStart_ = lb_RightHalfMass ? &mk_IntronCTermReverse : &mk_IntronNTermReverse;
             lk_IntronEnd_ = lb_RightHalfMass ? &mk_IntronNTermReverse : &mk_IntronCTermReverse;
+            lk_IntronStartKeys_ = lb_RightHalfMass ? &mk_IntronCTermReverseKeys : &mk_IntronNTermReverseKeys;
+            lk_IntronEndKeys_ = lb_RightHalfMass ? &mk_IntronNTermReverseKeys : &mk_IntronCTermReverseKeys;
         }
         else
         {
             lk_IntronStart_ = lb_RightHalfMass ? &mk_IntronCTerm : &mk_IntronNTerm;
             lk_IntronEnd_ = lb_RightHalfMass ? &mk_IntronNTerm : &mk_IntronCTerm;
+            lk_IntronStartKeys_ = lb_RightHalfMass ? &mk_IntronCTermKeys : &mk_IntronNTermKeys;
+            lk_IntronEndKeys_ = lb_RightHalfMass ? &mk_IntronNTermKeys : &mk_IntronCTermKeys;
         }
         int li_IntronStartMaxLength = lb_RightHalfMass ? mi_IntronCTermMaxLength : mi_IntronNTermMaxLength;
         int li_IntronEndMaxLength = lb_RightHalfMass ? mi_IntronNTermMaxLength : mi_IntronCTermMaxLength;
@@ -362,7 +395,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                 ++li_TagAminoAcidsPassed;
             
             li_AssemblyMass += mk_GpfIndexFile.mi_AminoAcidMasses_[(int)lc_AminoAcid];
-
+            
             li_DnaOffset += li_Step3;
             if (lb_ProgressIncreasing)
                 li_AnchorExonEnd += 2;
@@ -394,6 +427,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                             .arg(li_PrintAnchorExonLength);
                         if (!ak_FoundAssemblies.contains(ls_Assembly))
                         {
+                            ak_FoundAssemblies << ls_Assembly;
                             bool lb_Print = true;
                             if (!mb_SimilaritySearch)
                             {
@@ -411,21 +445,20 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                 QString ls_LeftAminoAcids;
                                 QString ls_RightAminoAcids;
                                 readFlankingAminoAcids(li_AnchorExonBegin, 
-                                                       li_AnchorExonBegin + li_BStep1 * (li_PrintAnchorExonLength - 1),
-                                                       ls_LeftAminoAcids,
-                                                       ls_RightAminoAcids, 
-                                                       li_BStep1,
-                                                       li_ScaffoldStart,
-                                                       li_ScaffoldEnd,
-                                                       lc_TripletToAminoAcid_);
-                                mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",\n")
+                                                    li_AnchorExonBegin + li_BStep1 * (li_PrintAnchorExonLength - 1),
+                                                    ls_LeftAminoAcids,
+                                                    ls_RightAminoAcids, 
+                                                    li_BStep1,
+                                                    li_ScaffoldStart,
+                                                    li_ScaffoldEnd,
+                                                    lc_TripletToAminoAcid_);
+                                mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",,\n")
                                     .arg(ms_QueryPeptide)
                                     .arg(ls_LeftAminoAcids)
                                     .arg(ls_Peptide)
                                     .arg(ls_RightAminoAcids)
                                     .arg((double)li_AssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
                                     .arg(ls_Assembly);
-                                ak_FoundAssemblies << ls_Assembly;
                             }
                         }
                     }
@@ -469,8 +502,9 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                             // invert nucleotides if backwards frame
                             if (lb_BackwardsFrame)
                                 li_Bit = invertNucleotides(li_Bit, li_BitLength);
-                            foreach (tk_IntPair lk_Site, lk_IntronStart_->keys())
+                            foreach (tk_IntPair lk_Site, *lk_IntronStartKeys_)
                             {
+//                                 printf("checking [%s\n", gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str());
                                 qint32 li_CutBit = li_Bit;
                                 qint32 li_CutBitLength = li_BitLength;
                                 if (lk_Site.second < li_CutBitLength)
@@ -537,8 +571,9 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                             // invert nucleotides if backwards frame
                                             if (lb_BackwardsFrame)
                                                 li_SubBit = invertNucleotides(li_SubBit, li_SubBitLength);
-                                            foreach (tk_IntPair lk_SubSite, lk_IntronEnd_->keys())
+                                            foreach (tk_IntPair lk_SubSite, (*lk_IntronStart_)[lk_Site])
                                             {
+//                                                 printf("checking %s]\n", gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second).toStdString().c_str());
                                                 qint32 li_SubCutBit = li_SubBit;
                                                 qint32 li_SubCutBitLength = li_SubBitLength;
                                                 if (lk_SubSite.second < li_SubCutBitLength)
@@ -689,6 +724,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                                 .arg(li_PrintHookExonLength);
                                                             if (!ak_FoundAssemblies.contains(ls_Assembly))
                                                             {
+                                                                ak_FoundAssemblies << ls_Assembly;
                                                                 bool lb_Print = true;
                                                                 if (!mb_SimilaritySearch)
                                                                 {
@@ -703,6 +739,10 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                                 }
                                                                 if (lb_Print)
                                                                 {
+                                                                    QString ls_SpliceSite = QString("%1|%2")
+                                                                        .arg(gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second))
+                                                                        .arg(gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second));
+                                                                        
                                                                     QString ls_LeftAminoAcids;
                                                                     QString ls_RightAminoAcids;
                                                                     readFlankingAminoAcids(li_FirstExonBegin, 
@@ -715,15 +755,16 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                                                         lc_TripletToAminoAcid_);
                                                                     int li_IntronLength = abs((li_FirstExonBegin + li_BStep1 * li_FirstExonLength) - 
                                                                         (li_SecondExonBegin));
-                                                                    mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",%7\n")
+                                                                            
+                                                                    mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",%7,%8\n")
                                                                         .arg(ms_QueryPeptide)
                                                                         .arg(ls_LeftAminoAcids)
                                                                         .arg(ls_SubPeptide)
                                                                         .arg(ls_RightAminoAcids)
                                                                         .arg((double)li_SubAssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
                                                                         .arg(ls_Assembly)
-                                                                        .arg(li_IntronLength);
-                                                                    ak_FoundAssemblies << ls_Assembly;
+                                                                        .arg(li_IntronLength)
+                                                                        .arg(ls_SpliceSite);
                                                                 }
                                                             }
                                                         }
@@ -850,4 +891,10 @@ void k_GpfQuery::readFlankingAminoAcids(qint64 ai_Start, qint64 ai_Stop,
     }
     as_Left = ls_Left;
     as_Right = ls_Right;
+}
+
+
+int sortByDecreasingLength(const tk_IntPair& ak_First, const tk_IntPair& ak_Second)
+{
+    return ak_First.second > ak_Second.second;
 }

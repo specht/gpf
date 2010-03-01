@@ -38,12 +38,15 @@ k_GpfIndexFile::k_GpfIndexFile(const QString& as_Path)
         {
             qint64 li_Mass = (qint64)(gk_GpfBase.md_AminoAcidMasses_[i] * mi_MassPrecision);
 			mi_AminoAcidMasses_[i] = li_Mass;
-            if (mi_MinAminoAcidMass == 0)
-                mi_MinAminoAcidMass = li_Mass;
-            else
+            if (li_Mass > 0)
             {
-                if (li_Mass < mi_MinAminoAcidMass)
+                if (mi_MinAminoAcidMass == 0)
                     mi_MinAminoAcidMass = li_Mass;
+                else
+                {
+                    if (li_Mass < mi_MinAminoAcidMass)
+                        mi_MinAminoAcidMass = li_Mass;
+                }
             }
         }
 	}
