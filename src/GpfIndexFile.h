@@ -46,6 +46,7 @@ public:
 	qint32 mi_TagSize;
 	qint32 mi_HmstBits;
 	qint64 mi_GnoBackwardsBit;
+    qint32 mi_GeneticCode;
 	
 	qint32 mi_TagCount;
 	qint64 mi_MaxMass;

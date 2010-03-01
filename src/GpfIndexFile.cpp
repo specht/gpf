@@ -24,7 +24,8 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 
 
 k_GpfIndexFile::k_GpfIndexFile(const QString& as_Path)
-	: mb_IsGood(false)
+	: mi_GeneticCode(1)
+    , mb_IsGood(false)
 {
 	parseGpfIndexFile(as_Path);
 
@@ -83,7 +84,7 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
 	memcpy(&mi_VersionMinor, lk_File.read(2).constData(), 2);
 	if (mi_VersionMajor != 3 || mi_VersionMinor != 0)
 	{
-		printf("Error: Only version 3.0 is supported, this is %d.%d.\n", mi_VersionMajor, mi_VersionMinor);
+		printf("Error parsing the index file: Only version 3.0 is supported, this is %d.%d.\n", mi_VersionMajor, mi_VersionMinor);
 		return;
 	}
 	
@@ -135,6 +136,16 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
 				mi_TotalNucleotideCount += li_ScaffoldSize;
 			}
 		}
+        else if (lui_ChunkType == r_DnaIndexChunkType::GeneticCode)
+        {
+            memcpy(&mi_GeneticCode, lk_File.read(4).constData(), 4);
+            // check if the genetic code is valid
+            if (!gk_GpfBase.mk_TranslationTableTitle.contains(mi_GeneticCode))
+            {
+                printf("Error: An invalid genetic code was specified in the index file (%d).\n", mi_GeneticCode);
+                exit(1);
+            }
+        }
 		else if (lui_ChunkType == r_DnaIndexChunkType::Dna)
 		{
 //             printf("Reading DNA chunk...\n");

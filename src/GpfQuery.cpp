@@ -294,8 +294,8 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
 //         printf("Scaffold range is %d - %d.\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd);
         
         char* lc_TripletToAminoAcid_ = lb_BackwardsFrame ? 
-            gk_GpfBase.mk_DnaTripletToAminoAcidReverse_ :
-            gk_GpfBase.mk_DnaTripletToAminoAcid_;
+            gk_GpfBase.mk_TranslationTablesReverse[mk_GpfIndexFile.mi_GeneticCode].get_Pointer() :
+            gk_GpfBase.mk_TranslationTables[mk_GpfIndexFile.mi_GeneticCode].get_Pointer();
         
         tk_IntPairListHash* lk_IntronStart_ = NULL;
         tk_IntPairListHash* lk_IntronEnd_ = NULL;
@@ -607,7 +607,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                                 li_CombinedTriplet = concatNucleotides(li_SplitTriplet, li_IntronStartOffset, li_RemainingNucleotides, li_ReadLength);
                                                             // make sure it's only the lower 9 bits!
                                                             li_CombinedTriplet &= 511;
-                                                            lc_SubAminoAcid = gk_GpfBase.mk_DnaTripletToAminoAcid_[li_CombinedTriplet];
+                                                            lc_SubAminoAcid = gk_GpfBase.mk_TranslationTables[mk_GpfIndexFile.mi_GeneticCode].get_Pointer()[li_CombinedTriplet];
     /*                                                        printf("remaining: %s %08o/ combined: %s / makes %c.\n", 
                                                                 gk_GpfBase.nucleotideSequenceForCode(li_RemainingNucleotides, li_ReadLength).toStdString().c_str(), 
                                                                 li_RemainingNucleotides,

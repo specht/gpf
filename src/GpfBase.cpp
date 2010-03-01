@@ -94,6 +94,8 @@ k_GpfBase::k_GpfBase()
             mk_TranslationTables[li_Id] = RefPtr<char>(new char[512]);
             memset(mk_TranslationTables[li_Id].get_Pointer(), 'X', 512);
             
+            QHash<int, QSet<char> > lk_Ambiguities;
+            
             for (int i = 0; i < 64; ++i)
             {
                 int a = mk_DnaCharToNumber_[(unsigned char)lk_Lines["base1"].at(i).toAscii()];
@@ -101,9 +103,63 @@ k_GpfBase::k_GpfBase()
                 int c = mk_DnaCharToNumber_[(unsigned char)lk_Lines["base3"].at(i).toAscii()];
                 char lc_AminoAcid = lk_Lines["aas"].at(i).toAscii();
                 mk_TranslationTables[li_Id].get_Pointer()[(a) | (b << 3) | (c << 6)] = lc_AminoAcid;
+                // try all combinations of one or two unknown nucleotides
+                for (int k = 1; k < 7; ++k)
+                {
+                    int sa = a;
+                    int sb = b;
+                    int sc = c;
+                    if ((k & 1) != 0)
+                        sa = 4;
+                    if ((k & 2) != 0)
+                        sb = 4;
+                    if ((k & 4) != 0)
+                        sc = 4;
+                    int li_Code = (sa) | (sb << 3) | (sc << 6);
+                    if (!lk_Ambiguities.contains(li_Code))
+                        lk_Ambiguities[li_Code] = QSet<char>();
+                    lk_Ambiguities[li_Code].insert(lc_AminoAcid);
+                }
             }
             
-            // :TODO: add those triplets that still yield useful amino acids
+            // :TODO: add incomplete triplets that still yield useful amino acids
+            foreach (int li_Code, lk_Ambiguities.keys())
+            {
+                if (lk_Ambiguities[li_Code].size() == 1)
+                {
+                    // this incomplete triplet is unambiguous, so add it
+                    char lc_AminoAcid = lk_Ambiguities[li_Code].toList().first();
+                    int a = (li_Code >> 0) & 7;
+                    int b = (li_Code >> 3) & 7;
+                    int c = (li_Code >> 6) & 7;
+                    int a0 = a;
+                    int a1 = a;
+                    int b0 = b;
+                    int b1 = b;
+                    int c0 = c;
+                    int c1 = c;
+                    if (a == 4)
+                    {
+                        a0 = 4;
+                        a1 = 7;
+                    }
+                    if (b == 4)
+                    {
+                        b0 = 4;
+                        b1 = 7;
+                    }
+                    if (c == 4)
+                    {
+                        c0 = 4;
+                        c1 = 7;
+                    }
+                    for (int a = a0; a <= a1; ++a)
+                        for (int b = b0; b <= b1; ++b)
+                            for (int c = c0; c <= c1; ++c)
+                                mk_TranslationTables[li_Id].get_Pointer()[(a) | (b << 3) | (c << 6)] = lc_AminoAcid;
+                }
+            }
+            
 
             // add reverse table
             mk_TranslationTablesReverse[li_Id] = RefPtr<char>(new char[512]);
@@ -117,41 +173,6 @@ k_GpfBase::k_GpfBase()
                 li_Reverse ^= 219;
                 mk_TranslationTablesReverse[li_Id].get_Pointer()[i] = mk_TranslationTables[li_Id].get_Pointer()[li_Reverse];
             }
-/*
-			QStringList lk_Line = ls_Line.split(";");
-			QString ls_Triplet = lk_Line[0];
-			ls_Triplet.replace("U", "T");
-			QString ls_AminoAcid = lk_Line.last();
-			int a = mk_DnaCharToNumber_[(unsigned char)ls_Triplet.at(0).toAscii()];
-			int b = mk_DnaCharToNumber_[(unsigned char)ls_Triplet.at(1).toAscii()];
-			int c = mk_DnaCharToNumber_[(unsigned char)ls_Triplet.at(2).toAscii()];
-			
-			// the next lines make sure that when an unknown nucleotide pops up,
-			// in some cases the correct amino acid is nevertheless returned,
-			// even if the unknown is not encoded by 111 but any of 1xx.
-			int a0 = a;
-			int a1 = a;
-			if (a > 3)
-			{
-				a0 = 4; a1 = 7;
-			}
-			int b0 = b;
-			int b1 = b;
-			if (b > 3)
-			{
-				b0 = 4; b1 = 7;
-			}
-			int c0 = c;
-			int c1 = c;
-			if (c > 3)
-			{
-				c0 = 4; c1 = 7;
-			}
-			for (int ia = a0; ia <= a1; ++ia)
-				for (int ib = b0; ib <= b1; ++ib)
-					for (int ic = c0; ic <= c1; ++ic)
-						mk_DnaTripletToAminoAcid_[(ia) | (ib << 3) | (ic << 6)] = ls_AminoAcid.at(0).toAscii();
-                    */
 		}
 		lk_File.close();
 	}
