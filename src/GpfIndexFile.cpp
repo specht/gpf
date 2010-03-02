@@ -25,6 +25,7 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 
 k_GpfIndexFile::k_GpfIndexFile(const QString& as_Path)
 	: mi_GeneticCode(1)
+    , ms_Enzyme("RK|")
     , mb_IsGood(false)
 {
 	parseGpfIndexFile(as_Path);
@@ -99,7 +100,6 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
 		memcpy(&li_ChunkSize, lk_File.read(8).constData(), 8);
 		if (lui_ChunkType == r_DnaIndexChunkType::Info)
 		{
-//             printf("Reading info chunk...\n");
 			// read genome title
 			qint32 li_TitleLength;
 			memcpy(&li_TitleLength, lk_File.read(4).constData(), 4);
@@ -148,6 +148,15 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
                 printf("Error: An invalid genetic code was specified in the index file (%d).\n", mi_GeneticCode);
                 exit(1);
             }
+        }
+        else if (lui_ChunkType == r_DnaIndexChunkType::Enzyme)
+        {
+            // read enzyme
+            qint32 li_EnzymeLength;
+            memcpy(&li_EnzymeLength, lk_File.read(4).constData(), 4);
+            QByteArray lk_Enzyme = lk_File.read(li_EnzymeLength);
+            lk_Enzyme.append('\0');
+            ms_Enzyme = lk_En;
         }
 		else if (lui_ChunkType == r_DnaIndexChunkType::Dna)
 		{

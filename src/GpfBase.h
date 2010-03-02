@@ -32,7 +32,8 @@ struct r_DnaIndexChunkType
 		Info = 100,
 		Dna,
 		Index,
-        GeneticCode
+        GeneticCode,
+        Enzyme
 	};
 };
 

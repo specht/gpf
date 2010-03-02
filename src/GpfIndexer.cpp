@@ -49,6 +49,7 @@ k_GpfIndexer::k_GpfIndexer(QString as_DnaPath, QString as_DnaIndexPath,
 	: ms_DnaPath(as_DnaPath)
 	, ms_DnaIndexPath(as_DnaIndexPath)
 	, ms_Title(as_Title)
+    , ms_Enzyme(as_Enzyme)
 	, mi_TotalNucleotideCount(0)
 	, mi_OffsetBits(0)
 	, mui_GnoBackwardsBit(0)
@@ -150,9 +151,15 @@ void k_GpfIndexer::compileIndex()
     
 	writeIdentifierChunk(&lk_OutFile);
 	writeInfoChunk(&lk_OutFile);
+    
     // only write genetic code chunk if not standard code
     if (mi_GeneticCode != 1)
         writeGeneticCodeChunk(&lk_OutFile);
+    
+    // only write enzyme chunk if not 'RK|'
+    if (ms_Enzyme != "RK|")
+        writeEnzymeChunk(&lk_OutFile);
+    
 	writeDnaChunk(&lk_OutFile);
 	
 	writeIndexChunk(&lk_OutFile);
@@ -309,10 +316,26 @@ void k_GpfIndexer::writeGeneticCodeChunk(QFile* ak_OutFile_)
     qint64 li_SizeLocation = writeChunkHeader(ak_OutFile_, r_DnaIndexChunkType::GeneticCode);
     qint64 li_ChunkSize = ak_OutFile_->pos();
     
-    // write genome title
+    // write genetic code
     ak_OutFile_->write((char*)&mi_GeneticCode, 4);
     
-    // finish info chunk
+    // finish genetic code chunk
+    li_ChunkSize = ak_OutFile_->pos() - li_ChunkSize;
+    writeChunkSize(ak_OutFile_, li_SizeLocation, li_ChunkSize);
+}
+
+
+void k_GpfIndexer::writeEnzymeChunk(QFile* ak_OutFile_)
+{
+    qint64 li_SizeLocation = writeChunkHeader(ak_OutFile_, r_DnaIndexChunkType::Enzyme);
+    qint64 li_ChunkSize = ak_OutFile_->pos();
+    
+    // write enzyme
+    qint32 li_EnzymeLength = ms_Enzyme.length();
+    ak_OutFile_->write((char*)&li_EnzymeLength, 4);
+    ak_OutFile_->write((char*)ms_Enzyme.toStdString().c_str(), li_EnzymeLength);
+    
+    // finish enzyme chunk
     li_ChunkSize = ak_OutFile_->pos() - li_ChunkSize;
     writeChunkSize(ak_OutFile_, li_SizeLocation, li_ChunkSize);
 }

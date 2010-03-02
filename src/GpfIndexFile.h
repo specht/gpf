@@ -47,6 +47,8 @@ public:
 	qint32 mi_HmstBits;
 	qint64 mi_GnoBackwardsBit;
     qint32 mi_GeneticCode;
+
+    QString ms_Enzyme;
 	
 	qint32 mi_TagCount;
 	qint64 mi_MaxMass;

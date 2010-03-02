@@ -45,6 +45,7 @@ protected:
 	virtual void writeIdentifierChunk(QFile* ak_OutFile_);
 	virtual void writeInfoChunk(QFile* ak_OutFile_);
     virtual void writeGeneticCodeChunk(QFile* ak_OutFile_);
+    virtual void writeEnzymeChunk(QFile* ak_OutFile_);
 	virtual void writeDnaChunk(QFile* ak_OutFile_);
 	virtual void writeIndexChunk(QFile* ak_OutFile_);
 	
@@ -53,6 +54,7 @@ protected:
 	QString ms_DnaPath;
 	QString ms_DnaIndexPath;
 	QString ms_Title;
+    QString ms_Enzyme;
 	
 	QStringList mk_ScaffoldLabels;
 	QList<qint64> mk_ScaffoldLength;
