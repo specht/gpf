@@ -49,8 +49,6 @@ protected:
     virtual void writeDnaChunk(QFile* ak_OutFile_);
     virtual void writeIndexChunk(QFile* ak_OutFile_);
     
-    QString bytesToStr(qint64 ai_Size);
-    
     QString ms_DnaPath;
     QString ms_DnaIndexPath;
     QString ms_Title;

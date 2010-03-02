@@ -120,7 +120,8 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     
     while (!lk_Arguments.empty())
     {
-        QString ls_Key = lk_Arguments.takeFirst();
+        QString ls_OriginalKey = lk_Arguments.takeFirst();
+        QString ls_Key = ls_OriginalKey.trimmed();
         if (ls_Key == "--massAccuracy")
         {
             bool lb_Ok = false;
@@ -220,7 +221,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
             lb_Quiet = true;
         else
         {
-            lk_Arguments.push_front(ls_Key);
+            lk_Arguments.push_front(ls_OriginalKey);
             break;
         }
     }
@@ -230,7 +231,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     RefPtr<k_GpfIndexFile> lk_pGpfIndexFile(new k_GpfIndexFile(ls_IndexFilePath));
     if (!lk_pGpfIndexFile->isGood())
     {
-        printf("Error: Unable to load GPF index file %s.\n", ac_Arguments__[1]);
+        printf("Error: Unable to load GPF index file %s.\n", ls_IndexFilePath.toStdString().c_str());
         exit(1);
     }
     

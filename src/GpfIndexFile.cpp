@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2007-2008 Michael Specht
+Copyright (c) 2007-2010 Michael Specht
 
 This file is part of GPF.
 

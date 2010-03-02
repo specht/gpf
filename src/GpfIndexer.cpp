@@ -132,7 +132,7 @@ void k_GpfIndexer::compileIndex()
     mi_HmstBits = mi_OffsetBits + mi_MassBits;
     mi_MaxMass = ((qint64)1 << mi_MassBits) - 1;
     
-    printf("Allocating %s for tag/direction count (32 bits) list.\n", bytesToStr(mi_TagCount * 2 * 4).toStdString().c_str());
+    printf("Allocating %s for tag/direction count (32 bits) list.\n", gk_GpfBase.bytesToStr(mi_TagCount * 2 * 4).toStdString().c_str());
     mui_pTagDirectionCount = RefPtr<quint32>(new quint32[mi_TagCount * 2]);
     memset(mui_pTagDirectionCount.get_Pointer(), 0, mi_TagCount * 2 * 4);
 
@@ -141,7 +141,7 @@ void k_GpfIndexer::compileIndex()
     if (li_IndexBufferMaxRequiredSize < mi_IndexBufferMaxLength)
         mi_IndexBufferMaxLength = li_IndexBufferMaxRequiredSize;
     printf("Allocating %s for index buffer (this appears to be a %d bit system).\n", 
-           bytesToStr(mi_IndexBufferMaxLength).toStdString().c_str(),
+           gk_GpfBase.bytesToStr(mi_IndexBufferMaxLength).toStdString().c_str(),
            (int)(sizeof(size_t) * 8));
     // allocate 9 extra bytes so that we're always safe if we should read several bytes at once
     muc_pIndexBuffer = RefPtr<quint8>(new quint8[mi_IndexBufferMaxLength + 9]);
@@ -178,7 +178,7 @@ void k_GpfIndexer::parseDna(QString as_DnaPath)
     lk_DnaFile.open(QIODevice::ReadOnly);
     QTextStream lk_Stream(&lk_DnaFile);
     
-    printf("Allocating %s for DNA.\n", bytesToStr(lk_DnaFile.size() * 3 / 8 + 1).toStdString().c_str());
+    printf("Allocating %s for DNA.\n", gk_GpfBase.bytesToStr(lk_DnaFile.size() * 3 / 8 + 1).toStdString().c_str());
     muc_pDnaBuffer = RefPtr<quint8>(new quint8[lk_DnaFile.size() * 3 / 8 + 1]);
     qint64 li_DnaBufferOffset = 0;
     mi_DnaBufferLength = 0;
@@ -404,7 +404,7 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
     if (li_BiggestBucketSize > li_MaxHmstPerIteration)
     {
         printf("Error: Unfortunately, we cannot continue here because the indexing buffer is to small.\n");
-        printf("You need to specify at least %s for the index buffer.\n", bytesToStr(li_BiggestBucketSize * (mi_HmstBits) / 8 + 1).toStdString().c_str());
+        printf("You need to specify at least %s for the index buffer.\n", gk_GpfBase.bytesToStr(li_BiggestBucketSize * (mi_HmstBits) / 8 + 1).toStdString().c_str());
         exit(1);
     }
     
@@ -546,20 +546,4 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
     // finish index chunk
     li_ChunkSize = ak_OutFile_->pos() - li_ChunkSize;
     writeChunkSize(ak_OutFile_, li_SizeLocation, li_ChunkSize);
-}
-
-
-QString k_GpfIndexer::bytesToStr(qint64 ai_Size)
-{
-    if (ai_Size < (qint64)1024)
-        return QString("%1 bytes").arg(ai_Size);
-    else if (ai_Size < (qint64)1024 * 1024)
-        return QString("%1.%2 KB").arg(ai_Size / 1024).arg((ai_Size * 10 / 1024) % 10);
-    else if (ai_Size < (qint64)1024 * 1024 * 1024)
-        return QString("%1.%2 MB").arg(ai_Size / 1024 / 1024).arg((ai_Size * 10 / 1024 / 1024) % 10);
-    else if (ai_Size < (qint64)1024 * 1024 * 1024 * 1024)
-        return QString("%1.%2 GB").arg(ai_Size / 1024 / 1024 / 1024).arg((ai_Size * 10 / 1024 / 1024 / 1024) % 10);
-    else 
-        return QString("%1.%2 TB").arg(ai_Size / 1024 / 1024 / 1024 / 1024).arg((ai_Size * 10 / 1024 / 1024 / 1024 / 1024) % 10);
-        
 }

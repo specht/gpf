@@ -48,6 +48,7 @@ public:
     int aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length);
     QString aminoAcidSequenceForCode(int ai_Code, int ai_Length);
     QString nucleotideSequenceForCode(int ai_Code, int ai_Length);
+    QString bytesToStr(qint64 ai_Size);
     
     quint16 mk_DnaCharToNumber_[256];
     

@@ -277,3 +277,18 @@ QString k_GpfBase::nucleotideSequenceForCode(int ai_Code, int ai_Length)
     }
     return ls_Result;
 }
+
+
+QString k_GpfBase::bytesToStr(qint64 ai_Size)
+{
+    if (ai_Size < (qint64)1024)
+        return QString("%1 bytes").arg(ai_Size);
+    else if (ai_Size < (qint64)1024 * 1024)
+        return QString("%1.%2 KiB").arg(ai_Size / 1024).arg((ai_Size * 10 / 1024) % 10);
+    else if (ai_Size < (qint64)1024 * 1024 * 1024)
+        return QString("%1.%2 MiB").arg(ai_Size / 1024 / 1024).arg((ai_Size * 10 / 1024 / 1024) % 10);
+    else if (ai_Size < (qint64)1024 * 1024 * 1024 * 1024)
+        return QString("%1.%2 GiB").arg(ai_Size / 1024 / 1024 / 1024).arg((ai_Size * 10 / 1024 / 1024 / 1024) % 10);
+    else 
+        return QString("%1.%2 TiB").arg(ai_Size / 1024 / 1024 / 1024 / 1024).arg((ai_Size * 10 / 1024 / 1024 / 1024 / 1024) % 10);
+}
