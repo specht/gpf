@@ -25,30 +25,30 @@ k_GpfBase gk_GpfBase;
 
 k_GpfBase::k_GpfBase()
 {
-	Q_INIT_RESOURCE(libgpf);
-	
-	for (int i = 0; i < 256; ++i)
-		mk_DnaCharToNumber_[i] = 7;
-	mk_DnaCharToNumber_[(unsigned char)'A'] = 0;
-	mk_DnaCharToNumber_[(unsigned char)'C'] = 1;
-	mk_DnaCharToNumber_[(unsigned char)'G'] = 2;
-	mk_DnaCharToNumber_[(unsigned char)'T'] = 3;
-	mk_DnaCharToNumber_[(unsigned char)'a'] = 0;
-	mk_DnaCharToNumber_[(unsigned char)'c'] = 1;
-	mk_DnaCharToNumber_[(unsigned char)'g'] = 2;
-	mk_DnaCharToNumber_[(unsigned char)'t'] = 3;
-	
-	{
-		QFile lk_File(":ext/proteomics-knowledge-base/genetic-codes.txt");
+    Q_INIT_RESOURCE(libgpf);
+    
+    for (int i = 0; i < 256; ++i)
+        mk_DnaCharToNumber_[i] = 7;
+    mk_DnaCharToNumber_[(unsigned char)'A'] = 0;
+    mk_DnaCharToNumber_[(unsigned char)'C'] = 1;
+    mk_DnaCharToNumber_[(unsigned char)'G'] = 2;
+    mk_DnaCharToNumber_[(unsigned char)'T'] = 3;
+    mk_DnaCharToNumber_[(unsigned char)'a'] = 0;
+    mk_DnaCharToNumber_[(unsigned char)'c'] = 1;
+    mk_DnaCharToNumber_[(unsigned char)'g'] = 2;
+    mk_DnaCharToNumber_[(unsigned char)'t'] = 3;
+    
+    {
+        QFile lk_File(":ext/proteomics-knowledge-base/genetic-codes.txt");
         if (!lk_File.open(QIODevice::ReadOnly))
         {
             printf("Internal error: Unable to open translation table.\n");
             exit(1);
         }
-		QTextStream lk_Stream(&lk_File);
-		while (!lk_Stream.atEnd())
-		{
-			QString ls_Line = lk_Stream.readLine().trimmed();
+        QTextStream lk_Stream(&lk_File);
+        while (!lk_Stream.atEnd())
+        {
+            QString ls_Line = lk_Stream.readLine().trimmed();
             // skip comments or empty lines
             if (ls_Line.startsWith("#") || ls_Line.isEmpty())
                 continue;
@@ -173,35 +173,35 @@ k_GpfBase::k_GpfBase()
                 li_Reverse ^= 219;
                 mk_TranslationTablesReverse[li_Id].get_Pointer()[i] = mk_TranslationTables[li_Id].get_Pointer()[li_Reverse];
             }
-		}
-		lk_File.close();
-	}
-	
-	for (int i = 0; i < 256; ++i)
-		mi_AminoAcidToNumber_[i] = -1;
-	
-	{
-		QFile lk_File(":ext/proteomics-knowledge-base/amino-acids.csv");
+        }
+        lk_File.close();
+    }
+    
+    for (int i = 0; i < 256; ++i)
+        mi_AminoAcidToNumber_[i] = -1;
+    
+    {
+        QFile lk_File(":ext/proteomics-knowledge-base/amino-acids.csv");
         if (!lk_File.open(QIODevice::ReadOnly))
         {
             printf("Internal error: Unable to open amino acid table.\n");
             exit(1);
         }
-		QTextStream lk_Stream(&lk_File);
-		lk_Stream.readLine();
-		for (int i = 0; i < 256; ++i)
-		{
-			md_AminoAcidMasses_[i] = 0.0;
-			mb_IsAminoAcid_[i] = false;
-		}
-		while (!lk_Stream.atEnd())
-		{
-			QString ls_Line = lk_Stream.readLine().trimmed();
-			QStringList lk_Line = ls_Line.split(",");
-			QString ls_AminoAcid = lk_Line[3];
-			QString ls_Mass = lk_Line[4];
-			mb_IsAminoAcid_[(int)ls_AminoAcid[0].toAscii()] = true;
-			md_AminoAcidMasses_[(int)ls_AminoAcid[0].toAscii()] = QVariant(ls_Mass).toDouble();
+        QTextStream lk_Stream(&lk_File);
+        lk_Stream.readLine();
+        for (int i = 0; i < 256; ++i)
+        {
+            md_AminoAcidMasses_[i] = 0.0;
+            mb_IsAminoAcid_[i] = false;
+        }
+        while (!lk_Stream.atEnd())
+        {
+            QString ls_Line = lk_Stream.readLine().trimmed();
+            QStringList lk_Line = ls_Line.split(",");
+            QString ls_AminoAcid = lk_Line[3];
+            QString ls_Mass = lk_Line[4];
+            mb_IsAminoAcid_[(int)ls_AminoAcid[0].toAscii()] = true;
+            md_AminoAcidMasses_[(int)ls_AminoAcid[0].toAscii()] = QVariant(ls_Mass).toDouble();
             int li_Code = QVariant(lk_Line[0]).toInt();
             if (li_Code > 7)
                 li_Code -= 1;
@@ -210,9 +210,9 @@ k_GpfBase::k_GpfBase()
                 mi_AminoAcidToNumber_[(int)ls_AminoAcid[0].toAscii()] = li_Code;
                 mc_NumberToAminoAcid_[li_Code] = ls_AminoAcid[0].toAscii();
             }
-		}
-		lk_File.close();
-	}
+        }
+        lk_File.close();
+    }
 }
 
 
@@ -223,28 +223,28 @@ k_GpfBase::~k_GpfBase()
 
 quint16 k_GpfBase::readNucleotideTriplet(quint8* auc_Buffer_, quint64 aui_Gno)
 {
-	// 9 bits are always contained in at most 2 bytes!
-	quint64 lui_Offset = (aui_Gno * 3) / 8;
-	quint16 lui_Bit;
-	memcpy(&lui_Bit, auc_Buffer_ + lui_Offset, 2);
-	lui_Bit >>= ((aui_Gno * 3) & 7);
-	lui_Bit &= 511;
-	return lui_Bit;
+    // 9 bits are always contained in at most 2 bytes!
+    quint64 lui_Offset = (aui_Gno * 3) / 8;
+    quint16 lui_Bit;
+    memcpy(&lui_Bit, auc_Buffer_ + lui_Offset, 2);
+    lui_Bit >>= ((aui_Gno * 3) & 7);
+    lui_Bit &= 511;
+    return lui_Bit;
 }
 
 
 int k_GpfBase::aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length)
 {
-	int li_Result = 0;
-	for (int i = 0; i < ai_Length; ++i)
-	{
-		li_Result *= 19;
-		int li_AminoAcidNumber = mi_AminoAcidToNumber_[(int)ac_Buffer_[i]];
-		if (li_AminoAcidNumber < 0)
-			return -1;
-		li_Result += li_AminoAcidNumber;
-	}
-	return li_Result;
+    int li_Result = 0;
+    for (int i = 0; i < ai_Length; ++i)
+    {
+        li_Result *= 19;
+        int li_AminoAcidNumber = mi_AminoAcidToNumber_[(int)ac_Buffer_[i]];
+        if (li_AminoAcidNumber < 0)
+            return -1;
+        li_Result += li_AminoAcidNumber;
+    }
+    return li_Result;
 }
 
 
@@ -285,43 +285,43 @@ QString k_GpfBase::nucleotideSequenceForCode(int ai_Code, int ai_Length)
 
 void overwriteBitsInBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, quint64 aui_Value, int ai_Size)
 {
-	while (ai_Size > 0)
-	{
-		int li_ByteOffset = ai_BitOffset / READ_BITS;
-		int li_BitOffset = ai_BitOffset % READ_BITS;
-		int li_CopyBits = (READ_BITS - li_BitOffset);
-		if (li_CopyBits > ai_Size)
-			li_CopyBits = ai_Size;
-		READ_TYPE lui_CopyMask = ((((quint64)1) << li_CopyBits) - 1);
-		READ_TYPE lui_NullMask = ~(lui_CopyMask << li_BitOffset);
-		((READ_TYPE*)auc_Buffer_)[li_ByteOffset] &= lui_NullMask;
-		READ_TYPE lui_CopyByte = (aui_Value & lui_CopyMask) << li_BitOffset;
-		((READ_TYPE*)auc_Buffer_)[li_ByteOffset] |= lui_CopyByte;
-		ai_BitOffset += li_CopyBits;
-		aui_Value >>= li_CopyBits;
-		ai_Size -= li_CopyBits;
-	}
+    while (ai_Size > 0)
+    {
+        int li_ByteOffset = ai_BitOffset / READ_BITS;
+        int li_BitOffset = ai_BitOffset % READ_BITS;
+        int li_CopyBits = (READ_BITS - li_BitOffset);
+        if (li_CopyBits > ai_Size)
+            li_CopyBits = ai_Size;
+        READ_TYPE lui_CopyMask = ((((quint64)1) << li_CopyBits) - 1);
+        READ_TYPE lui_NullMask = ~(lui_CopyMask << li_BitOffset);
+        ((READ_TYPE*)auc_Buffer_)[li_ByteOffset] &= lui_NullMask;
+        READ_TYPE lui_CopyByte = (aui_Value & lui_CopyMask) << li_BitOffset;
+        ((READ_TYPE*)auc_Buffer_)[li_ByteOffset] |= lui_CopyByte;
+        ai_BitOffset += li_CopyBits;
+        aui_Value >>= li_CopyBits;
+        ai_Size -= li_CopyBits;
+    }
 }
 
 
 quint64 readBitsFromBuffer(quint8* auc_Buffer_, qint64 ai_BitOffset, int ai_Size)
 {
-	quint64 lui_Result = 0;
-	int li_BitsCopied = 0;
-	while (ai_Size > 0)
-	{
-		int li_ByteOffset = ai_BitOffset / READ_BITS;
-		int li_BitOffset = ai_BitOffset % READ_BITS;
-		int li_CopyBits = READ_BITS - li_BitOffset;
-		if (li_CopyBits > ai_Size)
-			li_CopyBits = ai_Size;
-		READ_TYPE lui_CopyMask = ((((quint64)1) << li_CopyBits) - 1);
-		//READ_TYPE lui_CopyByte = (auc_Buffer_[li_ByteOffset] >> li_BitOffset) & lui_CopyMask;
-		READ_TYPE lui_CopyByte = (*((READ_TYPE*)auc_Buffer_ + li_ByteOffset) >> li_BitOffset) & lui_CopyMask;
-		lui_Result |= (((quint64)lui_CopyByte) << li_BitsCopied);
-		ai_BitOffset += li_CopyBits;
-		ai_Size -= li_CopyBits;
-		li_BitsCopied += li_CopyBits;
-	}
-	return lui_Result;
+    quint64 lui_Result = 0;
+    int li_BitsCopied = 0;
+    while (ai_Size > 0)
+    {
+        int li_ByteOffset = ai_BitOffset / READ_BITS;
+        int li_BitOffset = ai_BitOffset % READ_BITS;
+        int li_CopyBits = READ_BITS - li_BitOffset;
+        if (li_CopyBits > ai_Size)
+            li_CopyBits = ai_Size;
+        READ_TYPE lui_CopyMask = ((((quint64)1) << li_CopyBits) - 1);
+        //READ_TYPE lui_CopyByte = (auc_Buffer_[li_ByteOffset] >> li_BitOffset) & lui_CopyMask;
+        READ_TYPE lui_CopyByte = (*((READ_TYPE*)auc_Buffer_ + li_ByteOffset) >> li_BitOffset) & lui_CopyMask;
+        lui_Result |= (((quint64)lui_CopyByte) << li_BitsCopied);
+        ai_BitOffset += li_CopyBits;
+        ai_Size -= li_CopyBits;
+        li_BitsCopied += li_CopyBits;
+    }
+    return lui_Result;
 }

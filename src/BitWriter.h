@@ -26,16 +26,16 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 class k_BitWriter
 {
 public:
-	k_BitWriter(QIODevice* ak_Device_);
-	virtual ~k_BitWriter();
-	
-	void writeBits(quint64 aui_Value, int ai_Bits);
-	void flush();
-	
+    k_BitWriter(QIODevice* ak_Device_);
+    virtual ~k_BitWriter();
+    
+    void writeBits(quint64 aui_Value, int ai_Bits);
+    void flush();
+    
 protected:
-	size_t mui_BufferSize;
-	size_t mi_BufferOffset;
-	size_t mi_BufferBitOffset;
-	RefPtr<quint8> muc_pBuffer;
-	QIODevice* mk_Device_;
+    size_t mui_BufferSize;
+    size_t mi_BufferOffset;
+    size_t mi_BufferBitOffset;
+    RefPtr<quint8> muc_pBuffer;
+    QIODevice* mk_Device_;
 };

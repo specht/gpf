@@ -21,13 +21,13 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 
 
 k_BitWriter::k_BitWriter(QIODevice* ak_Device_)
-	: mui_BufferSize(8 * 1024 * 1024)
-	, mi_BufferOffset(0)
-	, mi_BufferBitOffset(0)
-	, muc_pBuffer(new quint8[mui_BufferSize])
-	, mk_Device_(ak_Device_)
+    : mui_BufferSize(8 * 1024 * 1024)
+    , mi_BufferOffset(0)
+    , mi_BufferBitOffset(0)
+    , muc_pBuffer(new quint8[mui_BufferSize])
+    , mk_Device_(ak_Device_)
 {
-	memset(muc_pBuffer.get_Pointer(), 0, mui_BufferSize);
+    memset(muc_pBuffer.get_Pointer(), 0, mui_BufferSize);
 }
 
 
@@ -40,44 +40,44 @@ k_BitWriter::~k_BitWriter()
 
 void k_BitWriter::writeBits(quint64 aui_Value, int ai_Bits)
 {
-	while (ai_Bits > 0)
-	{
-		int li_CopyBits = READ_BITS - mi_BufferBitOffset;
-		if (li_CopyBits > ai_Bits)
-			li_CopyBits = ai_Bits;
-		READ_TYPE lui_Byte = aui_Value & ((1 << li_CopyBits) - 1);
-		READ_TYPE lui_NullMask = (((quint64)1) << li_CopyBits) - 1;
-		lui_NullMask <<= mi_BufferBitOffset;
-		lui_NullMask ^= (((quint64)1) << READ_BITS) - 1;
-		lui_Byte <<= mi_BufferBitOffset;
-		aui_Value >>= li_CopyBits;
-		ai_Bits -= li_CopyBits;
-		((READ_TYPE*)(muc_pBuffer.get_Pointer()))[mi_BufferOffset] &= lui_NullMask;
-		((READ_TYPE*)(muc_pBuffer.get_Pointer()))[mi_BufferOffset] |= lui_Byte;
-		mi_BufferBitOffset += li_CopyBits;
-		if (mi_BufferBitOffset >= READ_BITS)
-		{
-			mi_BufferBitOffset -= READ_BITS;
-			++mi_BufferOffset;
-			if (mi_BufferOffset * READ_BITS / 8 >= mui_BufferSize)
-				flush();
-		}
-	}
+    while (ai_Bits > 0)
+    {
+        int li_CopyBits = READ_BITS - mi_BufferBitOffset;
+        if (li_CopyBits > ai_Bits)
+            li_CopyBits = ai_Bits;
+        READ_TYPE lui_Byte = aui_Value & ((1 << li_CopyBits) - 1);
+        READ_TYPE lui_NullMask = (((quint64)1) << li_CopyBits) - 1;
+        lui_NullMask <<= mi_BufferBitOffset;
+        lui_NullMask ^= (((quint64)1) << READ_BITS) - 1;
+        lui_Byte <<= mi_BufferBitOffset;
+        aui_Value >>= li_CopyBits;
+        ai_Bits -= li_CopyBits;
+        ((READ_TYPE*)(muc_pBuffer.get_Pointer()))[mi_BufferOffset] &= lui_NullMask;
+        ((READ_TYPE*)(muc_pBuffer.get_Pointer()))[mi_BufferOffset] |= lui_Byte;
+        mi_BufferBitOffset += li_CopyBits;
+        if (mi_BufferBitOffset >= READ_BITS)
+        {
+            mi_BufferBitOffset -= READ_BITS;
+            ++mi_BufferOffset;
+            if (mi_BufferOffset * READ_BITS / 8 >= mui_BufferSize)
+                flush();
+        }
+    }
 }
 
 
 void k_BitWriter::flush()
 {
-	size_t li_Size = mi_BufferOffset * READ_BITS / 8;
-	while (mi_BufferBitOffset > 0)
-	{
-		++li_Size;
-		if (mi_BufferBitOffset >= 8)
-			mi_BufferBitOffset -= 8;
-		else
-			mi_BufferBitOffset = 0;
-	}
-	mk_Device_->write((char*)muc_pBuffer.get_Pointer(), li_Size);
-	mi_BufferOffset = 0;
-	mi_BufferBitOffset = 0;
+    size_t li_Size = mi_BufferOffset * READ_BITS / 8;
+    while (mi_BufferBitOffset > 0)
+    {
+        ++li_Size;
+        if (mi_BufferBitOffset >= 8)
+            mi_BufferBitOffset -= 8;
+        else
+            mi_BufferBitOffset = 0;
+    }
+    mk_Device_->write((char*)muc_pBuffer.get_Pointer(), li_Size);
+    mi_BufferOffset = 0;
+    mi_BufferBitOffset = 0;
 }

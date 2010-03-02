@@ -39,9 +39,9 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         exit(0);
     }
     
-	if (ai_ArgumentCount < 3)
-	{
-		printf("Usage: gpfindex [options] [Genomic DNA sequence file] [GPF index out file]\n");
+    if (ai_ArgumentCount < 3)
+    {
+        printf("Usage: gpfindex [options] [Genomic DNA sequence file] [GPF index out file]\n");
         printf("The input file must be in FASTA format.\n\n");
         printf("Options:\n");
         printf("  --title <string>\n");
@@ -73,8 +73,8 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         printf("    list of genetic codes, specify --geneticCodeList.\n");
         
         
-		exit(1);
-	}
+        exit(1);
+    }
     
     QString ls_IndexFilename = lk_Arguments.takeLast();
     QString ls_GenomeFilename = lk_Arguments.takeLast();
@@ -84,7 +84,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         printf("Error: Unable to open %s.\n", ls_GenomeFilename.toStdString().c_str());
         exit(1);
     }
-	
+    
     QString ls_Title = QFileInfo(ls_GenomeFilename).baseName();
     
     qint32 li_TagSize = 5;
@@ -182,10 +182,10 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         }
     }
     
-	k_GpfIndexer lk_GpfIndexer(ls_GenomeFilename, ls_IndexFilename, ls_Title,
+    k_GpfIndexer lk_GpfIndexer(ls_GenomeFilename, ls_IndexFilename, ls_Title,
                                li_TagSize, ls_Enzyme, li_IndexBufferAllocSize,
                                li_MassPrecision, li_MassBits, li_GeneticCode);
-	lk_GpfIndexer.compileIndex();
-/*	char* s = "VIHAR";
-	printf("%d\n", gk_GpfBase.aminoAcidPolymerCode(s, 5));*/
+    lk_GpfIndexer.compileIndex();
+/*  char* s = "VIHAR";
+    printf("%d\n", gk_GpfBase.aminoAcidPolymerCode(s, 5));*/
 }

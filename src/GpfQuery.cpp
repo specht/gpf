@@ -29,39 +29,39 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
                        ae_IntronSearchType, int ai_MaxIntronLength, 
                        QString as_IntronSpliceSites, bool ab_Quiet, 
                        QIODevice* ak_Output_)
-	: mk_GpfIndexFile(ak_GpfIndexFile)
-	, md_MassAccuracy(ad_MassAccuracy)
-	, mb_SimilaritySearch(ab_SimilaritySearch)
-	, mb_DistinguishIL(ab_DistinguishIL)
-	, mb_SearchImmediateAlignments(ab_SearchImmediate)
-	, me_SearchIntronSplitAlignments(ae_SearchIntronSplitAlignments)
-	, me_IntronSearchType(ae_IntronSearchType)
-	, mi_MinIntronLength(1)
-	, mi_MaxIntronLength(ai_MaxIntronLength)
-	, mi_MinExonLength(1)
-	, mi_FlankingSequenceLength(5)
-	, ms_IntronSpliceSites(as_IntronSpliceSites)
+    : mk_GpfIndexFile(ak_GpfIndexFile)
+    , md_MassAccuracy(ad_MassAccuracy)
+    , mb_SimilaritySearch(ab_SimilaritySearch)
+    , mb_DistinguishIL(ab_DistinguishIL)
+    , mb_SearchImmediateAlignments(ab_SearchImmediate)
+    , me_SearchIntronSplitAlignments(ae_SearchIntronSplitAlignments)
+    , me_IntronSearchType(ae_IntronSearchType)
+    , mi_MinIntronLength(1)
+    , mi_MaxIntronLength(ai_MaxIntronLength)
+    , mi_MinExonLength(1)
+    , mi_FlankingSequenceLength(5)
+    , ms_IntronSpliceSites(as_IntronSpliceSites)
     , mb_Quiet(ab_Quiet)
     , mk_Output_(ak_Output_)
     , mk_CsvOutStream(mk_Output_)
 {
-	QStringList lk_IntronSpliceSites = ms_IntronSpliceSites.split(",");
+    QStringList lk_IntronSpliceSites = ms_IntronSpliceSites.split(",");
     
     mk_CsvOutStream << "Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site\n";
-	
-	// convert human readable intron splice site consensus sequences 
-	// into a form which is useful for GPF
-	mi_IntronNTermMaxLength = 0;
-	mi_IntronCTermMaxLength = 0;
-	
-	foreach (QString ls_SpliceSite, lk_IntronSpliceSites)
-	{
-		QStringList lk_SpliceSites = ls_SpliceSite.split("|");
-		if (lk_SpliceSites.size() != 2)
-		{
-			printf("Error: Invalid intron splice donor/acceptor site consensus sequence: %s.\n", ls_SpliceSite.toStdString().c_str());
-			exit(1);
-		}
+    
+    // convert human readable intron splice site consensus sequences 
+    // into a form which is useful for GPF
+    mi_IntronNTermMaxLength = 0;
+    mi_IntronCTermMaxLength = 0;
+    
+    foreach (QString ls_SpliceSite, lk_IntronSpliceSites)
+    {
+        QStringList lk_SpliceSites = ls_SpliceSite.split("|");
+        if (lk_SpliceSites.size() != 2)
+        {
+            printf("Error: Invalid intron splice donor/acceptor site consensus sequence: %s.\n", ls_SpliceSite.toStdString().c_str());
+            exit(1);
+        }
         for (int i = 0; i < 2; ++i)
         {
             if (lk_SpliceSites[i].length() > 10)
@@ -70,35 +70,35 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
                 exit(1);
             }
         }
-		QList<tk_IntPair> lk_SpliceSitesNumbers;
-		while (!lk_SpliceSites.empty())
-		{
-			QString ls_Site = lk_SpliceSites.takeFirst();
-			qint32 li_DnaCode = 0;
-			for (int i = ls_Site.length() - 1; i >= 0; --i)
-			{
-				qint32 li_Code = gk_GpfBase.mk_DnaCharToNumber_[(int)ls_Site.at(i).toAscii()];
-				if ((li_Code & 4) != 0)
-				{
-					printf("Error: Invalid intron splice donor/acceptor site consensus sequence: %s.\n", ls_SpliceSite.toStdString().c_str());
-					exit(1);
-				}
-				li_DnaCode <<= 3;
-				li_DnaCode |= li_Code;
-			}
-			lk_SpliceSitesNumbers.append(tk_IntPair(li_DnaCode, ls_Site.length()));
-		}
-		tk_IntPair lk_NTermCode = lk_SpliceSitesNumbers.first();
+        QList<tk_IntPair> lk_SpliceSitesNumbers;
+        while (!lk_SpliceSites.empty())
+        {
+            QString ls_Site = lk_SpliceSites.takeFirst();
+            qint32 li_DnaCode = 0;
+            for (int i = ls_Site.length() - 1; i >= 0; --i)
+            {
+                qint32 li_Code = gk_GpfBase.mk_DnaCharToNumber_[(int)ls_Site.at(i).toAscii()];
+                if ((li_Code & 4) != 0)
+                {
+                    printf("Error: Invalid intron splice donor/acceptor site consensus sequence: %s.\n", ls_SpliceSite.toStdString().c_str());
+                    exit(1);
+                }
+                li_DnaCode <<= 3;
+                li_DnaCode |= li_Code;
+            }
+            lk_SpliceSitesNumbers.append(tk_IntPair(li_DnaCode, ls_Site.length()));
+        }
+        tk_IntPair lk_NTermCode = lk_SpliceSitesNumbers.first();
         tk_IntPair lk_CTermCode = lk_SpliceSitesNumbers.last();
         tk_IntPair lk_NTermCodeReverse(reverseNucleotides(lk_NTermCode.first, lk_NTermCode.second), lk_NTermCode.second);
         tk_IntPair lk_CTermCodeReverse(reverseNucleotides(lk_CTermCode.first, lk_CTermCode.second), lk_CTermCode.second);
         
-		if (!mk_IntronNTerm.contains(lk_NTermCode))
-			mk_IntronNTerm[lk_NTermCode] = QList<tk_IntPair>();
-		mk_IntronNTerm[lk_NTermCode].append(lk_CTermCode);
+        if (!mk_IntronNTerm.contains(lk_NTermCode))
+            mk_IntronNTerm[lk_NTermCode] = QList<tk_IntPair>();
+        mk_IntronNTerm[lk_NTermCode].append(lk_CTermCode);
         
-		if (!mk_IntronCTerm.contains(lk_CTermCode))
-			mk_IntronCTerm[lk_CTermCode] = QList<tk_IntPair>();
+        if (!mk_IntronCTerm.contains(lk_CTermCode))
+            mk_IntronCTerm[lk_CTermCode] = QList<tk_IntPair>();
         mk_IntronCTerm[lk_CTermCode].append(lk_NTermCode);
         
         if (!mk_IntronNTermReverse.contains(lk_NTermCodeReverse))
@@ -110,12 +110,12 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
         mk_IntronCTermReverse[lk_CTermCodeReverse].append(lk_NTermCodeReverse);
 
         // update C- and N-term max length
-		if (lk_NTermCode.second > mi_IntronNTermMaxLength)
-			mi_IntronNTermMaxLength = lk_NTermCode.second;
+        if (lk_NTermCode.second > mi_IntronNTermMaxLength)
+            mi_IntronNTermMaxLength = lk_NTermCode.second;
         
-		if (lk_CTermCode.second > mi_IntronCTermMaxLength)
-			mi_IntronCTermMaxLength = lk_CTermCode.second;
-	}
+        if (lk_CTermCode.second > mi_IntronCTermMaxLength)
+            mi_IntronCTermMaxLength = lk_CTermCode.second;
+    }
     mk_IntronNTermKeys = mk_IntronNTerm.keys();
     qSort(mk_IntronNTermKeys.begin(), mk_IntronNTermKeys.end(), &sortByDecreasingLength);
     mk_IntronCTermKeys = mk_IntronCTerm.keys();

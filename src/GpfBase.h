@@ -27,41 +27,41 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 
 struct r_DnaIndexChunkType
 {
-	enum Enumeration
-	{
-		Info = 100,
-		Dna,
-		Index,
+    enum Enumeration
+    {
+        Info = 100,
+        Dna,
+        Index,
         GeneticCode,
         Enzyme
-	};
+    };
 };
 
 
 class k_GpfBase
 {
 public:
-	k_GpfBase();
-	virtual ~k_GpfBase();
-	
-	quint16 readNucleotideTriplet(quint8* auc_Buffer_, quint64 aui_Gno);
-	int aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length);
+    k_GpfBase();
+    virtual ~k_GpfBase();
+    
+    quint16 readNucleotideTriplet(quint8* auc_Buffer_, quint64 aui_Gno);
+    int aminoAcidPolymerCode(const char* ac_Buffer_, int ai_Length);
     QString aminoAcidSequenceForCode(int ai_Code, int ai_Length);
     QString nucleotideSequenceForCode(int ai_Code, int ai_Length);
-	
-	quint16 mk_DnaCharToNumber_[256];
+    
+    quint16 mk_DnaCharToNumber_[256];
     
     QHash<int, QString> mk_TranslationTableTitle;
     QHash<int, RefPtr<char> > mk_TranslationTables;
     QHash<int, RefPtr<char> > mk_TranslationTablesReverse;
     
-/*	char mk_DnaTripletToAminoAcid_[512];
-	// takes the same triplet as the array above, but reverses and transposes
-	char mk_DnaTripletToAminoAcidReverse_[512];*/
+/*  char mk_DnaTripletToAminoAcid_[512];
+    // takes the same triplet as the array above, but reverses and transposes
+    char mk_DnaTripletToAminoAcidReverse_[512];*/
     
-	double md_AminoAcidMasses_[256];
-	bool mb_IsAminoAcid_[256];
-	int mi_AminoAcidToNumber_[256];
+    double md_AminoAcidMasses_[256];
+    bool mb_IsAminoAcid_[256];
+    int mi_AminoAcidToNumber_[256];
     char mc_NumberToAminoAcid_[19];
 };
 

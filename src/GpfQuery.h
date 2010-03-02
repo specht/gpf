@@ -58,18 +58,18 @@ typedef QList<tk_IntPair> tk_IntPairList;
 class k_GpfQuery
 {
 public:
-	k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
+    k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
                bool ab_SimilaritySearch, bool ab_DistinguishIL,
                bool ab_SearchImmediate, r_SearchIntronSplitAlignments::Enumeration 
                ae_SearchIntronSplitAlignments, r_IntronSearchType::Enumeration
                ae_IntronSearchType, int ai_MaxIntronLength, 
                QString as_IntronSpliceSites, bool ab_Quiet, 
                QIODevice* ak_Output_);
-	virtual ~k_GpfQuery();
-	
-	void execute(const QString& as_Peptide, qint64 ai_PrecursorMass);
+    virtual ~k_GpfQuery();
+    
+    void execute(const QString& as_Peptide, qint64 ai_PrecursorMass);
     void execute(const QList<tk_StringIntPair> ak_Peptides);
-	
+    
 protected:
     void findAlignments(const tk_GnoMap& ak_GnoMap,
                         bool ab_SearchImmediate,
@@ -83,29 +83,29 @@ protected:
                                 char* ac_TripletToAminoAcid_);
     
     k_GpfIndexFile& mk_GpfIndexFile;
-	double md_MassAccuracy;
+    double md_MassAccuracy;
     bool mb_SimilaritySearch;
     bool mb_DistinguishIL;
     bool mb_SearchImmediateAlignments;
     r_SearchIntronSplitAlignments::Enumeration me_SearchIntronSplitAlignments;
     r_IntronSearchType::Enumeration me_IntronSearchType;
-	int mi_MinIntronLength;
-	int mi_MaxIntronLength;
+    int mi_MinIntronLength;
+    int mi_MaxIntronLength;
     int mi_MinExonLength;
     int mi_FlankingSequenceLength;
     QString ms_IntronSpliceSites;
     bool mb_Quiet;
     QIODevice* mk_Output_;
     QTextStream mk_CsvOutStream;
-	
-	// GT/2: [AG/2]
-	// GC/2: [AG/2]
-	tk_IntPairListHash mk_IntronNTerm;
+    
+    // GT/2: [AG/2]
+    // GC/2: [AG/2]
+    tk_IntPairListHash mk_IntronNTerm;
     // the sorted key list, sorted by descending splice site length
     tk_IntPairList mk_IntronNTermKeys;
-	
-	// AG/2: [GT/2, GC/2]
-	tk_IntPairListHash mk_IntronCTerm;
+    
+    // AG/2: [GT/2, GC/2]
+    tk_IntPairListHash mk_IntronCTerm;
     tk_IntPairList mk_IntronCTermKeys;
     
     // TG/2: [GA/2]
@@ -117,8 +117,8 @@ protected:
     tk_IntPairListHash mk_IntronCTermReverse;
     tk_IntPairList mk_IntronCTermReverseKeys;
     
-	int mi_IntronNTermMaxLength;
-	int mi_IntronCTermMaxLength;
+    int mi_IntronNTermMaxLength;
+    int mi_IntronCTermMaxLength;
     
     // per-query class variables
     int mi_AlignmentMinMass;

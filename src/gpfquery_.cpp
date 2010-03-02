@@ -39,9 +39,9 @@ int parseValue(QString as_Value, QStringList ak_Choices, QString as_Description)
 
 int main(int ai_ArgumentCount, char **ac_Arguments__) 
 {
-	if (ai_ArgumentCount < 3)
-	{
-		printf("Usage: gpfquery [options] [GPF index file] [peptide 1] [precursor mass 1 (optional)] [peptide 2] ...\n");
+    if (ai_ArgumentCount < 3)
+    {
+        printf("Usage: gpfquery [options] [GPF index file] [peptide 1] [precursor mass 1 (optional)] [peptide 2] ...\n");
         printf("\n");
         printf("For every query peptide, an uncharged precursor mass can be specified, this is useful\n");
         printf("if the peptide sequence comes from de novo prediction. If no precursor mass is\n");
@@ -90,10 +90,10 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         printf("    goes to stdout. Caution: If the file exists, it will be overwritten.\n");
         printf("  --quiet\n");
         printf("    Don't print status messages.\n");
-		exit(1);
-	}
-	
-	QStringList lk_Arguments;
+        exit(1);
+    }
+    
+    QStringList lk_Arguments;
     
     for (int i = 1; i < ai_ArgumentCount; ++i)
         lk_Arguments << ac_Arguments__[i];
@@ -225,15 +225,15 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         }
     }
 
-	QString ls_IndexFilePath = lk_Arguments.takeFirst();
-	// load index file
-	RefPtr<k_GpfIndexFile> lk_pGpfIndexFile(new k_GpfIndexFile(ls_IndexFilePath));
-	if (!lk_pGpfIndexFile->isGood())
-	{
-		printf("Error: Unable to load GPF index file %s.\n", ac_Arguments__[1]);
-		exit(1);
-	}
-	
+    QString ls_IndexFilePath = lk_Arguments.takeFirst();
+    // load index file
+    RefPtr<k_GpfIndexFile> lk_pGpfIndexFile(new k_GpfIndexFile(ls_IndexFilePath));
+    if (!lk_pGpfIndexFile->isGood())
+    {
+        printf("Error: Unable to load GPF index file %s.\n", ac_Arguments__[1]);
+        exit(1);
+    }
+    
     QList<tk_StringIntPair> lk_QueryPeptides;
     
     foreach (QString ls_Path, lk_PeptideFiles)
@@ -297,7 +297,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     }
 
     // open new scope for stop watch
-	{
+    {
         RefPtr<k_StopWatch> lk_pStopWatch;
         if (!lb_Quiet)
             lk_pStopWatch = RefPtr<k_StopWatch>(new k_StopWatch("GPF search took %1.\n"));
@@ -311,12 +311,12 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
                QString as_IntronSpliceSites, bool ab_Quiet, 
                QIODevice* ak_Output_);
         */
-		k_GpfQuery lk_Query(*(lk_pGpfIndexFile.get_Pointer()), ld_MassAccuracy,
+        k_GpfQuery lk_Query(*(lk_pGpfIndexFile.get_Pointer()), ld_MassAccuracy,
                             lb_SimilaritySearch, lb_DistinguishIL,
                             lb_SearchImmediateAlignments,
                             le_SearchIntronSplitAlignments,
                             le_IntronSearchType, li_MaxIntronLength,
                             ls_IntronSpliceSites, lb_Quiet, lk_CsvDevice_);
-		lk_Query.execute(lk_QueryPeptides);
-	}
+        lk_Query.execute(lk_QueryPeptides);
+    }
 }
