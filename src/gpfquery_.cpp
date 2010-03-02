@@ -296,27 +296,18 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         lk_QueryPeptides << tk_StringIntPair(ls_Peptide, li_Mass);
     }
 
+    k_GpfQuery lk_Query(*(lk_pGpfIndexFile.get_Pointer()), ld_MassAccuracy,
+                        lb_SimilaritySearch, lb_DistinguishIL,
+                        lb_SearchImmediateAlignments,
+                        le_SearchIntronSplitAlignments,
+                        le_IntronSearchType, li_MaxIntronLength,
+                        ls_IntronSpliceSites, lb_Quiet, lk_CsvDevice_);
     // open new scope for stop watch
     {
         RefPtr<k_StopWatch> lk_pStopWatch;
         if (!lb_Quiet)
             lk_pStopWatch = RefPtr<k_StopWatch>(new k_StopWatch("GPF search took %1.\n"));
 
-        /*
-    k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
-               bool ab_SimilaritySearch, bool ab_DistinguishIL,
-               bool ab_SearchImmediate, r_SearchIntronSplitAlignments::Enumeration 
-               ae_SearchIntronSplitAlignments, r_IntronSearchType::Enumeration
-               ae_IntronSearchType, int ai_MaxIntronLength, 
-               QString as_IntronSpliceSites, bool ab_Quiet, 
-               QIODevice* ak_Output_);
-        */
-        k_GpfQuery lk_Query(*(lk_pGpfIndexFile.get_Pointer()), ld_MassAccuracy,
-                            lb_SimilaritySearch, lb_DistinguishIL,
-                            lb_SearchImmediateAlignments,
-                            le_SearchIntronSplitAlignments,
-                            le_IntronSearchType, li_MaxIntronLength,
-                            ls_IntronSpliceSites, lb_Quiet, lk_CsvDevice_);
         lk_Query.execute(lk_QueryPeptides);
     }
 }

@@ -133,7 +133,6 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
         qSort(mk_IntronNTermReverse[lk_IntPair].begin(), mk_IntronNTermReverse[lk_IntPair].end(), &sortByDecreasingLength);
     foreach (tk_IntPair lk_IntPair, mk_IntronCTermReverse.keys())
         qSort(mk_IntronCTermReverse[lk_IntPair].begin(), mk_IntronCTermReverse[lk_IntPair].end(), &sortByDecreasingLength);
-    
 }
 
 
@@ -249,7 +248,8 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
                     lk_GnoMap.insert(lk_GnoMassDirection, lk_Masses[i]);
         }
     }
-//      printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoMap.size());
+    
+//     printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoMap.size());
     
     // now we have determined all interesting places in the genome, take a look at each
     // of them and try to construct alignments with the correct mass
@@ -315,7 +315,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
         qint64 li_ScaffoldEnd = li_ScaffoldStart + mk_GpfIndexFile.mk_ScaffoldLength[li_FirstScaffold] - 1;
         
         if (li_DnaOffset < li_ScaffoldStart || li_DnaOffset > li_ScaffoldEnd)
-            printf("WRONG scaffold borders: %d, %d (%d)\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd, (qint32)li_DnaOffset);
+            printf("Internal error: WRONG scaffold borders: %d, %d (%d)\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd, (qint32)li_DnaOffset);
         
 //         printf("Scaffold range is %d - %d.\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd);
         
