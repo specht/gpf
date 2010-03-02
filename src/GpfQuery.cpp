@@ -555,10 +555,10 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                     {
                                         qint64 li_SubReadLength = li_IntronEndMaxLength;
                                         if (lb_ProgressIncreasing)
-                                            li_ReadLength = std::min<qint64>(li_ReadLength, li_ScaffoldEnd - li_SubIntronScanPointer + 1);
+                                            li_SubReadLength = std::min<qint64>(li_SubReadLength, li_ScaffoldEnd - li_SubIntronScanPointer + 1);
                                         else
-                                            li_ReadLength = std::min<qint64>(li_ReadLength, li_SubIntronScanPointer - li_ScaffoldStart + 1);
-                                        if (li_ReadLength > 0)
+                                            li_SubReadLength = std::min<qint64>(li_SubReadLength, li_SubIntronScanPointer - li_ScaffoldStart + 1);
+                                        if (li_SubReadLength > 0)
                                         {
                     //                         printf("check %d/%d\n", (qint32)(((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor))), (qint32)li_ReadLength);
                                             qint32 li_SubBit = 
@@ -816,6 +816,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                         if (li_IntronScanPointer > li_ScaffoldEnd)
                             break;
                     }
+                    
                 }
 //                 printf("\n");
             }
