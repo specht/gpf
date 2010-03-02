@@ -200,8 +200,6 @@ k_GpfBase::k_GpfBase()
             QStringList lk_Line = ls_Line.split(",");
             QString ls_AminoAcid = lk_Line[3];
             QString ls_Mass = lk_Line[4];
-            mb_IsAminoAcid_[(int)ls_AminoAcid[0].toAscii()] = true;
-            md_AminoAcidMasses_[(int)ls_AminoAcid[0].toAscii()] = QVariant(ls_Mass).toDouble();
             int li_Code = QVariant(lk_Line[0]).toInt();
             if (li_Code > 7)
                 li_Code -= 1;
@@ -209,6 +207,8 @@ k_GpfBase::k_GpfBase()
             {
                 mi_AminoAcidToNumber_[(int)ls_AminoAcid[0].toAscii()] = li_Code;
                 mc_NumberToAminoAcid_[li_Code] = ls_AminoAcid[0].toAscii();
+                mb_IsAminoAcid_[(int)ls_AminoAcid[0].toAscii()] = true;
+                md_AminoAcidMasses_[(int)ls_AminoAcid[0].toAscii()] = QVariant(ls_Mass).toDouble();
             }
         }
         lk_File.close();
