@@ -28,7 +28,7 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
                        ae_SearchIntronSplitAlignments, r_IntronSearchType::Enumeration
                        ae_IntronSearchType, int ai_MaxIntronLength, 
                        QString as_IntronSpliceSites, bool ab_Quiet, 
-                       QIODevice* ak_Output_)
+                       QIODevice* ak_CsvOutput_, QIODevice* ak_PeptidesOutput_)
     : mk_GpfIndexFile(ak_GpfIndexFile)
     , md_MassAccuracy(ad_MassAccuracy)
     , mb_SimilaritySearch(ab_SimilaritySearch)
@@ -42,12 +42,15 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
     , mi_FlankingSequenceLength(5)
     , ms_IntronSpliceSites(as_IntronSpliceSites)
     , mb_Quiet(ab_Quiet)
-    , mk_Output_(ak_Output_)
-    , mk_CsvOutStream(mk_Output_)
+    , mk_CsvOutput_(ak_CsvOutput_)
+    , mk_CsvOutStream(mk_CsvOutput_)
+    , mk_PeptidesOutput_(ak_PeptidesOutput_)
+    , mk_PeptidesOutStream(mk_PeptidesOutput_)
 {
     QStringList lk_IntronSpliceSites = ms_IntronSpliceSites.split(",");
     
-    mk_CsvOutStream << "Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site\n";
+    if (mk_CsvOutput_)
+        mk_CsvOutStream << "Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site\n";
     
     // convert human readable intron splice site consensus sequences 
     // into a form which is useful for GPF
@@ -143,8 +146,6 @@ k_GpfQuery::~k_GpfQuery()
 
 void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
 {
-    QTextStream lk_OutStream(mk_Output_);
-    
     ms_QueryPeptide = as_Peptide;
     ms_QueryPeptideIL = as_Peptide;
     ms_QueryPeptideIL.replace("I", "L");
@@ -428,37 +429,49 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                         if (!ak_FoundAssemblies.contains(ls_Assembly))
                         {
                             ak_FoundAssemblies << ls_Assembly;
-                            bool lb_Print = true;
-                            if (!mb_SimilaritySearch)
+                            if (mk_CsvOutput_ || mk_PeptidesOutput_)
                             {
-                                if (mb_DistinguishIL)
-                                    lb_Print = ms_QueryPeptide == ms_QueryPeptide;
-                                else
+                                bool lb_Print = true;
+                                if (!mb_SimilaritySearch)
                                 {
-                                    QString ls_Check = ls_Peptide;
-                                    ls_Check.replace("I", "L");
-                                    lb_Print = ms_QueryPeptideIL == ls_Check;
+                                    if (mb_DistinguishIL)
+                                        lb_Print = ms_QueryPeptide == ms_QueryPeptide;
+                                    else
+                                    {
+                                        QString ls_Check = ls_Peptide;
+                                        ls_Check.replace("I", "L");
+                                        lb_Print = ms_QueryPeptideIL == ls_Check;
+                                    }
                                 }
-                            }
-                            if (lb_Print)
-                            {
-                                QString ls_LeftAminoAcids;
-                                QString ls_RightAminoAcids;
-                                readFlankingAminoAcids(li_AnchorExonBegin, 
-                                                    li_AnchorExonBegin + li_BStep1 * (li_PrintAnchorExonLength - 1),
-                                                    ls_LeftAminoAcids,
-                                                    ls_RightAminoAcids, 
-                                                    li_BStep1,
-                                                    li_ScaffoldStart,
-                                                    li_ScaffoldEnd,
-                                                    lc_TripletToAminoAcid_);
-                                mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",,\n")
-                                    .arg(ms_QueryPeptide)
-                                    .arg(ls_LeftAminoAcids)
-                                    .arg(ls_Peptide)
-                                    .arg(ls_RightAminoAcids)
-                                    .arg((double)li_AssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
-                                    .arg(ls_Assembly);
+                                if (lb_Print)
+                                {
+                                    if (mk_PeptidesOutput_)
+                                    {
+                                        if (!mk_ResultingPeptides.contains(ls_Peptide))
+                                            mk_PeptidesOutStream << ls_Peptide + "\n";
+                                        mk_ResultingPeptides << ls_Peptide;
+                                    }
+                                    if (mk_CsvOutput_)
+                                    {
+                                        QString ls_LeftAminoAcids;
+                                        QString ls_RightAminoAcids;
+                                        readFlankingAminoAcids(li_AnchorExonBegin, 
+                                                            li_AnchorExonBegin + li_BStep1 * (li_PrintAnchorExonLength - 1),
+                                                            ls_LeftAminoAcids,
+                                                            ls_RightAminoAcids, 
+                                                            li_BStep1,
+                                                            li_ScaffoldStart,
+                                                            li_ScaffoldEnd,
+                                                            lc_TripletToAminoAcid_);
+                                        mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",,\n")
+                                            .arg(ms_QueryPeptide)
+                                            .arg(ls_LeftAminoAcids)
+                                            .arg(ls_Peptide)
+                                            .arg(ls_RightAminoAcids)
+                                            .arg((double)li_AssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
+                                            .arg(ls_Assembly);
+                                    }
+                                }
                             }
                         }
                     }
@@ -725,64 +738,77 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                             if (!ak_FoundAssemblies.contains(ls_Assembly))
                                                             {
                                                                 ak_FoundAssemblies << ls_Assembly;
-                                                                bool lb_Print = true;
-                                                                if (!mb_SimilaritySearch)
+                                                                if (mk_CsvOutput_ || mk_PeptidesOutput_)
                                                                 {
-                                                                    if (mb_DistinguishIL)
-                                                                        lb_Print = ms_QueryPeptide == ls_SubPeptide;
-                                                                    else
+                                                                    bool lb_Print = true;
+                                                                    if (!mb_SimilaritySearch)
                                                                     {
-                                                                        QString ls_Check = ls_SubPeptide;
-                                                                        ls_Check.replace("I", "L");
-                                                                        lb_Print = ms_QueryPeptideIL == ls_Check;
+                                                                        if (mb_DistinguishIL)
+                                                                            lb_Print = ms_QueryPeptide == ls_SubPeptide;
+                                                                        else
+                                                                        {
+                                                                            QString ls_Check = ls_SubPeptide;
+                                                                            ls_Check.replace("I", "L");
+                                                                            lb_Print = ms_QueryPeptideIL == ls_Check;
+                                                                        }
                                                                     }
-                                                                }
-                                                                if (lb_Print)
-                                                                {
-                                                                    QString ls_FirstSite = gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second);
-                                                                    QString ls_SecondSite = gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second);
-                                                                    if (lb_RightHalfMass)
+                                                                    if (lb_Print)
                                                                     {
-                                                                        QString ls_Temp = ls_FirstSite;
-                                                                        ls_FirstSite = ls_SecondSite;
-                                                                        ls_SecondSite = ls_Temp;
-                                                                    }
-                                                                    if (lb_BackwardsFrame)
-                                                                    {
-                                                                        // WTF??! There's no QString::reverse()
-                                                                        QString ls_Temp;
-                                                                        for (int i = ls_FirstSite.length() - 1; i >= 0; --i)
-                                                                            ls_Temp.append(ls_FirstSite.at(i));
-                                                                        ls_FirstSite = ls_Temp;
-                                                                        ls_Temp = QString();
-                                                                        for (int i = ls_SecondSite.length() - 1; i >= 0; --i)
-                                                                            ls_Temp.append(ls_SecondSite.at(i));
-                                                                        ls_SecondSite = ls_Temp;
-                                                                    }
-                                                                    QString ls_SpliceSite = QString("%1|%2").arg(ls_FirstSite).arg(ls_SecondSite);
+                                                                        if (mk_PeptidesOutput_)
+                                                                        {
+                                                                            if (!mk_ResultingPeptides.contains(ls_SubPeptide))
+                                                                                mk_PeptidesOutStream << ls_SubPeptide + "\n";
+                                                                            mk_ResultingPeptides << ls_SubPeptide;
+                                                                        }
                                                                         
-                                                                    QString ls_LeftAminoAcids;
-                                                                    QString ls_RightAminoAcids;
-                                                                    readFlankingAminoAcids(li_FirstExonBegin, 
-                                                                                        li_SecondExonBegin + li_BStep1 * (li_SecondExonLength - 1),
-                                                                                        ls_LeftAminoAcids,
-                                                                                        ls_RightAminoAcids, 
-                                                                                        li_BStep1,
-                                                                                        li_ScaffoldStart,
-                                                                                        li_ScaffoldEnd,
-                                                                                        lc_TripletToAminoAcid_);
-                                                                    int li_IntronLength = abs((li_FirstExonBegin + li_BStep1 * li_FirstExonLength) - 
-                                                                        (li_SecondExonBegin));
-                                                                            
-                                                                    mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",%7,%8\n")
-                                                                        .arg(ms_QueryPeptide)
-                                                                        .arg(ls_LeftAminoAcids)
-                                                                        .arg(ls_SubPeptide)
-                                                                        .arg(ls_RightAminoAcids)
-                                                                        .arg((double)li_SubAssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
-                                                                        .arg(ls_Assembly)
-                                                                        .arg(li_IntronLength)
-                                                                        .arg(ls_SpliceSite);
+                                                                        if (mk_CsvOutput_)
+                                                                        {
+                                                                            QString ls_FirstSite = gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second);
+                                                                            QString ls_SecondSite = gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second);
+                                                                            if (lb_RightHalfMass)
+                                                                            {
+                                                                                QString ls_Temp = ls_FirstSite;
+                                                                                ls_FirstSite = ls_SecondSite;
+                                                                                ls_SecondSite = ls_Temp;
+                                                                            }
+                                                                            if (lb_BackwardsFrame)
+                                                                            {
+                                                                                // WTF??! There's no QString::reverse()
+                                                                                QString ls_Temp;
+                                                                                for (int i = ls_FirstSite.length() - 1; i >= 0; --i)
+                                                                                    ls_Temp.append(ls_FirstSite.at(i));
+                                                                                ls_FirstSite = ls_Temp;
+                                                                                ls_Temp = QString();
+                                                                                for (int i = ls_SecondSite.length() - 1; i >= 0; --i)
+                                                                                    ls_Temp.append(ls_SecondSite.at(i));
+                                                                                ls_SecondSite = ls_Temp;
+                                                                            }
+                                                                            QString ls_SpliceSite = QString("%1|%2").arg(ls_FirstSite).arg(ls_SecondSite);
+                                                                                
+                                                                            QString ls_LeftAminoAcids;
+                                                                            QString ls_RightAminoAcids;
+                                                                            readFlankingAminoAcids(li_FirstExonBegin, 
+                                                                                                li_SecondExonBegin + li_BStep1 * (li_SecondExonLength - 1),
+                                                                                                ls_LeftAminoAcids,
+                                                                                                ls_RightAminoAcids, 
+                                                                                                li_BStep1,
+                                                                                                li_ScaffoldStart,
+                                                                                                li_ScaffoldEnd,
+                                                                                                lc_TripletToAminoAcid_);
+                                                                            int li_IntronLength = abs((li_FirstExonBegin + li_BStep1 * li_FirstExonLength) - 
+                                                                                (li_SecondExonBegin));
+                                                                                    
+                                                                            mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",%7,%8\n")
+                                                                                .arg(ms_QueryPeptide)
+                                                                                .arg(ls_LeftAminoAcids)
+                                                                                .arg(ls_SubPeptide)
+                                                                                .arg(ls_RightAminoAcids)
+                                                                                .arg((double)li_SubAssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
+                                                                                .arg(ls_Assembly)
+                                                                                .arg(li_IntronLength)
+                                                                                .arg(ls_SpliceSite);
+                                                                            }
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -830,6 +856,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
 
 void k_GpfQuery::execute(const QList<tk_StringIntPair> ak_Peptides)
 {
+    mk_ResultingPeptides.clear();
     int i = 0;
     foreach (tk_StringIntPair lk_Peptide, ak_Peptides)
     {

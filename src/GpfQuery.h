@@ -64,7 +64,7 @@ public:
                ae_SearchIntronSplitAlignments, r_IntronSearchType::Enumeration
                ae_IntronSearchType, int ai_MaxIntronLength, 
                QString as_IntronSpliceSites, bool ab_Quiet, 
-               QIODevice* ak_Output_);
+               QIODevice* ak_CsvOutput_, QIODevice* ak_PeptidesOutput_);
     virtual ~k_GpfQuery();
     
     void execute(const QString& as_Peptide, qint64 ai_PrecursorMass);
@@ -95,8 +95,11 @@ protected:
     int mi_FlankingSequenceLength;
     QString ms_IntronSpliceSites;
     bool mb_Quiet;
-    QIODevice* mk_Output_;
+    QIODevice* mk_CsvOutput_;
     QTextStream mk_CsvOutStream;
+    QIODevice* mk_PeptidesOutput_;
+    QTextStream mk_PeptidesOutStream;
+    QSet<QString> mk_ResultingPeptides;
     
     // GT/2: [AG/2]
     // GC/2: [AG/2]

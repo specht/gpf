@@ -64,30 +64,27 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         printf("    for. Conditional means that intron split alignments for a given\n");
         printf("    peptide are only searched for if no immediate alignments have\n");
         printf("    been found.\n");
-        printf("  --intronSearchType <exhaustive|quick> (default: exhaustive)\n");
-        printf("    Specify whether the search for intron split alignments should be\n");
-        printf("    carried out exhaustively (which finds more alignments but takes longer)\n");
-        printf("    or quickly (which finds less alignments).\n");
         printf("  --maxIntronLength <int> (default: 2100)\n");
         printf("    Specify the maximum intron length in nucleotides.\n");
         printf("  --intronSpliceSites <string> (default: 'GT|AG,GC|AG')\n");
         printf("    Specify possible splice donor/acceptor site consensus sequences.\n");
-        printf("  --tagSize <int>\n");
+        // :TODO: 
+        // 1. implement this 
+        // 2. find out whether this is slower (it should be, right?)
+/*        printf("  --tagSize <int>\n");
         printf("    Apart from the tag size the genomic DNA sequence was indexed with,\n");
         printf("    you can specify a higher tag size here to achieve the same effect\n");
         printf("    as if the index file had been created with this tag size, although\n");
         printf("    this is a bit slower compared to using the right index file in the\n");
-        printf("    first place.\n");
-        // :TODO: 
-        // 1. implement this 
-        // 2. find out whether this is slower (it should be, right?)
+        printf("    first place.\n");*/
         printf("  --peptidesFile <path>\n");
         printf("    Specify a text file containing the query peptides, one peptide per line.\n");
         printf("    Optionally, each peptide may be followed by the precursor mass, separated\n");
         printf("    by a comma, semicolon, or whitespace.\n");
         printf("  --csvOutputPath <path>\n");
-        printf("    Specify a target file for CSV output. By default, the CSV output\n");
-        printf("    goes to stdout. Caution: If the file exists, it will be overwritten.\n");
+        printf("    Specify a target file for CSV output.\n");
+        printf("  --peptidesOutputPath <path>\n");
+        printf("    Specify a target file which all resulting peptides will be written to.\n");
         printf("  --quiet\n");
         printf("    Don't print status messages.\n");
         exit(1);
@@ -110,12 +107,12 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     QString ls_IntronSpliceSites = "GT|AG,GC|AG";
     bool lb_Quiet = false;
 
-    QFile lk_StdOut;
-    lk_StdOut.open(stdout, QIODevice::WriteOnly);
-    
     RefPtr<QFile> lk_pCsvOutFile;
+    QIODevice* lk_CsvDevice_ = NULL;
     
-    QIODevice* lk_CsvDevice_ = &lk_StdOut;
+    RefPtr<QFile> lk_pPeptidesOutFile;
+    QIODevice* lk_PeptidesDevice_ = NULL;
+    
     QStringList lk_PeptideFiles;
     
     while (!lk_Arguments.empty())
@@ -217,6 +214,12 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
             lk_pCsvOutFile->open(QIODevice::WriteOnly);
             lk_CsvDevice_ = lk_pCsvOutFile.get_Pointer();
         }
+        else if (ls_Key == "--peptidesOutputPath")
+        {
+            lk_pPeptidesOutFile = RefPtr<QFile>(new QFile(lk_Arguments.takeFirst()));
+            lk_pPeptidesOutFile->open(QIODevice::WriteOnly);
+            lk_PeptidesDevice_ = lk_pPeptidesOutFile.get_Pointer();
+        }
         else if (ls_Key == "--quiet")
             lb_Quiet = true;
         else
@@ -302,7 +305,8 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
                         lb_SearchImmediateAlignments,
                         le_SearchIntronSplitAlignments,
                         le_IntronSearchType, li_MaxIntronLength,
-                        ls_IntronSpliceSites, lb_Quiet, lk_CsvDevice_);
+                        ls_IntronSpliceSites, lb_Quiet, 
+                        lk_CsvDevice_, lk_PeptidesDevice_);
     // open new scope for stop watch
     {
         RefPtr<k_StopWatch> lk_pStopWatch;
