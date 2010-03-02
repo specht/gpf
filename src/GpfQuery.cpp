@@ -816,7 +816,6 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                         if (li_IntronScanPointer > li_ScaffoldEnd)
                             break;
                     }
-                    
                 }
 //                 printf("\n");
             }

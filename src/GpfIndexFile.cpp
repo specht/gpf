@@ -239,8 +239,8 @@ qint64 k_GpfIndexFile::peptideMass(const QString& as_Peptide)
 }
 
 
-#define READ_BITS 32
-#define READ_TYPE quint32
+#define READ_BITS_INDEX 32
+#define READ_TYPE_INDEX quint32
 
 quint64 k_GpfIndexFile::readIndexBits(qint64 ai_BitOffset, qint32 ai_Size)
 {
@@ -248,14 +248,14 @@ quint64 k_GpfIndexFile::readIndexBits(qint64 ai_BitOffset, qint32 ai_Size)
     int li_BitsCopied = 0;
     while (ai_Size > 0)
     {
-        qint64 li_ByteOffset = ai_BitOffset / READ_BITS;
-        int li_BitOffset = ai_BitOffset % READ_BITS;
-        int li_CopyBits = READ_BITS - li_BitOffset;
+        qint64 li_ByteOffset = ai_BitOffset / READ_BITS_INDEX;
+        int li_BitOffset = ai_BitOffset % READ_BITS_INDEX;
+        int li_CopyBits = READ_BITS_INDEX - li_BitOffset;
         if (li_CopyBits > ai_Size)
             li_CopyBits = ai_Size;
-        READ_TYPE lui_CopyMask = ((((quint64)1) << li_CopyBits) - 1);
+        READ_TYPE_INDEX lui_CopyMask = ((((quint64)1) << li_CopyBits) - 1);
         //READ_TYPE lui_CopyByte = (auc_Buffer_[li_ByteOffset] >> li_BitOffset) & lui_CopyMask;
-        READ_TYPE lui_CopyByte;
+        READ_TYPE_INDEX lui_CopyByte;
         mk_File.seek(mi_IndexFilePosition + li_ByteOffset * 4);
         memcpy(&lui_CopyByte, mk_File.read(4).constData(), 4);
         lui_CopyByte >>= li_BitOffset;
