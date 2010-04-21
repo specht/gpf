@@ -63,7 +63,8 @@ public:
                bool ab_SearchImmediate, r_SearchIntronSplitAlignments::Enumeration 
                ae_SearchIntronSplitAlignments, r_IntronSearchType::Enumeration
                ae_IntronSearchType, int ai_MaxIntronLength, 
-               QString as_IntronSpliceSites, bool ab_Quiet, 
+               QString as_IntronSpliceSites,
+               int ai_PrintFlankingResidues, bool ab_Quiet,
                QIODevice* ak_CsvOutput_, QIODevice* ak_PeptidesOutput_);
     virtual ~k_GpfQuery();
     

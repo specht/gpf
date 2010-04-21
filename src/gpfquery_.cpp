@@ -68,6 +68,8 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         printf("    Specify the maximum intron length in nucleotides.\n");
         printf("  --intronSpliceSites <string> (default: 'GT|AG,GC|AG')\n");
         printf("    Specify possible splice donor/acceptor site consensus sequences.\n");
+        printf("  --printFlankingResidues <int> (default: 5)\n");
+        printf("    Specify how many amino acids flanking a hit should be printed.\n");
         // :TODO: 
         // 1. implement this 
         // 2. find out whether this is slower (it should be, right?)
@@ -105,6 +107,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         le_IntronSearchType = r_IntronSearchType::Exhaustive;
     int li_MaxIntronLength = 2100;
     QString ls_IntronSpliceSites = "GT|AG,GC|AG";
+    int li_PrintFlankingResidues = 5;
     bool lb_Quiet = false;
 
     RefPtr<QFile> lk_pCsvOutFile;
@@ -192,7 +195,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         {
             bool lb_Ok = false;
             QString ls_Value = lk_Arguments.takeFirst();
-            li_MaxIntronLength = ls_Value.toDouble(&lb_Ok);
+            li_MaxIntronLength = ls_Value.toInt(&lb_Ok);
             if (!lb_Ok)
             {
                 printf("Error: Invalid max intron length specified: %s.\n", ls_Value.toStdString().c_str());
@@ -202,6 +205,17 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         else if (ls_Key == "--intronSpliceSites")
         {
             ls_IntronSpliceSites = lk_Arguments.takeFirst();
+        }
+        else if (ls_Key == "--printFlankingResidues")
+        {
+            bool lb_Ok = false;
+            QString ls_Value = lk_Arguments.takeFirst();
+            li_PrintFlankingResidues = ls_Value.toInt(&lb_Ok);
+            if (!lb_Ok)
+            {
+                printf("Error: Invalid flanking residue count specified: %s.\n", ls_Value.toStdString().c_str());
+                exit(1);
+            }
         }
         else if (ls_Key == "--peptidesFile")
         {
@@ -305,8 +319,8 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
                         lb_SearchImmediateAlignments,
                         le_SearchIntronSplitAlignments,
                         le_IntronSearchType, li_MaxIntronLength,
-                        ls_IntronSpliceSites, lb_Quiet, 
-                        lk_CsvDevice_, lk_PeptidesDevice_);
+                        ls_IntronSpliceSites, li_PrintFlankingResidues,
+                        lb_Quiet, lk_CsvDevice_, lk_PeptidesDevice_);
     // open new scope for stop watch
     {
         RefPtr<k_StopWatch> lk_pStopWatch;
