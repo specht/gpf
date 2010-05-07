@@ -161,7 +161,7 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
         else if (lui_ChunkType == r_DnaIndexChunkType::Dna)
         {
 //             printf("Reading DNA chunk...\n");
-            muc_pDnaBuffer = RefPtr<quint8>(new quint8[li_ChunkSize]);
+            muc_pDnaBuffer = QSharedPointer<quint8>(new quint8[li_ChunkSize]);
             // read DNA in 64M chunks
             qint64 li_Remaining = li_ChunkSize;
             qint64 li_Offset = 0;
@@ -170,7 +170,7 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
                 qint64 li_Step = 64 * 1024 * 1024;
                 if (li_Step > li_Remaining)
                     li_Step = li_Remaining;
-                memcpy(muc_pDnaBuffer.get_Pointer() + li_Offset, lk_File.read(li_Step).constData(), li_Step);
+                memcpy(muc_pDnaBuffer.data() + li_Offset, lk_File.read(li_Step).constData(), li_Step);
                 li_Offset += li_Step;
                 li_Remaining -= li_Step;
             }
@@ -182,13 +182,13 @@ void k_GpfIndexFile::parseGpfIndexFile(const QString& as_Path)
             qint32 li_HmstCountBits;
             memcpy(&li_HmstCountBits, lk_File.read(4).constData(), 4);
             qint64 li_HmstCountEncodedBufferSize = mi_TagCount * 2 * li_HmstCountBits / 8 + 1;
-            RefPtr<quint8> luc_pHmstCountEncoded(new quint8[li_HmstCountEncodedBufferSize]);
-            memcpy(luc_pHmstCountEncoded.get_Pointer(), lk_File.read(li_HmstCountEncodedBufferSize).constData(), li_HmstCountEncodedBufferSize);
+            QSharedPointer<quint8> luc_pHmstCountEncoded(new quint8[li_HmstCountEncodedBufferSize]);
+            memcpy(luc_pHmstCountEncoded.data(), lk_File.read(li_HmstCountEncodedBufferSize).constData(), li_HmstCountEncodedBufferSize);
             mi_TotalHmstCount = 0;
             mi_BiggestHmstCount = 0;
             for (qint64 i = 0; i < mi_TagCount * 2; ++i)
             {
-                qint64 li_HmstCount = readBitsFromBuffer(luc_pHmstCountEncoded.get_Pointer(), i * li_HmstCountBits, li_HmstCountBits);
+                qint64 li_HmstCount = readBitsFromBuffer(luc_pHmstCountEncoded.data(), i * li_HmstCountBits, li_HmstCountBits);
                 mk_HmstOffset.append(mi_TotalHmstCount);
                 mk_HmstCount.append(li_HmstCount);
 /*                if (li_HmstCount > 1)

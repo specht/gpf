@@ -330,8 +330,8 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
 //         printf("Scaffold range is %d - %d.\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd);
         
         char* lc_TripletToAminoAcid_ = lb_BackwardsFrame ? 
-            gk_GpfBase.mk_TranslationTablesReverse[mk_GpfIndexFile.mi_GeneticCode].get_Pointer() :
-            gk_GpfBase.mk_TranslationTables[mk_GpfIndexFile.mi_GeneticCode].get_Pointer();
+            gk_GpfBase.mk_TranslationTablesReverse[mk_GpfIndexFile.mi_GeneticCode].data() :
+            gk_GpfBase.mk_TranslationTables[mk_GpfIndexFile.mi_GeneticCode].data();
         
         tk_IntPairListHash* lk_IntronStart_ = NULL;
         tk_IntPairListHash* lk_IntronEnd_ = NULL;
@@ -388,7 +388,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
             
             quint16 lui_Triplet = 
                 gk_GpfBase.readNucleotideTriplet(
-                    mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                    mk_GpfIndexFile.muc_pDnaBuffer.data(), 
                     li_DnaOffset + li_BackwardsFactor * li_Step2);
             char lc_AminoAcid = lc_TripletToAminoAcid_[lui_Triplet];
             
@@ -527,7 +527,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
     //                         printf("check %d/%d\n", (qint32)(((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor))), (qint32)li_ReadLength);
                             qint32 li_Bit = 
                                 readBitsFromBuffer(
-                                mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                                mk_GpfIndexFile.muc_pDnaBuffer.data(), 
                                 ((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor)) * 3, 
                                 li_ReadLength * 3);
                             qint32 li_BitLength = li_ReadLength;
@@ -565,7 +565,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                     {
                                         li_SplitTriplet = 
                                             readBitsFromBuffer(
-                                            mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                                            mk_GpfIndexFile.muc_pDnaBuffer.data(), 
                                             ((li_IntronScanPointer - li_IntronStartOffset * li_Step1 - (li_IntronStartOffset - 1) * li_BackwardsFactor)) * 3, 
                                             li_IntronStartOffset * 3);
                                         if (lb_BackwardsFrame)
@@ -596,7 +596,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                     //                         printf("check %d/%d\n", (qint32)(((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor))), (qint32)li_ReadLength);
                                             qint32 li_SubBit = 
                                                 readBitsFromBuffer(
-                                                mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                                                mk_GpfIndexFile.muc_pDnaBuffer.data(), 
                                                 ((li_SubIntronScanPointer - (li_SubReadLength - 1) * li_BackwardsFactor)) * 3, 
                                                 li_SubReadLength * 3);
                                             qint32 li_SubBitLength = li_SubReadLength;
@@ -662,7 +662,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                             // read remaining nucleotides and comlete amino acid
                                                             qint32 li_RemainingNucleotides = 
                                                                 readBitsFromBuffer(
-                                                                    mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(),
+                                                                    mk_GpfIndexFile.muc_pDnaBuffer.data(),
                                                                     (li_SubDnaOffset - li_BackwardsFactor * (li_ReadLength - 1)) * 3,
                                                                     li_ReadLength * 3
                                                                 );
@@ -675,7 +675,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                                 li_CombinedTriplet = concatNucleotides(li_SplitTriplet, li_IntronStartOffset, li_RemainingNucleotides, li_ReadLength);
                                                             // make sure it's only the lower 9 bits!
                                                             li_CombinedTriplet &= 511;
-                                                            lc_SubAminoAcid = gk_GpfBase.mk_TranslationTables[mk_GpfIndexFile.mi_GeneticCode].get_Pointer()[li_CombinedTriplet];
+                                                            lc_SubAminoAcid = gk_GpfBase.mk_TranslationTables[mk_GpfIndexFile.mi_GeneticCode].data()[li_CombinedTriplet];
     /*                                                        printf("remaining: %s %08o/ combined: %s / makes %c.\n", 
                                                                 gk_GpfBase.nucleotideSequenceForCode(li_RemainingNucleotides, li_ReadLength).toStdString().c_str(), 
                                                                 li_RemainingNucleotides,
@@ -686,7 +686,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                         {
                                                             quint16 lui_SubTriplet = 
                                                                 gk_GpfBase.readNucleotideTriplet(
-                                                                    mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), 
+                                                                    mk_GpfIndexFile.muc_pDnaBuffer.data(), 
                                                                     li_SubDnaOffset + li_BackwardsFactor * li_Step2);
                                                             lc_SubAminoAcid = lc_TripletToAminoAcid_[lui_SubTriplet];
                                                         }
@@ -942,7 +942,7 @@ void k_GpfQuery::readFlankingAminoAcids(qint64 ai_Start, qint64 ai_Stop,
         }
         // read triplet
         qint32 li_Triplet = gk_GpfBase.
-            readNucleotideTriplet(mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), li_Pointer - li_BBackwardsFactor * 2) & 511;
+            readNucleotideTriplet(mk_GpfIndexFile.muc_pDnaBuffer.data(), li_Pointer - li_BBackwardsFactor * 2) & 511;
         ls_Left = ac_TripletToAminoAcid_[li_Triplet] + ls_Left;
         li_Pointer -= ai_BStep1 * 3;
     }
@@ -963,7 +963,7 @@ void k_GpfQuery::readFlankingAminoAcids(qint64 ai_Start, qint64 ai_Stop,
         }
         // read triplet
         qint32 li_Triplet = gk_GpfBase.
-            readNucleotideTriplet(mk_GpfIndexFile.muc_pDnaBuffer.get_Pointer(), li_Pointer - li_BBackwardsFactor * 2) & 511;
+            readNucleotideTriplet(mk_GpfIndexFile.muc_pDnaBuffer.data(), li_Pointer - li_BBackwardsFactor * 2) & 511;
         ls_Right += ac_TripletToAminoAcid_[li_Triplet];
         li_Pointer += ai_BStep1 * 3;
     }

@@ -22,7 +22,6 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #include <QtCore>
 #include "GpfBase.h"
 #include "GpfIndexer.h"
-#include "RefPtr.h"
 
 struct r_Hmst
 {
@@ -68,7 +67,7 @@ protected:
     qint64 mk_Last_[(int)r_HmstIteratorLevel::Size];
     qint64 mk_Value_[(int)r_HmstIteratorLevel::Size];
     
-    RefPtr<char> mc_pOrf;
+    QSharedPointer<char> mc_pOrf;
     
     typedef QPair<qint64, qint64> tk_IntPair;
     QList<tk_IntPair> mk_Spans;

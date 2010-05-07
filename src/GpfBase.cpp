@@ -91,8 +91,8 @@ k_GpfBase::k_GpfBase()
             }
             
             mk_TranslationTableTitle[li_Id] = ls_Title;
-            mk_TranslationTables[li_Id] = RefPtr<char>(new char[512]);
-            memset(mk_TranslationTables[li_Id].get_Pointer(), 'X', 512);
+            mk_TranslationTables[li_Id] = QSharedPointer<char>(new char[512]);
+            memset(mk_TranslationTables[li_Id].data(), 'X', 512);
             
             QHash<int, QSet<char> > lk_Ambiguities;
             
@@ -102,7 +102,7 @@ k_GpfBase::k_GpfBase()
                 int b = mk_DnaCharToNumber_[(unsigned char)lk_Lines["base2"].at(i).toAscii()];
                 int c = mk_DnaCharToNumber_[(unsigned char)lk_Lines["base3"].at(i).toAscii()];
                 char lc_AminoAcid = lk_Lines["aas"].at(i).toAscii();
-                mk_TranslationTables[li_Id].get_Pointer()[(a) | (b << 3) | (c << 6)] = lc_AminoAcid;
+                mk_TranslationTables[li_Id].data()[(a) | (b << 3) | (c << 6)] = lc_AminoAcid;
                 // try all combinations of one or two unknown nucleotides
                 for (int k = 1; k < 7; ++k)
                 {
@@ -156,14 +156,14 @@ k_GpfBase::k_GpfBase()
                     for (int a = a0; a <= a1; ++a)
                         for (int b = b0; b <= b1; ++b)
                             for (int c = c0; c <= c1; ++c)
-                                mk_TranslationTables[li_Id].get_Pointer()[(a) | (b << 3) | (c << 6)] = lc_AminoAcid;
+                                mk_TranslationTables[li_Id].data()[(a) | (b << 3) | (c << 6)] = lc_AminoAcid;
                 }
             }
             
 
             // add reverse table
-            mk_TranslationTablesReverse[li_Id] = RefPtr<char>(new char[512]);
-            memset(mk_TranslationTablesReverse[li_Id].get_Pointer(), 'X', 512);
+            mk_TranslationTablesReverse[li_Id] = QSharedPointer<char>(new char[512]);
+            memset(mk_TranslationTablesReverse[li_Id].data(), 'X', 512);
             for (int i = 0; i < 512; ++i)
             {
                 int a = i & 7;
@@ -171,7 +171,7 @@ k_GpfBase::k_GpfBase()
                 int c = (i >> 6) & 7;
                 int li_Reverse = (a << 6) | (b << 3) | c;
                 li_Reverse ^= 219;
-                mk_TranslationTablesReverse[li_Id].get_Pointer()[i] = mk_TranslationTables[li_Id].get_Pointer()[li_Reverse];
+                mk_TranslationTablesReverse[li_Id].data()[i] = mk_TranslationTables[li_Id].data()[li_Reverse];
             }
         }
         lk_File.close();

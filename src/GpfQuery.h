@@ -20,7 +20,6 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <QtCore>
-#include "RefPtr.h"
 
 class k_GpfIndexFile;
 

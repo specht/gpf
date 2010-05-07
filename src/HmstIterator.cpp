@@ -46,7 +46,7 @@ k_HmstIterator::k_HmstIterator(k_GpfIndexer& ak_GpfIndexer)
         if (li_Length > li_MaxLength)
             li_MaxLength = li_Length;
         
-    mc_pOrf = RefPtr<char>(new char[li_MaxLength / 3 + 1]);
+    mc_pOrf = QSharedPointer<char>(new char[li_MaxLength / 3 + 1]);
     
     this->reset();
 }
@@ -106,8 +106,8 @@ bool k_HmstIterator::advance(r_HmstIteratorLevel::Enumeration ae_Level)
 void k_HmstIterator::updateOrfAndCleavageSites()
 {
     char* lk_DnaTripletToAminoAcidTable_ = mk_Value_[r_HmstIteratorLevel::OrfDirection] == 0 ? 
-        gk_GpfBase.mk_TranslationTables[mk_GpfIndexer.mi_GeneticCode].get_Pointer() :
-        gk_GpfBase.mk_TranslationTablesReverse[mk_GpfIndexer.mi_GeneticCode].get_Pointer();
+        gk_GpfBase.mk_TranslationTables[mk_GpfIndexer.mi_GeneticCode].data() :
+        gk_GpfBase.mk_TranslationTablesReverse[mk_GpfIndexer.mi_GeneticCode].data();
         
     QSet<qint64> lk_CleavageSites;
     lk_CleavageSites << 0;
@@ -128,10 +128,10 @@ void k_HmstIterator::updateOrfAndCleavageSites()
             (i >= li_NucleotideEnd);
             i += li_NucleotideStep)
     {
-        quint16 lui_Triplet = gk_GpfBase.readNucleotideTriplet(mk_GpfIndexer.muc_pDnaBuffer.get_Pointer(), i);
+        quint16 lui_Triplet = gk_GpfBase.readNucleotideTriplet(mk_GpfIndexer.muc_pDnaBuffer.data(), i);
         char lc_AminoAcid = lk_DnaTripletToAminoAcidTable_[lui_Triplet];
         
-        mc_pOrf.get_Pointer()[li_OrfLength] = lc_AminoAcid;
+        mc_pOrf.data()[li_OrfLength] = lc_AminoAcid;
         ++li_OrfLength;
         // always cleave after a STOP codon
         if (lc_AminoAcid == '*')
@@ -152,9 +152,9 @@ void k_HmstIterator::updateOrfAndCleavageSites()
     {
         qint64 li_Start = lk_CleavageSitesSorted[i];
         qint64 li_End = lk_CleavageSitesSorted[i + 1] - 1;
-        while (li_Start < li_OrfLength && mc_pOrf.get_Pointer()[li_Start] == '*')
+        while (li_Start < li_OrfLength && mc_pOrf.data()[li_Start] == '*')
             ++li_Start;
-        while (li_End > 0 && mc_pOrf.get_Pointer()[li_End] == '*')
+        while (li_End > 0 && mc_pOrf.data()[li_End] == '*')
             --li_End;
         mk_Spans << tk_IntPair(li_Start, li_End);
     }
@@ -193,7 +193,7 @@ bool k_HmstIterator::goodState()
         li_SpanOffset = (int)(mk_Spans[mk_Value_[r_HmstIteratorLevel::SpanIndex]].first + mk_Value_[r_HmstIteratorLevel::TagOffset]);
     else
         li_SpanOffset = (int)(mk_Spans[mk_Value_[r_HmstIteratorLevel::SpanIndex]].second - mk_GpfIndexer.mi_TagSize - (mk_Value_[r_HmstIteratorLevel::TagOffset] - 1));
-    mi_CurrentTag = gk_GpfBase.aminoAcidPolymerCode(mc_pOrf.get_Pointer() + li_SpanOffset, mk_GpfIndexer.mi_TagSize);
+    mi_CurrentTag = gk_GpfBase.aminoAcidPolymerCode(mc_pOrf.data() + li_SpanOffset, mk_GpfIndexer.mi_TagSize);
     
     if (mi_CurrentTag < 0)
     {
@@ -204,7 +204,7 @@ bool k_HmstIterator::goodState()
     if (mk_Value_[r_HmstIteratorLevel::TagOffset] != mk_First_[r_HmstIteratorLevel::TagOffset])
     {
         int li_CurrentAminoAcidIndex = li_SpanOffset + ((mk_Value_[r_HmstIteratorLevel::MassDirection] == 0) ? -1 : mk_GpfIndexer.mi_TagSize);
-        char lc_CurrentAminoAcid = mc_pOrf.get_Pointer()[li_CurrentAminoAcidIndex];
+        char lc_CurrentAminoAcid = mc_pOrf.data()[li_CurrentAminoAcidIndex];
         li_DeltaMass = mk_GpfIndexer.mi_AminoAcidMasses_[(int)lc_CurrentAminoAcid];
     }
     // increase half mass if not greater than maximum allowed mass

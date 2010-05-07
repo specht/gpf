@@ -20,7 +20,6 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <QtCore>
-#include "RefPtr.h"
 
 
 class k_GpfIndexFile
@@ -58,7 +57,7 @@ public:
     QList<qint64> mk_ScaffoldStart;
     qint64 mi_TotalNucleotideCount;
     
-    RefPtr<quint8> muc_pDnaBuffer;
+    QSharedPointer<quint8> muc_pDnaBuffer;
     
     QList<qint64> mk_HmstOffset;
     QList<qint64> mk_HmstCount;

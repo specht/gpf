@@ -18,7 +18,6 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "GpfIndexFile.h"
-#include "RefPtr.h"
 
 
 int main(int ai_ArgumentCount, char **ac_Arguments__) 
@@ -30,7 +29,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     }
 
     // load index file
-    RefPtr<k_GpfIndexFile> lk_pGpfIndexFile(new k_GpfIndexFile(QString(ac_Arguments__[1])));
+    QSharedPointer<k_GpfIndexFile> lk_pGpfIndexFile(new k_GpfIndexFile(QString(ac_Arguments__[1])));
     
     if (!lk_pGpfIndexFile->isGood())
     {

@@ -20,7 +20,6 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <QtCore>
-#include "RefPtr.h"
 
 
 class k_BitWriter
@@ -36,6 +35,6 @@ protected:
     size_t mui_BufferSize;
     size_t mi_BufferOffset;
     size_t mi_BufferBitOffset;
-    RefPtr<quint8> muc_pBuffer;
+    QSharedPointer<quint8> muc_pBuffer;
     QIODevice* mk_Device_;
 };

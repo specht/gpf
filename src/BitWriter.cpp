@@ -27,7 +27,7 @@ k_BitWriter::k_BitWriter(QIODevice* ak_Device_)
     , muc_pBuffer(new quint8[mui_BufferSize])
     , mk_Device_(ak_Device_)
 {
-    memset(muc_pBuffer.get_Pointer(), 0, mui_BufferSize);
+    memset(muc_pBuffer.data(), 0, mui_BufferSize);
 }
 
 
@@ -52,8 +52,8 @@ void k_BitWriter::writeBits(quint64 aui_Value, int ai_Bits)
         lui_Byte <<= mi_BufferBitOffset;
         aui_Value >>= li_CopyBits;
         ai_Bits -= li_CopyBits;
-        ((READ_TYPE*)(muc_pBuffer.get_Pointer()))[mi_BufferOffset] &= lui_NullMask;
-        ((READ_TYPE*)(muc_pBuffer.get_Pointer()))[mi_BufferOffset] |= lui_Byte;
+        ((READ_TYPE*)(muc_pBuffer.data()))[mi_BufferOffset] &= lui_NullMask;
+        ((READ_TYPE*)(muc_pBuffer.data()))[mi_BufferOffset] |= lui_Byte;
         mi_BufferBitOffset += li_CopyBits;
         if (mi_BufferBitOffset >= READ_BITS)
         {
@@ -77,7 +77,7 @@ void k_BitWriter::flush()
         else
             mi_BufferBitOffset = 0;
     }
-    mk_Device_->write((char*)muc_pBuffer.get_Pointer(), li_Size);
+    mk_Device_->write((char*)muc_pBuffer.data(), li_Size);
     mi_BufferOffset = 0;
     mi_BufferBitOffset = 0;
 }

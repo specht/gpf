@@ -19,7 +19,6 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "GpfIndexFile.h"
 #include "GpfQuery.h"
-#include "RefPtr.h"
 #include "StopWatch.h"
 
 
@@ -110,10 +109,10 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     int li_PrintFlankingResidues = 5;
     bool lb_Quiet = false;
 
-    RefPtr<QFile> lk_pCsvOutFile;
+    QSharedPointer<QFile> lk_pCsvOutFile;
     QIODevice* lk_CsvDevice_ = NULL;
     
-    RefPtr<QFile> lk_pPeptidesOutFile;
+    QSharedPointer<QFile> lk_pPeptidesOutFile;
     QIODevice* lk_PeptidesDevice_ = NULL;
     
     QStringList lk_PeptideFiles;
@@ -224,15 +223,15 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         }
         else if (ls_Key == "--csvOutputPath")
         {
-            lk_pCsvOutFile = RefPtr<QFile>(new QFile(lk_Arguments.takeFirst()));
+            lk_pCsvOutFile = QSharedPointer<QFile>(new QFile(lk_Arguments.takeFirst()));
             lk_pCsvOutFile->open(QIODevice::WriteOnly);
-            lk_CsvDevice_ = lk_pCsvOutFile.get_Pointer();
+            lk_CsvDevice_ = lk_pCsvOutFile.data();
         }
         else if (ls_Key == "--peptidesOutputPath")
         {
-            lk_pPeptidesOutFile = RefPtr<QFile>(new QFile(lk_Arguments.takeFirst()));
+            lk_pPeptidesOutFile = QSharedPointer<QFile>(new QFile(lk_Arguments.takeFirst()));
             lk_pPeptidesOutFile->open(QIODevice::WriteOnly);
-            lk_PeptidesDevice_ = lk_pPeptidesOutFile.get_Pointer();
+            lk_PeptidesDevice_ = lk_pPeptidesOutFile.data();
         }
         else if (ls_Key == "--quiet")
             lb_Quiet = true;
@@ -245,7 +244,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
 
     QString ls_IndexFilePath = lk_Arguments.takeFirst();
     // load index file
-    RefPtr<k_GpfIndexFile> lk_pGpfIndexFile(new k_GpfIndexFile(ls_IndexFilePath));
+    QSharedPointer<k_GpfIndexFile> lk_pGpfIndexFile(new k_GpfIndexFile(ls_IndexFilePath));
     if (!lk_pGpfIndexFile->isGood())
     {
         printf("Error: Unable to load GPF index file %s.\n", ls_IndexFilePath.toStdString().c_str());
@@ -314,7 +313,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         lk_QueryPeptides << tk_StringIntPair(ls_Peptide, li_Mass);
     }
 
-    k_GpfQuery lk_Query(*(lk_pGpfIndexFile.get_Pointer()), ld_MassAccuracy,
+    k_GpfQuery lk_Query(*(lk_pGpfIndexFile.data()), ld_MassAccuracy,
                         lb_SimilaritySearch, lb_DistinguishIL,
                         lb_SearchImmediateAlignments,
                         le_SearchIntronSplitAlignments,
@@ -323,9 +322,9 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
                         lb_Quiet, lk_CsvDevice_, lk_PeptidesDevice_);
     // open new scope for stop watch
     {
-        RefPtr<k_StopWatch> lk_pStopWatch;
+        QSharedPointer<k_StopWatch> lk_pStopWatch;
         if (!lb_Quiet)
-            lk_pStopWatch = RefPtr<k_StopWatch>(new k_StopWatch("GPF search took %1.\n"));
+            lk_pStopWatch = QSharedPointer<k_StopWatch>(new k_StopWatch("GPF search took %1.\n"));
 
         lk_Query.execute(lk_QueryPeptides);
     }

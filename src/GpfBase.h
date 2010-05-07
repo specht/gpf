@@ -20,7 +20,6 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <QtCore>
-#include "RefPtr.h"
 
 #define WATER_MASS 18.01057
 
@@ -53,8 +52,8 @@ public:
     quint16 mk_DnaCharToNumber_[256];
     
     QHash<int, QString> mk_TranslationTableTitle;
-    QHash<int, RefPtr<char> > mk_TranslationTables;
-    QHash<int, RefPtr<char> > mk_TranslationTablesReverse;
+    QHash<int, QSharedPointer<char> > mk_TranslationTables;
+    QHash<int, QSharedPointer<char> > mk_TranslationTablesReverse;
     
 /*  char mk_DnaTripletToAminoAcid_[512];
     // takes the same triplet as the array above, but reverses and transposes

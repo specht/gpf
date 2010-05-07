@@ -21,7 +21,6 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QtCore>
 #include "GpfBase.h"
-#include "RefPtr.h"
 
 
 class k_GpfIndexer
@@ -72,15 +71,15 @@ protected:
     qint64 mi_AminoAcidMasses_[256];
     
     // this buffer contains the nucleotides as 3-bit-entities
-    RefPtr<quint8> muc_pDnaBuffer;
+    QSharedPointer<quint8> muc_pDnaBuffer;
     size_t mi_DnaBufferLength;
     
-    RefPtr<quint8> muc_pIndexBuffer;
+    QSharedPointer<quint8> muc_pIndexBuffer;
     size_t mi_IndexBufferMaxLength;
     size_t mi_IndexBufferOffset;
     size_t mi_IndexBufferBitOffset;
     
-    RefPtr<quint32> mui_pTagDirectionCount;
+    QSharedPointer<quint32> mui_pTagDirectionCount;
     bool mb_CleaveBefore_[256];
     bool mb_CleaveAfter_[256];
 };

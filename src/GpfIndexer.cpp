@@ -22,7 +22,6 @@ along with GPF.  If not, see <http://www.gnu.org/licenses/>.
 #include "BitWriter.h"
 #include "GpfBase.h"
 #include "HmstIterator.h"
-#include "RefPtr.h"
 #include "StopWatch.h"
 
 
@@ -133,8 +132,8 @@ void k_GpfIndexer::compileIndex()
     mi_MaxMass = ((qint64)1 << mi_MassBits) - 1;
     
     printf("Allocating %s for tag/direction count (32 bits) list.\n", gk_GpfBase.bytesToStr(mi_TagCount * 2 * 4).toStdString().c_str());
-    mui_pTagDirectionCount = RefPtr<quint32>(new quint32[mi_TagCount * 2]);
-    memset(mui_pTagDirectionCount.get_Pointer(), 0, mi_TagCount * 2 * 4);
+    mui_pTagDirectionCount = QSharedPointer<quint32>(new quint32[mi_TagCount * 2]);
+    memset(mui_pTagDirectionCount.data(), 0, mi_TagCount * 2 * 4);
 
     // file size * 2 (all six reading frames) * 2 (left and right HMST)
     qint64 li_IndexBufferMaxRequiredSize = (QFileInfo(ms_DnaPath).size() * 2 * 2 * mi_HmstBits / 8) + 1;
@@ -144,8 +143,8 @@ void k_GpfIndexer::compileIndex()
            gk_GpfBase.bytesToStr(mi_IndexBufferMaxLength).toStdString().c_str(),
            (int)(sizeof(size_t) * 8));
     // allocate 9 extra bytes so that we're always safe if we should read several bytes at once
-    muc_pIndexBuffer = RefPtr<quint8>(new quint8[mi_IndexBufferMaxLength + 9]);
-    memset(muc_pIndexBuffer.get_Pointer(), 0, mi_IndexBufferMaxLength);
+    muc_pIndexBuffer = QSharedPointer<quint8>(new quint8[mi_IndexBufferMaxLength + 9]);
+    memset(muc_pIndexBuffer.data(), 0, mi_IndexBufferMaxLength);
     mi_IndexBufferOffset = 0;
     mi_IndexBufferBitOffset = 0;
     
@@ -179,7 +178,7 @@ void k_GpfIndexer::parseDna(QString as_DnaPath)
     QTextStream lk_Stream(&lk_DnaFile);
     
     printf("Allocating %s for DNA.\n", gk_GpfBase.bytesToStr(lk_DnaFile.size() * 3 / 8 + 1).toStdString().c_str());
-    muc_pDnaBuffer = RefPtr<quint8>(new quint8[lk_DnaFile.size() * 3 / 8 + 1]);
+    muc_pDnaBuffer = QSharedPointer<quint8>(new quint8[lk_DnaFile.size() * 3 / 8 + 1]);
     qint64 li_DnaBufferOffset = 0;
     mi_DnaBufferLength = 0;
     
@@ -225,7 +224,7 @@ void k_GpfIndexer::parseDna(QString as_DnaPath)
                 if (li_DnaBufferLength >= 8)
                 {
                     quint8 lui_DnaBufferBit = (quint8)(lui_DnaBuffer & 255);
-                    muc_pDnaBuffer.get_Pointer()[li_DnaBufferOffset] = lui_DnaBufferBit;
+                    muc_pDnaBuffer.data()[li_DnaBufferOffset] = lui_DnaBufferBit;
                     ++li_DnaBufferOffset;
                     ++mi_DnaBufferLength;
                     li_DnaBufferLength -= 8;
@@ -238,7 +237,7 @@ void k_GpfIndexer::parseDna(QString as_DnaPath)
     if (li_DnaBufferLength > 0)
     {
         quint8 lui_DnaBufferBit = (quint8)(lui_DnaBuffer & 255);
-        muc_pDnaBuffer.get_Pointer()[li_DnaBufferOffset] = lui_DnaBufferBit;
+        muc_pDnaBuffer.data()[li_DnaBufferOffset] = lui_DnaBufferBit;
         ++li_DnaBufferOffset;
         ++mi_DnaBufferLength;
     }
@@ -344,7 +343,7 @@ void k_GpfIndexer::writeEnzymeChunk(QFile* ak_OutFile_)
 void k_GpfIndexer::writeDnaChunk(QFile* ak_OutFile_)
 {
     qint64 li_SizeLocation = writeChunkHeader(ak_OutFile_, r_DnaIndexChunkType::Dna);
-    ak_OutFile_->write((char*)muc_pDnaBuffer.get_Pointer(), mi_DnaBufferLength);
+    ak_OutFile_->write((char*)muc_pDnaBuffer.data(), mi_DnaBufferLength);
     writeChunkSize(ak_OutFile_, li_SizeLocation, mi_DnaBufferLength);
 }
 
@@ -370,7 +369,6 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
         if (li_Length > li_MaxLen)
             li_MaxLen = li_Length;
         
-    RefPtr<char> lc_pOpenReadingFrame(new char[li_MaxLen / 3 + 1]);
     //printf("Translating DNA, marking cleavage sites...");
     
     
@@ -378,8 +376,8 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
     k_HmstIterator lk_HmstIterator(*this);
     r_Hmst lr_Hmst;
     qint64 li_TotalHmstCount = 0;
-    RefPtr<qint64> li_pTagDirectionCount(new qint64[mi_TagCount * 2]);
-    memset(li_pTagDirectionCount.get_Pointer(), 0, sizeof(qint64) * mi_TagCount * 2);
+    QSharedPointer<qint64> li_pTagDirectionCount(new qint64[mi_TagCount * 2]);
+    memset(li_pTagDirectionCount.data(), 0, sizeof(qint64) * mi_TagCount * 2);
     qint64 li_BiggestBucketSize = 0;
     {
         k_StopWatch lk_SubStopWatch("One iteration took %1.\n");
@@ -390,16 +388,16 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
             //printf("%d %d %d\n", (unsigned int)lr_Hmst.mui_TagDirectionIndex, (int)lr_Hmst.mi_HalfMass, (unsigned int)lr_Hmst.mui_Gno);
             // count
             ++li_TotalHmstCount;
-            ++li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex];
-            if (li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] > li_BiggestBucketSize)
-                li_BiggestBucketSize = li_pTagDirectionCount.get_Pointer()[lr_Hmst.mui_TagDirectionIndex];
+            ++li_pTagDirectionCount.data()[lr_Hmst.mui_TagDirectionIndex];
+            if (li_pTagDirectionCount.data()[lr_Hmst.mui_TagDirectionIndex] > li_BiggestBucketSize)
+                li_BiggestBucketSize = li_pTagDirectionCount.data()[lr_Hmst.mui_TagDirectionIndex];
         } 
         printf("done.\n");
     }
     
     qint64 li_MaxHmstPerIteration = ((qint64)mi_IndexBufferMaxLength * 8) / mi_HmstBits;
     
-    RefPtr<quint32> lui_pIndicesToSort(new quint32[li_BiggestBucketSize]);
+    QSharedPointer<quint32> lui_pIndicesToSort(new quint32[li_BiggestBucketSize]);
     
     if (li_BiggestBucketSize > li_MaxHmstPerIteration)
     {
@@ -416,39 +414,40 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
     printf("HMST count bits: %d.\n", li_HmstCountBits);
     ak_OutFile_->write((char*)&li_HmstCountBits, 4);
     // encode HMST counts
-    RefPtr<quint8> lui_pHmstCounts(new quint8[mi_TagCount * 2 * li_HmstCountBits / 8 + 1]);
+    QSharedPointer<quint8> lui_pHmstCounts(new quint8[mi_TagCount * 2 * li_HmstCountBits / 8 + 1]);
     for (qint64 i = 0; i < mi_TagCount * 2; ++i)
     {
-/*        if (li_pTagDirectionCount.get_Pointer()[i] > 0)
-            printf("%x %d\n", (unsigned int)i, (unsigned int)li_pTagDirectionCount.get_Pointer()[i]);*/
-        overwriteBitsInBuffer(lui_pHmstCounts.get_Pointer(), i * li_HmstCountBits, li_pTagDirectionCount.get_Pointer()[i], li_HmstCountBits);
+/*        if (li_pTagDirectionCount.data()[i] > 0)
+            printf("%x %d\n", (unsigned int)i, (unsigned int)li_pTagDirectionCount.data()[i]);*/
+        overwriteBitsInBuffer(lui_pHmstCounts.data(), i * li_HmstCountBits, li_pTagDirectionCount.data()[i], li_HmstCountBits);
     }
     // write HMST counts
-    ak_OutFile_->write((char*)lui_pHmstCounts.get_Pointer(), mi_TagCount * 2 * li_HmstCountBits / 8 + 1);
+    ak_OutFile_->write((char*)lui_pHmstCounts.data(), mi_TagCount * 2 * li_HmstCountBits / 8 + 1);
     
     // determine necessary iterations
     QList<QPair<int, int> > lk_IterationRanges;
     int li_TagDirection = 0;
-    qint64 li_HmstForCurrentIteration = li_pTagDirectionCount.get_Pointer()[0];
+    qint64 li_HmstForCurrentIteration = li_pTagDirectionCount.data()[0];
     lk_IterationRanges << QPair<int, int>(0, 0);
     while (li_TagDirection < mi_TagCount * 2)
     {
-        if (li_HmstForCurrentIteration + li_pTagDirectionCount.get_Pointer()[li_TagDirection] <= li_MaxHmstPerIteration)
+        if (li_HmstForCurrentIteration + li_pTagDirectionCount.data()[li_TagDirection] <= li_MaxHmstPerIteration)
         {
             lk_IterationRanges.last().second = li_TagDirection;
-            li_HmstForCurrentIteration += li_pTagDirectionCount.get_Pointer()[li_TagDirection];
+            li_HmstForCurrentIteration += li_pTagDirectionCount.data()[li_TagDirection];
         }
         else
         {
             lk_IterationRanges << QPair<int, int>(li_TagDirection, li_TagDirection);
-            li_HmstForCurrentIteration = li_pTagDirectionCount.get_Pointer()[li_TagDirection];
+            li_HmstForCurrentIteration = li_pTagDirectionCount.data()[li_TagDirection];
         }
         ++li_TagDirection;
     }
     
-    RefPtr<qint64> li_pTagDirectionOffset(new qint64[mi_TagCount * 2]);
+    QSharedPointer<qint64> li_pTagDirectionOffset(new qint64[mi_TagCount * 2]);
     
-    RefPtr<k_BitWriter> lk_pBitWriter(new k_BitWriter(ak_OutFile_));
+    QSharedPointer<k_BitWriter> lk_pBitWriter;
+    lk_pBitWriter = QSharedPointer<k_BitWriter>(new k_BitWriter(ak_OutFile_));
     
     // perform iterations!
     printf("Required iterations: %d.\n", lk_IterationRanges.size());
@@ -467,8 +466,8 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
         qint64 li_Offset = 0;
         for (unsigned int i = lui_FirstTagDirectionIndex; i <= lui_LastTagDirectionIndex; ++i)
         {
-            li_pTagDirectionOffset.get_Pointer()[i] = li_Offset;
-            li_Offset += li_pTagDirectionCount.get_Pointer()[i];
+            li_pTagDirectionOffset.data()[i] = li_Offset;
+            li_Offset += li_pTagDirectionCount.data()[i];
         }
         
 //      printf("range: %d - %d\n", lui_FirstTagDirectionIndex, lui_LastTagDirectionIndex);
@@ -485,14 +484,14 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
                        lr_Hmst.mui_TagDirectionIndex % 2 == 0 ? "L" : "R"
                 );*/
                 // puts HMST into right place
-                overwriteBitsInBuffer(muc_pIndexBuffer.get_Pointer(), li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits, lr_Hmst.mi_HalfMass, mi_MassBits);
-                overwriteBitsInBuffer(muc_pIndexBuffer.get_Pointer(), li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits + mi_MassBits, lr_Hmst.mui_Gno, mi_OffsetBits);
-/*              qint64 li_ControlMass = readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits, mi_MassBits);
-                qint64 li_ControlGno = readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits + mi_MassBits, mi_OffsetBits);
+                overwriteBitsInBuffer(muc_pIndexBuffer.data(), li_pTagDirectionOffset.data()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits, lr_Hmst.mi_HalfMass, mi_MassBits);
+                overwriteBitsInBuffer(muc_pIndexBuffer.data(), li_pTagDirectionOffset.data()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits + mi_MassBits, lr_Hmst.mui_Gno, mi_OffsetBits);
+/*              qint64 li_ControlMass = readBitsFromBuffer(muc_pIndexBuffer.data(), li_pTagDirectionOffset.data()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits, mi_MassBits);
+                qint64 li_ControlGno = readBitsFromBuffer(muc_pIndexBuffer.data(), li_pTagDirectionOffset.data()[lr_Hmst.mui_TagDirectionIndex] * mi_HmstBits + mi_MassBits, mi_OffsetBits);
                 printf("%d/%d - %d/%d\n", (int)lr_Hmst.mi_HalfMass, (int)lr_Hmst.mui_Gno, 
                         (int)li_ControlMass, (int)li_ControlGno);*/
                 // advance tag/dir offset
-                ++li_pTagDirectionOffset.get_Pointer()[lr_Hmst.mui_TagDirectionIndex];
+                ++li_pTagDirectionOffset.data()[lr_Hmst.mui_TagDirectionIndex];
             }
         }
         
@@ -501,17 +500,17 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 
         for (unsigned int i = lui_FirstTagDirectionIndex; i <= lui_LastTagDirectionIndex; ++i)
         {
-            if (li_pTagDirectionCount.get_Pointer()[i] > 0)
+            if (li_pTagDirectionCount.data()[i] > 0)
             {
-/*                if (li_pTagDirectionCount.get_Pointer()[i] > 1)
-                    printf("HMST COUNT %d\n", (unsigned int)li_pTagDirectionCount.get_Pointer()[i]);*/
+/*                if (li_pTagDirectionCount.data()[i] > 1)
+                    printf("HMST COUNT %d\n", (unsigned int)li_pTagDirectionCount.data()[i]);*/
                 typedef QPair<quint32, quint64> tk_MassGnoPair;
                 QMap<quint32, tk_MassGnoPair> lk_Map;
                 
-                for (int k = 0; k < li_pTagDirectionCount.get_Pointer()[i]; ++k)
+                for (int k = 0; k < li_pTagDirectionCount.data()[i]; ++k)
                 {
-                    quint32 lui_Mass = readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), (li_Offset + k) * mi_HmstBits, mi_MassBits);
-                    quint64 lui_Gno = readBitsFromBuffer(muc_pIndexBuffer.get_Pointer(), (li_Offset + k) * mi_HmstBits + mi_MassBits, mi_OffsetBits);
+                    quint32 lui_Mass = readBitsFromBuffer(muc_pIndexBuffer.data(), (li_Offset + k) * mi_HmstBits, mi_MassBits);
+                    quint64 lui_Gno = readBitsFromBuffer(muc_pIndexBuffer.data(), (li_Offset + k) * mi_HmstBits + mi_MassBits, mi_OffsetBits);
                     
                     lk_Map.insertMulti(lui_Mass, tk_MassGnoPair(lui_Mass, lui_Gno));
                 }
@@ -535,7 +534,7 @@ void k_GpfIndexer::writeIndexChunk(QFile* ak_OutFile_)
 //                     printf("%x O %d\n", i, (unsigned int)lk_Iterator.value().second);
                 }
                 
-                li_Offset += li_pTagDirectionCount.get_Pointer()[i];
+                li_Offset += li_pTagDirectionCount.data()[i];
             }
         }
     } 

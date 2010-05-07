@@ -34,7 +34,6 @@ RESOURCES += ../../src/libgpf.qrc
 HEADERS += \
     ../../src/BitWriter.h \
     ../../src/GpfBase.h \
-    ../../src/RefPtr.h \
     ../../src/StopWatch.h \
 
 SOURCES += \
