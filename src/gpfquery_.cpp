@@ -29,7 +29,7 @@ int parseValue(QString as_Value, QStringList ak_Choices, QString as_Description)
         if (as_Value == ak_Choices[i])
             return i;
     }
-    printf("Error: Invalid %s specified: %s.\n", 
+    fprintf(stderr, "Error: Invalid %s specified: %s.\n", 
            as_Description.toStdString().c_str(),
            as_Value.toStdString().c_str());
     exit(1);
@@ -40,54 +40,54 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
 {
     if (ai_ArgumentCount < 3)
     {
-        printf("Usage: gpfquery [options] [GPF index file] [peptide 1] [precursor mass 1 (optional)] [peptide 2] ...\n");
-        printf("\n");
-        printf("For every query peptide, an uncharged precursor mass can be specified, this is useful\n");
-        printf("if the peptide sequence comes from de novo prediction. If no precursor mass is\n");
-        printf("specified, an appropriate precursor mass is calculated from the peptide sequence.\n");
-        printf("\n");
-        printf("Options:\n");
-        printf("  --massAccuracy <float> (default: 10.0)\n");
-        printf("    Specify the mass accuracy in ppm.\n");
-        printf("  --similaritySearch <yes|no> (default: yes)\n");
-        printf("    Specify whether alignments should be found that are exact in mass,\n");
-        printf("    but not necessarily exact in amino acid sequence.\n");
-        printf("  --distinguishIL <yes|no> (default: no)\n");
-        printf("    Specify whether isoleucine (I) and leucine (L) should be\n");
-        printf("    considered the same when checking for sequence equality.\n");
-        printf("  --searchImmediate <yes|no> (default: yes)\n");
-        printf("    Specify whether immediate (i. e. non-intron split) alignments\n");
-        printf("    should be searched for.\n");
-        printf("  --searchIntronSplit <yes|no|conditional> (default: conditional)\n");
-        printf("    Specify whether non-intron split alignments should be searched\n");
-        printf("    for. Conditional means that intron split alignments for a given\n");
-        printf("    peptide are only searched for if no immediate alignments have\n");
-        printf("    been found.\n");
-        printf("  --maxIntronLength <int> (default: 2100)\n");
-        printf("    Specify the maximum intron length in nucleotides.\n");
-        printf("  --intronSpliceSites <string> (default: 'GT|AG,GC|AG')\n");
-        printf("    Specify possible splice donor/acceptor site consensus sequences.\n");
-        printf("  --printFlankingResidues <int> (default: 5)\n");
-        printf("    Specify how many amino acids flanking a hit should be printed.\n");
+        fprintf(stderr, "Usage: gpfquery [options] [GPF index file] [peptide 1] [precursor mass 1 (optional)] [peptide 2] ...\n");
+        fprintf(stderr, "\n");
+        fprintf(stderr, "For every query peptide, an uncharged precursor mass can be specified, this is useful\n");
+        fprintf(stderr, "if the peptide sequence comes from de novo prediction. If no precursor mass is\n");
+        fprintf(stderr, "specified, an appropriate precursor mass is calculated from the peptide sequence.\n");
+        fprintf(stderr, "\n");
+        fprintf(stderr, "Options:\n");
+        fprintf(stderr, "  --massAccuracy <float> (default: 10.0)\n");
+        fprintf(stderr, "    Specify the mass accuracy in ppm.\n");
+        fprintf(stderr, "  --similaritySearch <yes|no> (default: yes)\n");
+        fprintf(stderr, "    Specify whether alignments should be found that are exact in mass,\n");
+        fprintf(stderr, "    but not necessarily exact in amino acid sequence.\n");
+        fprintf(stderr, "  --distinguishIL <yes|no> (default: no)\n");
+        fprintf(stderr, "    Specify whether isoleucine (I) and leucine (L) should be\n");
+        fprintf(stderr, "    considered the same when checking for sequence equality.\n");
+        fprintf(stderr, "  --searchImmediate <yes|no> (default: yes)\n");
+        fprintf(stderr, "    Specify whether immediate (i. e. non-intron split) alignments\n");
+        fprintf(stderr, "    should be searched for.\n");
+        fprintf(stderr, "  --searchIntronSplit <yes|no|conditional> (default: conditional)\n");
+        fprintf(stderr, "    Specify whether non-intron split alignments should be searched\n");
+        fprintf(stderr, "    for. Conditional means that intron split alignments for a given\n");
+        fprintf(stderr, "    peptide are only searched for if no immediate alignments have\n");
+        fprintf(stderr, "    been found.\n");
+        fprintf(stderr, "  --maxIntronLength <int> (default: 2100)\n");
+        fprintf(stderr, "    Specify the maximum intron length in nucleotides.\n");
+        fprintf(stderr, "  --intronSpliceSites <string> (default: 'GT|AG,GC|AG')\n");
+        fprintf(stderr, "    Specify possible splice donor/acceptor site consensus sequences.\n");
+        fprintf(stderr, "  --printFlankingResidues <int> (default: 5)\n");
+        fprintf(stderr, "    Specify how many amino acids flanking a hit should be printed.\n");
         // :TODO: 
         // 1. implement this 
         // 2. find out whether this is slower (it should be, right?)
-/*        printf("  --tagSize <int>\n");
-        printf("    Apart from the tag size the genomic DNA sequence was indexed with,\n");
-        printf("    you can specify a higher tag size here to achieve the same effect\n");
-        printf("    as if the index file had been created with this tag size, although\n");
-        printf("    this is a bit slower compared to using the right index file in the\n");
-        printf("    first place.\n");*/
-        printf("  --peptidesFile <path>\n");
-        printf("    Specify a text file containing the query peptides, one peptide per line.\n");
-        printf("    Optionally, each peptide may be followed by the precursor mass, separated\n");
-        printf("    by a comma, semicolon, or whitespace.\n");
-        printf("  --csvOutputPath <path>\n");
-        printf("    Specify a target file for CSV output.\n");
-        printf("  --peptidesOutputPath <path>\n");
-        printf("    Specify a target file which all resulting peptides will be written to.\n");
-        printf("  --quiet\n");
-        printf("    Don't print status messages.\n");
+/*        fprintf(stderr, "  --tagSize <int>\n");
+        fprintf(stderr, "    Apart from the tag size the genomic DNA sequence was indexed with,\n");
+        fprintf(stderr, "    you can specify a higher tag size here to achieve the same effect\n");
+        fprintf(stderr, "    as if the index file had been created with this tag size, although\n");
+        fprintf(stderr, "    this is a bit slower compared to using the right index file in the\n");
+        fprintf(stderr, "    first place.\n");*/
+        fprintf(stderr, "  --peptidesFile <path>\n");
+        fprintf(stderr, "    Specify a text file containing the query peptides, one peptide per line.\n");
+        fprintf(stderr, "    Optionally, each peptide may be followed by the precursor mass, separated\n");
+        fprintf(stderr, "    by a comma, semicolon, or whitespace.\n");
+        fprintf(stderr, "  --csvOutputPath <path> (default: stdout)\n");
+        fprintf(stderr, "    Specify a target file for CSV output.\n");
+        fprintf(stderr, "  --peptidesOutputPath <path>\n");
+        fprintf(stderr, "    Specify a target file which all resulting peptides will be written to.\n");
+        fprintf(stderr, "  --quiet\n");
+        fprintf(stderr, "    Don't print status messages.\n");
         exit(1);
     }
     
@@ -109,11 +109,10 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     int li_PrintFlankingResidues = 5;
     bool lb_Quiet = false;
 
-    QSharedPointer<QFile> lk_pCsvOutFile;
-    QIODevice* lk_CsvDevice_ = NULL;
-    
+    QFile* lk_StdOut_ = new QFile();
+    lk_StdOut_->open(stdout, QIODevice::WriteOnly);
+    QSharedPointer<QFile> lk_pCsvOutFile(lk_StdOut_);
     QSharedPointer<QFile> lk_pPeptidesOutFile;
-    QIODevice* lk_PeptidesDevice_ = NULL;
     
     QStringList lk_PeptideFiles;
     
@@ -128,7 +127,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
             ld_MassAccuracy = ls_Value.toDouble(&lb_Ok);
             if (!lb_Ok)
             {
-                printf("Error: Invalid mass accuracy specified: %s.\n", ls_Value.toStdString().c_str());
+                fprintf(stderr, "Error: Invalid mass accuracy specified: %s.\n", ls_Value.toStdString().c_str());
                 exit(1);
             }
         }
@@ -197,7 +196,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
             li_MaxIntronLength = ls_Value.toInt(&lb_Ok);
             if (!lb_Ok)
             {
-                printf("Error: Invalid max intron length specified: %s.\n", ls_Value.toStdString().c_str());
+                fprintf(stderr, "Error: Invalid max intron length specified: %s.\n", ls_Value.toStdString().c_str());
                 exit(1);
             }
         }
@@ -212,7 +211,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
             li_PrintFlankingResidues = ls_Value.toInt(&lb_Ok);
             if (!lb_Ok)
             {
-                printf("Error: Invalid flanking residue count specified: %s.\n", ls_Value.toStdString().c_str());
+                fprintf(stderr, "Error: Invalid flanking residue count specified: %s.\n", ls_Value.toStdString().c_str());
                 exit(1);
             }
         }
@@ -225,13 +224,11 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         {
             lk_pCsvOutFile = QSharedPointer<QFile>(new QFile(lk_Arguments.takeFirst()));
             lk_pCsvOutFile->open(QIODevice::WriteOnly);
-            lk_CsvDevice_ = lk_pCsvOutFile.data();
         }
         else if (ls_Key == "--peptidesOutputPath")
         {
             lk_pPeptidesOutFile = QSharedPointer<QFile>(new QFile(lk_Arguments.takeFirst()));
             lk_pPeptidesOutFile->open(QIODevice::WriteOnly);
-            lk_PeptidesDevice_ = lk_pPeptidesOutFile.data();
         }
         else if (ls_Key == "--quiet")
             lb_Quiet = true;
@@ -247,7 +244,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
     QSharedPointer<k_GpfIndexFile> lk_pGpfIndexFile(new k_GpfIndexFile(ls_IndexFilePath));
     if (!lk_pGpfIndexFile->isGood())
     {
-        printf("Error: Unable to load GPF index file %s.\n", ls_IndexFilePath.toStdString().c_str());
+        fprintf(stderr, "Error: Unable to load GPF index file %s.\n", ls_IndexFilePath.toStdString().c_str());
         exit(1);
     }
     
@@ -274,7 +271,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
                     double ld_Mass = lk_Line[1].toDouble(&lb_Ok);
                     if (!lb_Ok)
                     {
-                        printf("Error: Invalid precursor mass in %s, line %d.\n", ls_Path.toStdString().c_str(), li_LineCount);
+                        fprintf(stderr, "Error: Invalid precursor mass in %s, line %d.\n", ls_Path.toStdString().c_str(), li_LineCount);
                         exit(1);
                     }
                     li_Mass = (qint64)(ld_Mass * lk_pGpfIndexFile->mi_MassPrecision);
@@ -287,7 +284,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         }
         else
         {
-            printf("Error: Unable to open peptides file %s.\n", ls_Path.toStdString().c_str());
+            fprintf(stderr, "Error: Unable to open peptides file %s.\n", ls_Path.toStdString().c_str());
             exit(1);
         }
     }
@@ -319,7 +316,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
                         le_SearchIntronSplitAlignments,
                         le_IntronSearchType, li_MaxIntronLength,
                         ls_IntronSpliceSites, li_PrintFlankingResidues,
-                        lb_Quiet, lk_CsvDevice_, lk_PeptidesDevice_);
+                        lb_Quiet, lk_pCsvOutFile.data(), lk_pPeptidesOutFile.data());
     // open new scope for stop watch
     {
         QSharedPointer<k_StopWatch> lk_pStopWatch;

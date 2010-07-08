@@ -71,14 +71,14 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
         QStringList lk_SpliceSites = ls_SpliceSite.split("|");
         if (lk_SpliceSites.size() != 2)
         {
-            printf("Error: Invalid intron splice donor/acceptor site consensus sequence: %s.\n", ls_SpliceSite.toStdString().c_str());
+            fprintf(stderr, "Error: Invalid intron splice donor/acceptor site consensus sequence: %s.\n", ls_SpliceSite.toStdString().c_str());
             exit(1);
         }
         for (int i = 0; i < 2; ++i)
         {
             if (lk_SpliceSites[i].length() > 10)
             {
-                printf("Error: A splice site consensus sequence must not be longer than 10 nucleotides.\n");
+                fprintf(stderr, "Error: A splice site consensus sequence must not be longer than 10 nucleotides.\n");
                 exit(1);
             }
         }
@@ -92,7 +92,7 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
                 qint32 li_Code = gk_GpfBase.mk_DnaCharToNumber_[(int)ls_Site.at(i).toAscii()];
                 if ((li_Code & 4) != 0)
                 {
-                    printf("Error: Invalid intron splice donor/acceptor site consensus sequence: %s.\n", ls_SpliceSite.toStdString().c_str());
+                    fprintf(stderr, "Error: Invalid intron splice donor/acceptor site consensus sequence: %s.\n", ls_SpliceSite.toStdString().c_str());
                     exit(1);
                 }
                 li_DnaCode <<= 3;
@@ -174,9 +174,9 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
     {
         QString ls_Tag = as_Peptide.mid(i, mk_GpfIndexFile.mi_TagSize);
         qint32 li_Tag = gk_GpfBase.aminoAcidPolymerCode(ls_Tag.toStdString().c_str(), mk_GpfIndexFile.mi_TagSize) * 2;
-//          printf("tag: [%1.4f, %s] (%x)\n", (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision, ls_Tag.toStdString().c_str(), li_Tag);
+//          fprintf(stderr, "tag: [%1.4f, %s] (%x)\n", (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision, ls_Tag.toStdString().c_str(), li_Tag);
 
-        //printf("%s %d %d\n", ls_Tag.toStdString().c_str(), li_Tag, (qint32)li_HalfMass);
+        //fprintf(stderr, "%s %d %d\n", ls_Tag.toStdString().c_str(), li_Tag, (qint32)li_HalfMass);
         lk_AllHmst.insert(li_Tag, li_HalfMass);
         
         // break loop if no similarity search
@@ -192,9 +192,9 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
     {
         QString ls_Tag = as_Peptide.mid(i, mk_GpfIndexFile.mi_TagSize);
         qint32 li_Tag = gk_GpfBase.aminoAcidPolymerCode(ls_Tag.toStdString().c_str(), mk_GpfIndexFile.mi_TagSize) * 2 + 1;
-//         printf("tag: [%s, %1.4f] (%x)\n", ls_Tag.toStdString().c_str(), (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision, li_Tag);
+//         fprintf(stderr, "tag: [%s, %1.4f] (%x)\n", ls_Tag.toStdString().c_str(), (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision, li_Tag);
         
-//          printf("%s %d %d\n", ls_Tag.toStdString().c_str(), li_Tag, (qint32)li_HalfMass);
+//          fprintf(stderr, "%s %d %d\n", ls_Tag.toStdString().c_str(), li_Tag, (qint32)li_HalfMass);
         lk_AllHmst.insert(li_Tag, li_HalfMass);
 
         // break loop if no similarity search
@@ -213,20 +213,20 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
         qint32 li_TagDirectionIndex = lk_Iter.key();
         
         qint64 li_HalfMass = lk_Iter.value();
-//         printf("li_HalfMass = %9.4f\n", (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision);
+//         fprintf(stderr, "li_HalfMass = %9.4f\n", (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision);
         qint64 li_HalfMassDelta = (qint64)(md_MassAccuracy * li_HalfMass / 1000000.0);
         qint64 li_MinMass = li_HalfMass - li_HalfMassDelta;
         qint64 li_MaxMass = li_HalfMass + li_HalfMassDelta;
         
         // determine sub range in HMST list (via min and max masses)
-        //printf("tag/dir %8d: %d entries.\n", li_TagDirectionIndex, (qint32)mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]);
+        //fprintf(stderr, "tag/dir %8d: %d entries.\n", li_TagDirectionIndex, (qint32)mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]);
         qint64 li_Start = -1;
         qint64 li_Count = 0;
         QList<qint64> lk_Masses;
         for (qint64 i = 0; i < mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]; ++i)
         {
             qint64 li_Mass = mk_GpfIndexFile.readIndexBits(mk_GpfIndexFile.mk_HmstOffset[li_TagDirectionIndex] * mk_GpfIndexFile.mi_HmstBits + i * mk_GpfIndexFile.mi_MassBits, mk_GpfIndexFile.mi_MassBits);
-/*          printf("[%x] %9.4f %9.4f %9.4f\n", 
+/*          fprintf(stderr, "[%x] %9.4f %9.4f %9.4f\n", 
                 (qint32)li_TagDirectionIndex, 
                 (double)li_Mass / mk_GpfIndexFile.mi_MassPrecision, 
                 (double)li_MinMass / mk_GpfIndexFile.mi_MassPrecision, 
@@ -239,7 +239,7 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
                 lk_Masses.append(li_Mass);
             }
         }
-        //printf("%d - %d\n", (qint32)li_Start, (qint32)(li_Count));
+        //fprintf(stderr, "%d - %d\n", (qint32)li_Start, (qint32)(li_Count));
         
         // now we have the correct range, read the corresponding GNOs
         for (qint64 i = 0; i < li_Count; ++i)
@@ -259,7 +259,7 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
         }
     }
     
-//     printf("distinct GNO count (anchors in DNA): %d\n", lk_GnoMap.size());
+//     fprintf(stderr, "distinct GNO count (anchors in DNA): %d\n", lk_GnoMap.size());
     
     // now we have determined all interesting places in the genome, take a look at each
     // of them and try to construct alignments with the correct mass
@@ -303,7 +303,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
         qint64 li_AnchorExonStart = li_DnaOffset;
         qint64 li_AnchorExonEnd = li_AnchorExonStart;
         
-//         printf("STARTING SEARCH at %d\n", (unsigned int)li_DnaOffset);
+//         fprintf(stderr, "STARTING SEARCH at %d\n", (unsigned int)li_DnaOffset);
         
         // do a binary search to find the right scaffold
         qint32 li_FirstScaffold = 0;
@@ -325,9 +325,9 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
         qint64 li_ScaffoldEnd = li_ScaffoldStart + mk_GpfIndexFile.mk_ScaffoldLength[li_FirstScaffold] - 1;
         
         if (li_DnaOffset < li_ScaffoldStart || li_DnaOffset > li_ScaffoldEnd)
-            printf("Internal error: WRONG scaffold borders: %d, %d (%d)\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd, (qint32)li_DnaOffset);
+            fprintf(stderr, "Internal error: WRONG scaffold borders: %d, %d (%d)\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd, (qint32)li_DnaOffset);
         
-//         printf("Scaffold range is %d - %d.\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd);
+//         fprintf(stderr, "Scaffold range is %d - %d.\n", (qint32)li_ScaffoldStart, (qint32)li_ScaffoldEnd);
         
         char* lc_TripletToAminoAcid_ = lb_BackwardsFrame ? 
             gk_GpfBase.mk_TranslationTablesReverse[mk_GpfIndexFile.mi_GeneticCode].data() :
@@ -364,7 +364,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
         qint64 li_BStep3 = li_BStep1 * 3;
         qint64 li_BBackwardsFactor = lb_BackwardsFrame ? 1 : 0;
         
-//         printf("progress increasing: %d, step: %d\n", lb_ProgressIncreasing, (qint32)li_Step1);
+//         fprintf(stderr, "progress increasing: %d, step: %d\n", lb_ProgressIncreasing, (qint32)li_Step1);
         // try to assemble an alignment
         
         qint64 li_AssemblyMass = mk_GpfIndexFile.mi_WaterMass;
@@ -511,7 +511,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                     li_SeekEnd = std::max(li_SeekEnd, li_ScaffoldStart + mi_MinExonLength);*/
 
                 qint64 li_IntronScanPointer = li_DnaOffset;
-//                 printf("starting intron search at %d\n", (qint32)li_IntronScanPointer);
+//                 fprintf(stderr, "starting intron search at %d\n", (qint32)li_IntronScanPointer);
 
                 if (ab_SearchIntronSplit)
                 {
@@ -524,7 +524,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                             li_ReadLength = std::min<qint64>(li_ReadLength, li_IntronScanPointer - li_ScaffoldStart + 1);
                         if (li_ReadLength > 0)
                         {
-    //                         printf("check %d/%d\n", (qint32)(((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor))), (qint32)li_ReadLength);
+    //                         fprintf(stderr, "check %d/%d\n", (qint32)(((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor))), (qint32)li_ReadLength);
                             qint32 li_Bit = 
                                 readBitsFromBuffer(
                                 mk_GpfIndexFile.muc_pDnaBuffer.data(), 
@@ -537,7 +537,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                 li_Bit = invertNucleotides(li_Bit, li_BitLength);
                             foreach (tk_IntPair lk_Site, *lk_IntronStartKeys_)
                             {
-//                                 printf("checking [%s\n", gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str());
+//                                 fprintf(stderr, "checking [%s\n", gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str());
                                 qint32 li_CutBit = li_Bit;
                                 qint32 li_CutBitLength = li_BitLength;
                                 if (lk_Site.second < li_CutBitLength)
@@ -552,12 +552,12 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                 if ((lk_Site.first == li_CutBit) && (lk_Site.second == li_CutBitLength))
                                 {
                                     // we found an intron start site!
-    /*                                printf("[START %s/%s at %d]\n",
+    /*                                fprintf(stderr, "[START %s/%s at %d]\n",
                                         gk_GpfBase.nucleotideSequenceForCode(lk_Site.first, lk_Site.second).toStdString().c_str(),
                                         gk_GpfBase.nucleotideSequenceForCode(li_CutBit, li_CutBitLength).toStdString().c_str(),
                                         (qint32)li_IntronAnchorOffset
                                     );
-                                    printf("intron start offset is %d.\n", (qint32)li_IntronStartOffset);*/
+                                    fprintf(stderr, "intron start offset is %d.\n", (qint32)li_IntronStartOffset);*/
                                     // fetch first part of split triplet, if any, from right before 
                                     // the start sequence
                                     qint32 li_SplitTriplet = 0;
@@ -571,11 +571,11 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                         if (lb_BackwardsFrame)
                                             li_SplitTriplet = transposeNucleotides(li_SplitTriplet, li_IntronStartOffset);
                                     }
-    //                                 printf("start nucleotides are '%s' %08o.\n", gk_GpfBase.nucleotideSequenceForCode(li_SplitTriplet, li_IntronStartOffset).toStdString().c_str(), li_SplitTriplet);
+    //                                 fprintf(stderr, "start nucleotides are '%s' %08o.\n", gk_GpfBase.nucleotideSequenceForCode(li_SplitTriplet, li_IntronStartOffset).toStdString().c_str(), li_SplitTriplet);
                                     
                                     // now scan the next few nucleotides for an appropriate intron end sequence
                                     qint64 li_SubIntronScanPointer = li_IntronScanPointer;
-    //                                 printf("starting intron search at %d\n", (qint32)li_IntronScanPointer);
+    //                                 fprintf(stderr, "starting intron search at %d\n", (qint32)li_IntronScanPointer);
                                     qint64 li_SubAnchorExonStart = li_AnchorExonStart;
                                     qint64 li_SubAnchorExonEnd = li_AnchorExonEnd;
                                     
@@ -593,7 +593,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                             li_SubReadLength = std::min<qint64>(li_SubReadLength, li_SubIntronScanPointer - li_ScaffoldStart + 1);
                                         if (li_SubReadLength > 0)
                                         {
-                    //                         printf("check %d/%d\n", (qint32)(((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor))), (qint32)li_ReadLength);
+                    //                         fprintf(stderr, "check %d/%d\n", (qint32)(((li_IntronScanPointer - (li_ReadLength - 1) * li_BackwardsFactor))), (qint32)li_ReadLength);
                                             qint32 li_SubBit = 
                                                 readBitsFromBuffer(
                                                 mk_GpfIndexFile.muc_pDnaBuffer.data(), 
@@ -606,7 +606,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                 li_SubBit = invertNucleotides(li_SubBit, li_SubBitLength);
                                             foreach (tk_IntPair lk_SubSite, (*lk_IntronStart_)[lk_Site])
                                             {
-//                                                 printf("checking %s]\n", gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second).toStdString().c_str());
+//                                                 fprintf(stderr, "checking %s]\n", gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second).toStdString().c_str());
                                                 qint32 li_SubCutBit = li_SubBit;
                                                 qint32 li_SubCutBitLength = li_SubBitLength;
                                                 if (lk_SubSite.second < li_SubCutBitLength)
@@ -622,7 +622,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                 {
                                                     qint64 li_IntronHookOffset = li_SubIntronScanPointer + li_Step1 * li_SubCutBitLength;
                                                     // we found an intron start site!
-    /*                                                printf("[END %s/%s at %d]\n",
+    /*                                                fprintf(stderr, "[END %s/%s at %d]\n",
                                                         gk_GpfBase.nucleotideSequenceForCode(lk_SubSite.first, lk_SubSite.second).toStdString().c_str(),
                                                         gk_GpfBase.nucleotideSequenceForCode(li_SubCutBit, li_SubCutBitLength).toStdString().c_str(),
                                                         (qint32)(li_IntronHookOffset - li_Step1)
@@ -676,7 +676,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                             // make sure it's only the lower 9 bits!
                                                             li_CombinedTriplet &= 511;
                                                             lc_SubAminoAcid = gk_GpfBase.mk_TranslationTables[mk_GpfIndexFile.mi_GeneticCode].data()[li_CombinedTriplet];
-    /*                                                        printf("remaining: %s %08o/ combined: %s / makes %c.\n", 
+    /*                                                        fprintf(stderr, "remaining: %s %08o/ combined: %s / makes %c.\n", 
                                                                 gk_GpfBase.nucleotideSequenceForCode(li_RemainingNucleotides, li_ReadLength).toStdString().c_str(), 
                                                                 li_RemainingNucleotides,
                                                                 gk_GpfBase.nucleotideSequenceForCode(li_CombinedTriplet, 3).toStdString().c_str(), 
@@ -876,7 +876,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                             break;
                     }
                 }
-//                 printf("\n");
+//                 fprintf(stderr, "\n");
             }
             if (lb_ProgressIncreasing)
                 li_AnchorExonEnd += 1;
@@ -896,12 +896,12 @@ void k_GpfQuery::execute(const QList<tk_StringIntPair> ak_Peptides)
         if (!mb_Quiet)
         {
             ++i;
-            printf("\rProcessing query %d of %d... ", i, ak_Peptides.size());
+            fprintf(stderr, "\rProcessing query %d of %d... ", i, ak_Peptides.size());
         }
         this->execute(lk_Peptide.first, lk_Peptide.second);
     }
     if (!mb_Quiet)
-        printf(" done.\n");
+        fprintf(stderr, " done.\n");
 }
 
 
