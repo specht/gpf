@@ -74,7 +74,8 @@ protected:
     void findAlignments(const tk_GnoMap& ak_GnoMap,
                         bool ab_SearchImmediate,
                         bool ab_SearchIntronSplit,
-                        tk_StringSet& ak_FoundAssemblies);
+                        tk_StringSet& ak_FoundAssemblies,
+                        tk_StringSet& ak_AcceptedAssemblies);
     int reverseSpliceSequence(int ai_Sequence, int ai_Length);
     void readFlankingAminoAcids(qint64 ai_Start, qint64 ai_Stop,
                                 QString& as_Left, QString& as_Right,
