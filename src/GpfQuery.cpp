@@ -1,4 +1,4 @@
-/*
+f/*
 Copyright (c) 2007-2010 Michael Specht
 
 This file is part of GPF.
@@ -444,7 +444,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                 if (!mb_SimilaritySearch)
                                 {
                                     if (mb_DistinguishIL)
-                                        lb_Print = ms_QueryPeptide == ms_QueryPeptide;
+                                        lb_Print = ms_QueryPeptide == ls_Peptide;
                                     else
                                     {
                                         QString ls_Check = ls_Peptide;
