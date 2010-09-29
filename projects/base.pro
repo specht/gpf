@@ -6,12 +6,12 @@ macx {
     QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.4
 }
 
-linux-g++ {
-    CONFIG += static
-    QMAKE_LFLAGS += -L/usr/local/lib
-    LIBS += -ldl -lrt
-    message("STATIC LINKAGE")
-}
+; linux-g++ {
+;     CONFIG += static
+;     QMAKE_LFLAGS += -L/usr/local/lib
+;     LIBS += -ldl -lrt
+;     message("STATIC LINKAGE")
+; }
 
 CONFIG += debug_and_release
 

@@ -14,7 +14,7 @@ $ cd projects/gpfindex
 $ qmake
 $ make release
 
-$ cd projects/gpfquery
+$ cd ../gpfquery
 $ qmake
 $ make release
 </pre>
