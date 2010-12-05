@@ -35,7 +35,7 @@ k_HmstIterator::k_HmstIterator(k_GpfIndexer& ak_GpfIndexer)
     mk_First_[r_HmstIteratorLevel::SpanIndex] = 0;
     mk_Last_[r_HmstIteratorLevel::SpanIndex] = -1;
     mk_First_[r_HmstIteratorLevel::MassDirection] = 0;
-    mk_Last_[r_HmstIteratorLevel::MassDirection] = 1;
+    mk_Last_[r_HmstIteratorLevel::MassDirection] = 0;
     // last TagOffset is dependent, start is always 0
     mk_First_[r_HmstIteratorLevel::TagOffset] = 0;
     mk_Last_[r_HmstIteratorLevel::TagOffset] = -1;
@@ -134,12 +134,12 @@ void k_HmstIterator::updateOrfAndCleavageSites()
         mc_pOrf.data()[li_OrfLength] = lc_AminoAcid;
         ++li_OrfLength;
         // always cleave after a STOP codon
-        if (lc_AminoAcid == '*')
+/*        if (lc_AminoAcid == '*')
             lk_CleavageSites << li_OrfLength;
         if (mk_GpfIndexer.mb_CleaveAfter_[(int)lc_AminoAcid])
             lk_CleavageSites << li_OrfLength;
         if (mk_GpfIndexer.mb_CleaveBefore_[(int)lc_AminoAcid])
-            lk_CleavageSites << (li_OrfLength - 1);
+            lk_CleavageSites << (li_OrfLength - 1);*/
     }
     lk_CleavageSites << li_OrfLength;
     
@@ -208,11 +208,11 @@ bool k_HmstIterator::goodState()
         li_DeltaMass = mk_GpfIndexer.mi_AminoAcidMasses_[(int)lc_CurrentAminoAcid];
     }
     // increase half mass if not greater than maximum allowed mass
-    if (mi_CurrentHalfMass <= mk_GpfIndexer.mi_MaxMass)
+/*    if (mi_CurrentHalfMass <= mk_GpfIndexer.mi_MaxMass)
         mi_CurrentHalfMass += li_DeltaMass;
     
     if (mi_CurrentHalfMass > mk_GpfIndexer.mi_MaxMass)
-        return false;
+        return false;*/
     
     qint64 li_SpanAnchor = mk_Value_[r_HmstIteratorLevel::MassDirection] == 0 ? 
         mk_Spans[(int)mk_Value_[r_HmstIteratorLevel::SpanIndex]].first :
@@ -223,6 +223,7 @@ bool k_HmstIterator::goodState()
         mui_CurrentGno = 
             mk_GpfIndexer.mk_ScaffoldStart[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] + 
             li_SpanAnchor * 3 +
+            mk_Value_[r_HmstIteratorLevel::TagOffset] * 3 + 
             mk_Value_[r_HmstIteratorLevel::Frame] - mk_Value_[r_HmstIteratorLevel::MassDirection];
     }
     else
@@ -231,6 +232,7 @@ bool k_HmstIterator::goodState()
             mk_GpfIndexer.mk_ScaffoldStart[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] +
             mk_GpfIndexer.mk_ScaffoldLength[(int)mk_Value_[r_HmstIteratorLevel::ScaffoldIndex]] -
             li_SpanAnchor * 3 -
+            mk_Value_[r_HmstIteratorLevel::TagOffset] * 3 -
             mk_Value_[r_HmstIteratorLevel::Frame] - 1 + mk_Value_[r_HmstIteratorLevel::MassDirection];
         mui_CurrentGno |= mk_GpfIndexer.mui_GnoBackwardsBit;
     }
