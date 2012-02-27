@@ -367,9 +367,6 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
         qint64 li_Step3 = li_Step1 * 3;
         qint64 li_BackwardsFactor = lb_ProgressIncreasing ? 0 : 1;
         qint64 li_BStep1 = lb_BackwardsFrame ? -1 : 1;
-        qint64 li_BStep2 = li_BStep1 * 2;
-        qint64 li_BStep3 = li_BStep1 * 3;
-        qint64 li_BBackwardsFactor = lb_BackwardsFrame ? 1 : 0;
         
 //         fprintf(stderr, "progress increasing: %d, step: %d\n", lb_ProgressIncreasing, (qint32)li_Step1);
         // try to assemble an alignment
