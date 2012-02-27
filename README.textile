@@ -23,3 +23,4 @@ h2. References
 
 # Allmer J, Markert C, Stauber EJ, Hippler M. 2004. "A new approach that allows identification of intron-split peptides from mass spectrometric data in genomic databases.":http://linkinghub.elsevier.com/retrieve/pii/S0014579304002121 FEBS Letters 562:202-206.
 # Allmer J, Naumann B, Markert C, Zhang M, Hippler M. 2006. "Mass spectrometric genomic data mining: novel insights into bioenergetic pathways in chlamydomonas reinhardtii.":http://www3.interscience.wiley.com/journal/113447913/abstract Proteomics 6:6207-6220.
+# Specht M, Stanke M, Terashima M, Naumann-Busch B, Janßen I, Höhner R, Hom EFY, et al. 2011. "Concerted action of the new Genomic Peptide Finder and AUGUSTUS allows for automated proteogenomic annotation of the Chlamydomonas reinhardtii genome.":http://dx.goi.org/10.1002/pmic.201000621 Proteomics 11:1814-1823.
