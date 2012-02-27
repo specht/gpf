@@ -1,6 +1,6 @@
 h1. Synopsis
 
-The Genomic Peptide Finder is a tool that matches de novo predicted amino acid sequences to the genomic DNA sequence of an organisms. The matching procedure is error-tolerant to accomodate possible sequencing errors due to individual missing fragment ions. In addition, spliced peptides can be deduced.
+The Genomic Peptide Finder is a tool that matches de novo predicted amino acid sequences to the genomic DNA sequence of an organism. The matching procedure is error-tolerant to accomodate possible sequencing errors due to individual missing fragment ions. In addition, spliced peptides can be deduced.
 
 GPF has been devised by Jens Allmer and Michael Hippler in 2003, with subsequent design changes and reimplementation by Michael Specht starting in 2007.
 
