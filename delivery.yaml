@@ -1,0 +1,5 @@
+projects:
+  - projects/gpfindex
+  - projects/gpfquery
+qt: [core]
+win32Libs: []
