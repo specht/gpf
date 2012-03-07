@@ -201,6 +201,7 @@ k_GpfBase::k_GpfBase()
             QString ls_AminoAcid = lk_Line[3];
             QString ls_Mass = lk_Line[4];
             int li_Code = QVariant(lk_Line[0]).toInt();
+            // skip isoleucine
             if (li_Code > 7)
                 li_Code -= 1;
             if (li_Code <= 18)
