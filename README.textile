@@ -4,6 +4,7 @@ The Genomic Peptide Finder is a tool that matches de novo predicted amino acid s
 
 GPF has been devised by Jens Allmer and Michael Hippler in 2003, with subsequent design changes and reimplementation by Michael Specht starting in 2007.
 
+For detailed information, have a look at the "GPF website":http://specht.github.com/gpf/.
 
 h2. Building GPF
 
