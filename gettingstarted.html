@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+	Design by Free CSS Templates
+	http://www.freecsstemplates.org
+	Released for free under a Creative Commons Attribution 2.5 License
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Genomic Peptide Finder - Getting started</title>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<link href="template/default.css" rel="stylesheet" type="text/css" />
+<!-- <link href="template/print.css" rel="stylesheet" type="text/css" media="print" /> -->
+<link rel="icon" href="favicon.ico" type="image/vnd.microsoft.icon" />
+<link rel="shortcut icon" href="favicon.ico" type="image/vnd.microsoft.icon" />
+<!--<link href='http://fonts.googleapis.com/css?family=Molengo' rel='stylesheet' type='text/css'>-->
+</head>
+<body>
+<div id="outer">
+	<div id="header">
+		<h1 id='h_ahrefgenomicpeptidefindera'><a href="#">Genomic Peptide Finder</a></h1>
+	</div>
+	<div id='headerOverlay'>
+	</div>
+	<div id="menu">
+		<ul>
+			<li><a class='' href='index.html'>Home</a></li><li><a class='current' href='gettingstarted.html'>Getting started</a></li><li><a class='' href='doc.html'>Documentation</a></li><li><a class='' href='download.html'>Download</a></li><li><a class='' href='contribute.html'>Contribute</a></li><li><a class='' href='contact.html'>Contact</a></li>
+		</ul>
+	</div>
+<!--     <div id="secondaryContent"> -->
+        
+<!--     </div> -->
+	<div id="content">
+		<div id="primaryContentContainer">
+			<div id="primaryContent">
+            <div id='pagetitle'><h1 id='h_gettingstarted'>Getting started</h1></div>
+			<p><div id='toc'>
+<b>Contents</b><br />
+<ul>
+<li><a href='#h_buildingtheindex'>Building the index</a></li>
+<li><a href='#h_queryingtheindex'>Querying the index</a></li>
+<li><a href='#h_butthevalidation'>But the validation?</a></li>
+</ul>
+</div>
+</p>
+<h2 id='h_gettingstartedh_gettingstarted1'>Getting started</h2>
+<p>Download a mini <span class="caps">FASTA</span> database <a href="https://github.com/specht/gpf/raw/2.9/craft/mini.fasta">here</a> to run the following examples. The database is really tiny, it&#8217;s just a single sequence which looks like this (copy and paste works just as well):</p>
+<pre><codelisting>>mini
+CCGGCGAGCACTGCGTCCCGGGTCTGCTCTCCCACCCCGCTGATCTCAACCAGCTTGGCAATAACAGGCGCAGCACCGCGCCTGAT
+CGCCAAGTTCAGTGCAGCCTGAGCGCCCTGCGCGGCCCCCTGAGGCTGAGCATTGCCGATCGCGGGCCCCTGCTCACCCTGGACGG
+CCTCGGCGACCACAGCAGCGCCAGCTCCGATAGCAGCCTCCTGCTCCTGCTCCTGCTCCACAGCTCCACGACCGCGACCGCGACCG
+CGACCACGAATGCCAGCAGCTCCACGCCCACGCTCCATAGCAGCAACAAAAGGGCTTGAGTGAGAACGTTAGAAGTAACGTTAAAA
+</codelisting>
+</pre><h3 id='h_buildingtheindex'>Building the index</h3>
+<p>Before peptides can be queried with <span class="caps">GPF</span>, an index file of the genomic <span class="caps">DNA</span> sequence must be built. In order to do this, call <em>gpfindex</em> and specify the input and output file names:</p>
+<p><strong><code>$ ./gpfindex mini.fasta mini.fasta.gpfindex</code></strong></p>
+<p>There are a couple of optional parameters which can be passed to <em>gpfindex</em>, with sensible default values. By default, <em>gpfindex</em> uses a tag size of 5 amino acids and trypsin for determination of enzymatic cleavage sites. Run the program without any parameters to see all options.</p>
+<h3 id='h_queryingtheindex'>Querying the index</h3>
+<p>Query the index with a peptide with the following command:</p>
+<p><strong><code>$ ./gpfquery mini.fasta.gpfindex DHECQQLHAHAP</code></strong></p>
+<p>&#8230;which produces the following output (to redirect the output to a <span class="caps">CSV</span> file, use the &#8212;csvOutputPath parameter):</p>
+<pre><codelisting>Processing query 1 of 1...  done.
+GPF search took 0.2 milliseconds.
+Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site
+DHECQQLHAHAP,RDRDR,DHECQQLHAHAP,*QQQK,1384.5936,"{mini/mini}+259:36",,
+</codelisting>
+</pre><p>The following table explains the columns in the <span class="caps">CSV</span> output:</p>
+<table>
+	<tr>
+		<th>Column </th>
+		<th>Description </th>
+	</tr>
+	<tr>
+		<td> Query </td>
+		<td> The peptide you have been searching for. Note: There may be multiple result rows for the same query peptide. </td>
+	</tr>
+	<tr>
+		<td> AA N-term </td>
+		<td> The amino acids flanking the <span class="caps">GPF</span> aligned peptide at the N-terminus. </td>
+	</tr>
+	<tr>
+		<td> Peptide </td>
+		<td> The peptide resulting from <span class="caps">GPF</span> search. This peptide is usually a bit differeny from your query, unless you run the program with <code>--similaritySearch no</code>, which only looks for perfect matches (and is therefore faster). </td>
+	</tr>
+	<tr>
+		<td> AA C-term </td>
+		<td> The amino acids flanking the <span class="caps">GPF</span> aligned peptide at the C-terminus. </td>
+	</tr>
+	<tr>
+		<td> Mass </td>
+		<td> The monoisotopic mass of the <span class="caps">GPF</span> peptide. </td>
+	</tr>
+	<tr>
+		<td> Assembly </td>
+		<td> A textual representation of the alignment. <br /> The part in curly braces describes the genomic <span class="caps">DNA</span> identifier and the contig, separated by a slash. <br /> The + or &#8211; sign denotes the reading direction. <br />
+The rest is a list of offset:length tuples, offsets are zero-based in respect the contig, if there&#8217;s more than one tuple, it&#8217;s a spliced alignment. <br /> Offsets are always oriented towards the peptide&#8217;s N-terminus, tuples always start with the N-terminal part. </td>
+	</tr>
+	<tr>
+		<td> Intron length </td>
+		<td> Length of the intron if this is a spliced alignment. </td>
+	</tr>
+	<tr>
+		<td> Splice site </td>
+		<td> Splice site dinucleotide pair if this is a spliced alignment. <br /> By default, <span class="caps">GPF</span> will look for GT/AG and GC/AG alignments. </td>
+	</tr>
+</table>
+<p>A quick look into the six frame translation shows that the peptide is a perfectly tryptic peptide, with a tryptic cleave site at the N-terminus and a stop codon at the C-terminus:</p>
+<pre style='font-size: 8pt; line-height: 10pt;'>------------------------------------------------------------------------------------------------------------------------
+240  .    250  .    260  .    270  .    280  .    290  .    300  .    310  .    320  .    330  .    340  .    350  .    
+CGACCGCGACCGCGACCGC<span class='highlight-yellow'>GACCACGAATGCCAGCAGCTCCACGCCCACGCTCCA</span>TAGCAGCAACAAAAGGGCTTGAGTGAGAACGTTAGAAGTAACGTTAAAA
+GCTGGCGCTGGCGCTGGCGCTGGTGCTTACGGTCGTCGAGGTGCGGGTGCGAGGTATCGTCGTTGTTTTCCCGAACTCACTCTTGCAATCTTCATTGCAATTTT
+ R  P  R  P  R  P  R  P  R  M  P  A  A  P  R  P  R  S  I  A  A  T  K  G  L  E  *  E  R  *  K  *  R  *  
+  D  R  D  R  D  R <span class='highlight'> D  H  E  C  Q  Q  L  H  A  H  A  P </span> *  Q  Q  Q  K  G  L  S  E  N  V  R  S  N  V  K 
+T  T  A  T  A  T  A  T  T  N  A  S  S  S  T  P  T  L  H  S  S  N  K  R  A  *  V  R  T  L  E  V  T  L  K
+R  G  R  G  R  G  R  G  R  I  G  A  A  G  R  G  R  E  M  A  A  V  F  P  S  S  H  S  R  *  F  Y  R  *  F
+  V  A  V  A  V  A  V  V  F  A  L  L  E  V  G  V  S  W  L  L  L  L  L  A  Q  T  L  V  N  S  T  V  N  F 
+ S  R  S  R  S  R  S  W  S  H  W  C  S  W  A  W  A  G  Y  C  C  C  F  P  K  L  S  F  T  L  L  L  T  L  
+ 
+</pre><p><span class="caps">GPF</span> is also capable of aligning partially correct peptides, so let&#8217;s trying shuffling the C-terminal half of <span class="caps">DHECQQLHAHAP</span> and try <span class="caps">DHECQQAAHHLP</span>, which produces the same result:</p>
+<pre><codelisting>Processing query 1 of 1...  done.
+GPF search took 0.1 milliseconds.
+Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site
+DHECQQAAHHLP,RDRDR,DHECQQLHAHAP,*QQQK,1384.5936,"{mini/mini}+259:36",,
+</codelisting>
+</pre><p>Because the N-terminal part of the peptide was left intact, <span class="caps">GPF</span> could still find the peptide. As long as a single tag from the query peptide (5 amino acids by default) can be found in the genomic <span class="caps">DNA</span>, <span class="caps">GPF</span> will attempt to deduce a peptide. Furthermore, one enzymatic cleavage site is sufficient to find a peptide, this means that also semitryptic peptides can be found.</p>
+<p>Let&#8217;s search for another peptide, <span class="caps">QAQHRFS</span>:</p>
+<pre><codelisting>Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site
+QAQHRFS,PAWQ*,QAQHRFS,AA*AP,872.4250,"{mini/mini}+64:15,93:6",14,GC|AG
+</codelisting>
+</pre><pre style='font-size: 8pt; line-height: 10pt;'>------------------------------------------------------------------------------------------------------------------------
+0    .    10   .    20   .    30   .    40   .    50   .    60   .    70   .    80   .    90   .    100  .    110  .    
+CCGGCGAGCACTGCGTCCCGGGTCTGCTCTCCCACCCCGCTGATCTCAACCAGCTTGGCAATAA<span class='highlight-yellow'>CAGGCGCAGCACCGC</span><span class='highlight-grey'>GC</span>CTGATCGCCA<span class='highlight-grey'>AG</span><span class='highlight-yellow'>TTCAGT</span>GCAGCCTGAGCGCCCTGCGCG
+GGCCGCTCGTGACGCAGGGCCCAGACGAGAGGGTGGGGCGACTAGAGTTGGTCGAACCGTTATTGTCCGCGTCGTGGCGCGGACTAGCGGTTCAAGTCACGTCGGACTCGCGGGACGCGC
+ P  A  S  T  A  S  R  V  C  S  P  T  P  L  I  S  T  S  L  A  I  T  G  A  A  P  R  L  I  A  K <span class='highlight'> F  S </span> A  A  *  A  P  C  A 
+  R  R  A  L  R  P  G  S  A  L  P  P  R  *  S  Q  P  A  W  Q  * <span class='highlight'> Q  A  Q  H  R </span> A  *  S  P  S  S  V  Q  P  E  R  P  A  R
+   G  E  H  C  V  P  G  L  L  S  H  P  A  D  L  N  Q  L  G  N  N  R  R  S  T  A  P  D  R  Q  V  Q  C  S  L  S  A  L  R  
+   A  L  V  A  D  R  T  Q  E  G  V  G  S  I  E  V  L  K  A  I  V  P  A  A  G  R  R  I  A  L  N  L  A  A  Q  A  G  Q  A  
+  P  S  C  Q  T  G  P  R  S  E  W  G  A  S  R  L  W  S  P  L  L  L  R  L  V  A  G  S  R  W  T  *  H  L  R  L  A  R  R  P
+ R  R  A  S  R  G  P  D  A  R  G  G  R  Q  D  *  G  A  Q  C  Y  C  A  C  C  R  A  Q  D  G  L  E  T  C  G  S  R  G  A  R 
+
+</pre>
+<p>The result is a spliced alignment which includes a frame shift. Also, the peptide is semi-tryptic. The splice site dinucleotide pair is highlighted in gray. <span class="caps">GPF</span> can also find spliced peptide where the intron split happens within a coding nucleotide triplet:</p>
+<pre><codelisting>Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site
+ALPIAAPAPI,AP*G*,ALPIAAPAPI,AASCS,932.5690,"{mini/mini}+135:16,190:14",39,GC|AG
+</codelisting>
+</pre>
+<pre style='font-size: 8pt; line-height: 10pt;'>------------------------------------------------------------------------------------------------------------------------
+120  .    130  .    140  .    150  .    160  .    170  .    180  .    190  .    200  .    210  .    220  .    230  .    
+GCCCCCTGAGGCTGA<span class='highlight-yellow'>GCATTGCCGATCGCG</span><span class='highlight-green'>G</span><span class='highlight-grey'>GC</span>CCCTGCTCACCCTGGACGGCCTCGGCGACCACAGC<span class='highlight-grey'>AG</span><span class='highlight-green'>CG</span><span class='highlight'>CCAGCTCCGATAGC</span>AGCCTCCTGCTCCTGCTCCTGCTCCACAGCTCCA
+CGGGGGACTCCGACTCGTAACGGCTAGCGCCCGGGGACGAGTGGGACCTGCCGGAGCCGCTGGTGTCGTCGCGGTCGAGGCTATCGTCGGAGGACGAGGACGAGGACGAGGTGTCGAGGT
+ A  P  *  G  * <span class='highlight'> A  L  P  I  A </span> G  P  C  S  P  W  T  A  S  A  T  T  A  A <span class='highlight'> P  A  P  I </span> A  A  S  C  S  C  S  C  S  T  A  P 
+  P  P  E  A  E  H  C  R  S  R  A  P  A  H  P  G  R  P  R  R  P  Q  Q  R  Q  L  R  *  Q  P  P  A  P  A  P  A  P  Q  L  H
+G  P  L  R  L  S  I  A  D  R  G  P  L  L  T  L  D  G  L  G  D  H  S  S  A  S  S  D  S  S  L  L  L  L  L  L  L  H  S  S  
+A  G  Q  P  Q  A  N  G  I  A  P  G  Q  E  G  Q  V  A  E  A  V  V  A  A  G  A  G  I  A  A  E  Q  E  Q  E  Q  E  V  A  G  
+  G  R  L  S  L  M  A  S  R  P  G  R  S  V  R  S  P  R  P  S  W  L  L  A  L  E  S  L  L  R  R  S  R  S  R  S  W  L  E  V
+ G  G  S  A  S  C  Q  R  D  R  A  G  A  *  G  P  R  G  R  R  G  C  C  R  W  S  R  Y  C  G  G  A  G  A  G  A  G  C  S  W 
+
+</pre><p>The <span class="caps">DNA</span> fragments highlighted in green depict the coding nucleotide triplet which is split by an intron. After intron splicing, these fragments get assembled to <span class="caps">GCG</span>, resulting in an alanine residue (A). Note that technically, this is not the same alanine residue as the one left to the C-terminal exon part, which is not found by <span class="caps">GPF</span> because the resulting intron splice site dinucleotide pair would be GG/CA, which is not what we were looking for in this query.</p>
+<p>Although all queries shown so far resulted in alignments on the forward strand, alignments on the reverse strand are identified just as well. However, care must be taken when interpreting results from the reverse strand, because offsets are stored from the N-terminal side of an alignment, and in the case of spliced peptides, exon parts from the most N-terminal exon are stored first. Take a close look at the following example <span class="caps">CSV</span> output and the corresponding genome view to wrap your head around this:</p>
+<pre><codelisting>Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site
+RSHSSPFRGRG,*RYF*,RSHSSPFRGRG,AAGIR,1242.6326,"{mini/mini}-325:21,289:12",15,GT|AG
+</codelisting>
+</pre><pre style='font-size: 8pt; line-height: 10pt;'>------------------------------------------------------------------------------------------------------------------------
+240  .    250  .    260  .    270  .    280  .    290  .    300  .    310  .    320  .    330  .    340  .    350  .    
+CGACCGCGACCGCGACCGCGACCACGAATGCCAGCAGCTCCACGCCCACGCTCCATAGCAGCAACAAAAGGGCTTGAGTGAGAACGTTAGAAGTAACGTTAAAA
+GCTGGCGCTGGCGCTGGCGCTGGTGCTTACGGTCGTCG<span class='highlight'>AGGTGCGGGTGC</span><span class='highlight-grey'>GA</span>GGTATCGTCGT<span class='highlight-grey'>TG</span><span class='highlight'>TTTTCCCGAACTCACTCTTGC</span>AATCTTCATTGCAATTTT
+ R  P  R  P  R  P  R  P  R  M  P  A  A  P  R  P  R  S  I  A  A  T  K  G  L  E  *  E  R  *  K  *  R  *  
+  D  R  D  R  D  R  D  H  E  C  Q  Q  L  H  A  H  A  P  *  Q  Q  Q  K  G  L  S  E  N  V  R  S  N  V  K 
+T  T  A  T  A  T  A  T  T  N  A  S  S  S  T  P  T  L  H  S  S  N  K  R  A  *  V  R  T  L  E  V  T  L  K
+R  G  R  G  R  G  R  G  R  I  G  A  A <span class='highlight'> G  R  G  R </span> E  M  A  A  V <span class='highlight'> F  P  S  S  H  S  R </span> *  F  Y  R  *  F
+  V  A  V  A  V  A  V  V  F  A  L  L  E  V  G  V  S  W  L  L  L  L  L  A  Q  T  L  V  N  S  T  V  N  F 
+ S  R  S  R  S  R  S  W  S  H  W  C  S  W  A  W  A  G  Y  C  C  C  F  P  K  L  S  F  T  L  L  L  T  L  
+ 
+</pre><h3 id='h_butthevalidation'>But the validation?</h3>
+<p><span class="caps">GPF</span> can be used for two scenarios:</p>
+<ol>
+	<li>Align partially correct <em>de novo</em> predicted peptides to the genome.</li>
+	<li>Locate peptides in the genome.</li>
+</ol>
+<p>In the first case, <span class="caps">GPF</span> will output many different aligned peptides for every query peptide. The decision which peptide is the presumably correct one for a specific MS/MS scan is not within the scope of <span class="caps">GPF</span> but can be done using a database search program like <a href="http://pubchem.ncbi.nlm.nih.gov/omssa/"><span class="caps">OMSSA</span></a>. Peptide validation can be achieved via a modified target/decoy strategy as described in <a href="http://dx.doi.org/10.1002/pmic.201000621">this paper</a>.</p>
+<p>If you just want to quickly determine the position of peptides in a genome (scenario 2), you can call gpfquery with <code>--similaritySearch no</code> and <code>--distinguishIL yes</code>.</p>
+			</div>
+		</div>
+		<div class="clear"></div>
+	</div>
+	<div id="footer">
+		<p>Copyright &copy; 2009&ndash;2012 <a href='mailto:micha.specht@gmail.com'>Michael Specht</a>. Powered by <a href='http://redcloth.org/'>RedCloth</a>, design based on the <a href='http://www.freecsstemplates.org/preview/emerald'>Emerald</a> theme by <a href="http://www.freecsstemplates.org">Free CSS Templates</a>. </p>
+	</div>
+</div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-20429515-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>

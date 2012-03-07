@@ -1,0 +1,333 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+	Design by Free CSS Templates
+	http://www.freecsstemplates.org
+	Released for free under a Creative Commons Attribution 2.5 License
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Genomic Peptide Finder - Documentation</title>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<link href="template/default.css" rel="stylesheet" type="text/css" />
+<!-- <link href="template/print.css" rel="stylesheet" type="text/css" media="print" /> -->
+<link rel="icon" href="favicon.ico" type="image/vnd.microsoft.icon" />
+<link rel="shortcut icon" href="favicon.ico" type="image/vnd.microsoft.icon" />
+<!--<link href='http://fonts.googleapis.com/css?family=Molengo' rel='stylesheet' type='text/css'>-->
+</head>
+<body>
+<div id="outer">
+	<div id="header">
+		<h1 id='h_ahrefgenomicpeptidefindera'><a href="#">Genomic Peptide Finder</a></h1>
+	</div>
+	<div id='headerOverlay'>
+	</div>
+	<div id="menu">
+		<ul>
+			<li><a class='' href='index.html'>Home</a></li><li><a class='' href='gettingstarted.html'>Getting started</a></li><li><a class='current' href='doc.html'>Documentation</a></li><li><a class='' href='download.html'>Download</a></li><li><a class='' href='contribute.html'>Contribute</a></li><li><a class='' href='contact.html'>Contact</a></li>
+		</ul>
+	</div>
+<!--     <div id="secondaryContent"> -->
+        
+<!--     </div> -->
+	<div id="content">
+		<div id="primaryContentContainer">
+			<div id="primaryContent">
+            <div id='pagetitle'><h1 id='h_documentation'>Documentation</h1></div>
+			<p><div id='toc'>
+<b>Contents</b><br />
+<ul>
+<li><a href='#h_searchalgorithm'>Search algorithm</a></li>
+<ul>
+<li><a href='#h_determinelocationsofinterest'>Determine locations of interest</a></li>
+<li><a href='#h_findpeptidealignments'>Find peptide alignments</a></li>
+</ul>
+<li><a href='#h_indexfileformat'>Index file format</a></li>
+<ul>
+<li><a href='#h_indexdatastructure'>Index data structure</a></li>
+<li><a href='#h_chunks'>Chunks</a></li>
+<ul>
+<li><a href='#h_identifierchunk'>Identifier chunk</a></li>
+<li><a href='#h_infochunk'>Info chunk</a></li>
+<li><a href='#h_geneticcodechunkoptional'>Genetic code chunk (optional)</a></li>
+<li><a href='#h_enzymechunkoptional'>Enzyme chunk (optional)</a></li>
+<li><a href='#h_spanclasscapsdnaspanchunk'><span class="caps">DNA</span> chunk</a></li>
+<li><a href='#h_indexchunk'>Index chunk</a></li>
+</ul>
+</ul>
+</ul>
+</div>
+</p>
+<h2 id='h_searchalgorithm'>Search algorithm</h2>
+<p><span class="caps">GPF</span> matches peptides derived from <em>de novo</em> sequencing to a genomic <span class="caps">DNA</span> sequence in two steps:</p>
+<ol>
+	<li>Determine genomic locations of interest for a given peptide.</li>
+	<li>Deduce unspliced and spliced alignments at every location of interest.</li>
+</ol>
+<p>In the following, both steps are described in detail.</p>
+<h3 id='h_determinelocationsofinterest'>Determine locations of interest</h3>
+<p>In order to quickly determine all locations in the genome which could potentially explain an observed MS/MS scan, a previously compiled index is queried. The elements in the index file are <em>half mass sequence tags</em> (<span class="caps">HMST</span>) which consist of:</p>
+<ul>
+	<li>a small sequence of amino acids (typically 3 or 5)</li>
+	<li>the mass of either the N-terminal or C-terminal fragment up to the next enzymatic cleavage site</li>
+</ul>
+<p>From the query peptide (which is specified by the user), all possible <span class="caps">HMST</span> are extracted and queried. All locations of interest (or <em>seeding points</em>) are collected and passed to the next stage: peptide alignment.</p>
+<h3 id='h_findpeptidealignments'>Find peptide alignments</h3>
+<p>From a given location of interest, which always starts at a cleavage site and extends into either the N-terminal or C-terminal direction, an unspliced peptide assembly is attempted first. After that, spliced alignments may be attempted (by default, this only happens when no unspliced alignment has been found), taking splice site dinucleotide consensus sequences into account. In any case, any peptide is reported which has a monoisotopic mass which is equal to the mass of the query peptide within the user-specified mass accuracy (10 ppm by default).</p>
+<p>The following image is an attempt to clarify what&#8217;s happening:</p>
+<p><img src="images/gpf-workflow-small.png" alt="" /></p>
+<p><em>Note: Subfigure C in the figure above has been corrected because the spliced example in the <a href="http://dx.doi.org/10.1002/pmic.201000621">original figure</a> was pretending to show an alignment on the reverse strand (reading frames 4 to 6), which it was not.</em></p>
+<h2 id='h_indexfileformat'>Index file format</h2>
+<p><span class="caps">GPF</span> index files can be created from genomic <span class="caps">DNA</span> <span class="caps">FASTA</span> files using the <em>gpfindex</em> tool.</p>
+<h3 id='h_indexdatastructure'>Index data structure</h3>
+<p>A <span class="caps">HMST</span> is defined as a tuple of three elements:</p>
+<ul>
+	<li>tag</li>
+	<li>direction (0 if forward, 1 if reverse)</li>
+	<li>fragment mass</li>
+</ul>
+<p>An example for a <span class="caps">HMST</span> is [&#8216;<span class="caps">LQYSE</span>&#8217;, 0, 186.0793], corresponding to something which has &#8216;<span class="caps">LQYSE</span>&#8217; in it and N-terminal fragment (direction = 0) with a mass of 186 Da and which ends at a tryptic cleavage site.</p>
+<p>The index can be queried with a given tag/direction pair (in our example, [&#8216;<span class="caps">LQYSE</span>&#8217;, 0]) and returns a list of occurences in the genomic <span class="caps">DNA</span>, sorted by fragment mass. Using the sorted fragment masses, the subset of interest can quickly be determined using <a href="http://en.wikipedia.org/wiki/Binary_search_algorithm">binary search</a>, using the HMST&#8217;s fragment mass plus/minus the user-defined mass accuracy.</p>
+<p>Because leucine (L) and isoleucine (I) are not distinguished in the tags due to their equal masses, the number of possible tag/direction pairs is calculated as follows:</p>
+<p><b>tag/direction pair count</b> = 19 ^ tag size * 2<br />
+<i>(all strings of length <em>tag size</em> using 19 different characters (amino acids) plus one extra bit (*2) for the reading direction)</i></p>
+<p>Instead of recording actual amino acid sequences in the tags, all possible sequences are simply enumerated, for example <span class="caps">GGGGG</span> would correspond to 0, <span class="caps">GGGGA</span> would correspond to 1. All amino acids are sorted by their monoisotopic mass, and isoleucine is skipped, resulting in a numeric range from 0 to 18 for the amino acids glycine to tryptophan.</p>
+<h3 id='h_chunks'>Chunks</h3>
+<p>A <span class="caps">GPF</span> index file consists of a sequence of chunks, in the following order:</p>
+<h4 id='h_identifierchunk'>Identifier chunk</h4>
+<table>
+	<tr>
+		<th>Item </th>
+		<th>Size </th>
+		<th>Value / Comment</th>
+	</tr>
+	<tr>
+		<td> magic number </td>
+		<td> 8 </td>
+		<td> &#8216;gpfindex&#8217; </td>
+	</tr>
+	<tr>
+		<td> index version major </td>
+		<td> 2 </td>
+		<td> 3 </td>
+	</tr>
+	<tr>
+		<td> index version minor </td>
+		<td> 2 </td>
+		<td> 0 </td>
+	</tr>
+</table>
+<p><em>Note: As of now, only version 3.0 is supported.</em></p>
+<h4 id='h_infochunk'>Info chunk</h4>
+<table>
+	<tr>
+		<th>Item </th>
+		<th>Size </th>
+		<th>Value / Comment </th>
+	</tr>
+	<tr>
+		<td> chunk type </td>
+		<td> 4 </td>
+		<td> &#8216;100&#8217; </td>
+	</tr>
+	<tr>
+		<td> chunk length </td>
+		<td> 8 </td>
+		<td> length of this chunk, in bytes, starting from next byte </td>
+	</tr>
+	<tr>
+		<td> title length </td>
+		<td> 4 </td>
+		<td> the number of characters in the following title </td>
+	</tr>
+	<tr>
+		<td> title </td>
+		<td> <em>n</em> </td>
+		<td> the genome title, gets deduced from the input filename by default </td>
+	</tr>
+	<tr>
+		<td> offset bits </td>
+		<td> 4 </td>
+		<td> the number of bits required to encode any offset in the genomic <span class="caps">DNA</span>, including an extra bit for the strand </td>
+	</tr>
+	<tr>
+		<td> mass bits </td>
+		<td> 4 </td>
+		<td> user-defined value denoting the number of bits to used for storing masses using fixed-point arithmetic, 27 by default </td>
+	</tr>
+	<tr>
+		<td> mass precision </td>
+		<td> 4 </td>
+		<td> masses are multiplied by this factor before trunaction to integers, 10,000 by default, corresponding to 4 decimal places </td>
+	</tr>
+	<tr>
+		<td> tag size </td>
+		<td> 4 </td>
+		<td> tag length, in amino acids, 5 by default </td>
+	</tr>
+	<tr>
+		<td> scaffold count </td>
+		<td> 4 </td>
+		<td> number of scaffolds </td>
+	</tr>
+	<tr>
+		<th colspan="3"><em>for every scaffold:</em> </th>
+	</tr>
+	<tr>
+		<td> scaffold size </td>
+		<td> 8 </td>
+		<td> the scaffold size, in nucleotides </td>
+	</tr>
+	<tr>
+		<td> scaffold label length </td>
+		<td> 4 </td>
+		<td> the number of characters in the following scaffold label </td>
+	</tr>
+	<tr>
+		<td> scaffold label </td>
+		<td> <em>n</em> </td>
+		<td> the scaffold label </td>
+	</tr>
+</table>
+<h4 id='h_geneticcodechunkoptional'>Genetic code chunk (optional)</h4>
+<table>
+	<tr>
+		<th>Item </th>
+		<th>Size </th>
+		<th>Value / Comment </th>
+	</tr>
+	<tr>
+		<td> chunk type </td>
+		<td> 4 </td>
+		<td> &#8216;103&#8217; </td>
+	</tr>
+	<tr>
+		<td> chunk length </td>
+		<td> 8 </td>
+		<td> length of this chunk, in bytes, starting from next byte </td>
+	</tr>
+	<tr>
+		<td> genetic code </td>
+		<td> 4 </td>
+		<td> <span class="caps">NCBI</span> <a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi">genetic code number</a> </td>
+	</tr>
+</table>
+<p><em>Note: The genetic code chunk is only present if the genetic code used is not 1.</em></p>
+<h4 id='h_enzymechunkoptional'>Enzyme chunk (optional)</h4>
+<table>
+	<tr>
+		<th>Item </th>
+		<th>Size </th>
+		<th>Value / Comment </th>
+	</tr>
+	<tr>
+		<td> chunk type </td>
+		<td> 4 </td>
+		<td> &#8216;104&#8217; </td>
+	</tr>
+	<tr>
+		<td> chunk length </td>
+		<td> 8 </td>
+		<td> length of this chunk, in bytes, starting from next byte </td>
+	</tr>
+	<tr>
+		<td> enzyme length </td>
+		<td> 4 </td>
+		<td> the number of characters in the following enzyme description </td>
+	</tr>
+	<tr>
+		<td> enzyme </td>
+		<td> <em>n</em> </td>
+		<td> the enzyme description </td>
+	</tr>
+</table>
+<p><em>Note: The enzyme chunk is only present if the enzyme used is not &#8216;RK|&#8217;.</em></p>
+<h4 id='h_spanclasscapsdnaspanchunk'><span class="caps">DNA</span> chunk</h4>
+<table>
+	<tr>
+		<th>Item </th>
+		<th>Size </th>
+		<th>Value / Comment </th>
+	</tr>
+	<tr>
+		<td> chunk type </td>
+		<td> 4 </td>
+		<td> &#8216;101&#8217; </td>
+	</tr>
+	<tr>
+		<td> chunk length </td>
+		<td> 8 </td>
+		<td> length of this chunk, in bytes, starting from next byte </td>
+	</tr>
+	<tr>
+		<td> sequence </td>
+		<td> <em>n</em> </td>
+		<td> packed <span class="caps">DNA</span> sequence (3 bits per nucleotide) </td>
+	</tr>
+</table>
+<p><em>Note: Nucleotides are encoded using 3 bits, with values of 0 to 3 corresponding to the bases A, C, G, and T. Values higher than 3 represent unknown residues (N).</em></p>
+<h4 id='h_indexchunk'>Index chunk</h4>
+<table>
+	<tr>
+		<th>Item </th>
+		<th>Size </th>
+		<th>Value / Comment </th>
+	</tr>
+	<tr>
+		<td> chunk type </td>
+		<td> 4 </td>
+		<td> &#8216;102&#8217; </td>
+	</tr>
+	<tr>
+		<td> chunk length </td>
+		<td> 8 </td>
+		<td> length of this chunk, in bytes, starting from next byte </td>
+	</tr>
+	<tr>
+		<td> <span class="caps">HMST</span> count bits </td>
+		<td> 4 </td>
+		<td> number of bits required to encode the maximum <span class="caps">HMST</span> bucket size </td>
+	</tr>
+	<tr>
+		<td> <span class="caps">HMST</span> counts </td>
+		<td> <em>n</em> </td>
+		<td> packed <span class="caps">HMST</span> counts ((19 ^ tag size) * 2 entries, each of length <em><span class="caps">HMST</span> count bits</em>) <br /> the size of this structure is: floor((19 ^ tag size) * 2 * (<span class="caps">HMST</span> count bits) / 8) + 1 </td>
+	</tr>
+	<tr>
+		<th colspan="3"><em>for every tag/direction pair:</em> </th>
+	</tr>
+	<tr>
+		<td> packed masses </td>
+		<td> <em>n</em> </td>
+		<td> masses are sorted and encoded using <em>mass bits</em> bits </td>
+	</tr>
+	<tr>
+		<td> packed offsets </td>
+		<td> <em>n</em> </td>
+		<td> offsets are encoded using <em>offset bits</em> bits </td>
+	</tr>
+</table>
+			</div>
+		</div>
+		<div class="clear"></div>
+	</div>
+	<div id="footer">
+		<p>Copyright &copy; 2009&ndash;2012 <a href='mailto:micha.specht@gmail.com'>Michael Specht</a>. Powered by <a href='http://redcloth.org/'>RedCloth</a>, design based on the <a href='http://www.freecsstemplates.org/preview/emerald'>Emerald</a> theme by <a href="http://www.freecsstemplates.org">Free CSS Templates</a>. </p>
+	</div>
+</div>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-20429515-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>

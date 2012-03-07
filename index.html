@@ -1,88 +1,69 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+	Design by Free CSS Templates
+	http://www.freecsstemplates.org
+	Released for free under a Creative Commons Attribution 2.5 License
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta charset='utf-8'>
-
-  <title>specht/gpf @ GitHub</title>
-
-  <style type="text/css">
-    body {
-      margin-top: 1.0em;
-      background-color: #6fd229;
-      font-family: Helvetica, Arial, FreeSans, san-serif;
-      color: #ffffff;
-    }
-    #container {
-      margin: 0 auto;
-      width: 700px;
-    }
-    h1 { font-size: 3.8em; color: #902dd6; margin-bottom: 3px; }
-    h1 .small { font-size: 0.4em; }
-    h1 a { text-decoration: none }
-    h2 { font-size: 1.5em; color: #902dd6; }
-    h3 { text-align: center; color: #902dd6; }
-    a { color: #902dd6; }
-    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
-    .download { float: right; }
-    pre { background: #000; color: #fff; padding: 15px;}
-    hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
-    .footer { text-align:center; padding-top:30px; font-style: italic; }
-  </style>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Genomic Peptide Finder - Home</title>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<link href="template/default.css" rel="stylesheet" type="text/css" />
+<!-- <link href="template/print.css" rel="stylesheet" type="text/css" media="print" /> -->
+<link rel="icon" href="favicon.ico" type="image/vnd.microsoft.icon" />
+<link rel="shortcut icon" href="favicon.ico" type="image/vnd.microsoft.icon" />
+<!--<link href='http://fonts.googleapis.com/css?family=Molengo' rel='stylesheet' type='text/css'>-->
 </head>
-
 <body>
-  <a href="https://github.com/specht/gpf"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+<div id="outer">
+	<div id="header">
+		<h1><a href="#">Genomic Peptide Finder</a></h1>
+	</div>
+	<div id='headerOverlay'>
+	</div>
+	<div id="menu">
+		<ul>
+			<li><a class='current' href='index.html'>Home</a></li><li><a class='' href='gettingstarted.html'>Getting started</a></li><li><a class='' href='doc.html'>Documentation</a></li><li><a class='' href='download.html'>Download</a></li><li><a class='' href='contribute.html'>Contribute</a></li><li><a class='' href='contact.html'>Contact</a></li>
+		</ul>
+	</div>
+<!--     <div id="secondaryContent"> -->
+        
+<!--     </div> -->
+	<div id="content">
+		<div id="primaryContentContainer">
+			<div id="primaryContent">
+            <div id='pagetitle'><h1>Home</h1></div>
+			<h2>Welcome to <span class="caps">GPF</span></h2>
+<p>The Genomic Peptide Finder is a tool that matches <em>de novo</em> predicted amino acid sequences to the genomic <span class="caps">DNA</span> sequence of an organism. The matching procedure is error-tolerant to accomodate possible <em>de novo</em> sequencing errors due to individual missing fragment ions in the MS/MS scan. In addition, spliced peptides can be deduced from genomic <span class="caps">DNA</span>.</p>
+<p><span class="caps">GPF</span> has been devised by Jens Allmer and Michael Hippler in 2003, with subsequent design changes and reimplementation by Michael Specht starting in 2007.</p>
+<h2>References</h2>
+<ol>
+	<li>Allmer J, Markert C, Stauber EJ, Hippler M. 2004. <a href="http://linkinghub.elsevier.com/retrieve/pii/S0014579304002121">A new approach that allows identification of intron-split peptides from mass spectrometric data in genomic databases.</a> <span class="caps">FEBS</span> Letters 562:202-206.</li>
+	<li>Allmer J, Naumann B, Markert C, Zhang M, Hippler M. 2006. <a href="http://www3.interscience.wiley.com/journal/113447913/abstract">Mass spectrometric genomic data mining: novel insights into bioenergetic pathways in chlamydomonas reinhardtii.</a> Proteomics 6:6207-6220.</li>
+	<li>Specht M, Stanke M, Terashima M, Naumann-Busch B, Janßen I, Höhner R, Hom <span class="caps">EFY</span>, et al. 2011. <a href="http://dx.doi.org/10.1002/pmic.201000621">Concerted action of the new Genomic Peptide Finder and <span class="caps">AUGUSTUS</span> allows for automated proteogenomic annotation of the Chlamydomonas reinhardtii genome.</a> Proteomics 11:1814-1823.</li>
+</ol>
+			</div>
+		</div>
+		<div class="clear"></div>
+	</div>
+	<div id="footer">
+		<p>Copyright &copy; 2009&ndash;2012 <a href='mailto:micha.specht@gmail.com'>Michael Specht</a>. Powered by <a href='http://redcloth.org/'>RedCloth</a>, design based on the <a href='http://www.freecsstemplates.org/preview/emerald'>Emerald</a> theme by <a href="http://www.freecsstemplates.org">Free CSS Templates</a>. </p>
+	</div>
+</div>
+<script type="text/javascript">
 
-  <div id="container">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-20429515-1']);
+  _gaq.push(['_trackPageview']);
 
-    <div class="download">
-      <a href="https://github.com/specht/gpf/zipball/master">
-        <img border="0" width="90" src="https://github.com/images/modules/download/zip.png"></a>
-      <a href="https://github.com/specht/gpf/tarball/master">
-        <img border="0" width="90" src="https://github.com/images/modules/download/tar.png"></a>
-    </div>
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
 
-    <h1><a href="https://github.com/specht/gpf">GPF</a>
-      <span class="small">by <a href="https://github.com/specht">specht</a></span></h1>
-
-    <div class="description">
-      Genomic Peptide Finder
-    </div>
-
-    
-
-    
-
-    
-
-    
-
-    
-      <h2>Authors</h2>
-      <p>Michael Specht (micha.specht@gmail.com)<br/>      </p>
-    
-
-    
-      <h2>Contact</h2>
-      <p>Michael Specht (micha.specht@gmail.com)<br/>      </p>
-    
-
-    <h2>Download</h2>
-    <p>
-      You can download this project in either
-      <a href="https://github.com/specht/gpf/zipball/master">zip</a> or
-      <a href="https://github.com/specht/gpf/tarball/master">tar formats.
-    </p>
-    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
-      by running:
-      <pre>$ git clone git://github.com/specht/gpf</pre>
-    </p>
-
-    <div class="footer">
-      get the source code on GitHub : <a href="https://github.com/specht/gpf">specht/gpf</a>
-    </div>
-
-  </div>
-
+</script>
 </body>
 </html>
