@@ -220,6 +220,15 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
         
         // determine sub range in HMST list (via min and max masses)
         //fprintf(stderr, "tag/dir %8d: %d entries.\n", li_TagDirectionIndex, (qint32)mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]);
+
+        // TODO: This should really be a binary search, right now we look at
+        // every single element, which is kind of a shame.
+        // 1. Find the leftmost element with a mass >= li_MinMass via binary search
+        // 2. From there, find the rightmost element with a mass <= li_MaxMass via binary search
+        // U KAN DO IT!!
+        // Careful: Compare with native approach, there might be no appropriate
+        // result range.
+
         qint64 li_Start = -1;
         qint64 li_Count = 0;
         QList<qint64> lk_Masses;
@@ -239,6 +248,7 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
                 lk_Masses.append(li_Mass);
             }
         }
+//         fprintf(stderr, "Checked %d, found %d.\n", mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex], li_Count);
         //fprintf(stderr, "%d - %d\n", (qint32)li_Start, (qint32)(li_Count));
         
         // now we have the correct range, read the corresponding GNOs
@@ -248,7 +258,7 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
                 mk_GpfIndexFile.mk_HmstOffset[li_TagDirectionIndex] * mk_GpfIndexFile.mi_HmstBits +
                 mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex] * mk_GpfIndexFile.mi_MassBits + 
                 (i + li_Start) * mk_GpfIndexFile.mi_OffsetBits, mk_GpfIndexFile.mi_OffsetBits);
-            tk_GnoMassDirection lk_GnoMassDirection(li_Gno, (li_TagDirectionIndex % 2) == 1);
+            tk_GnoMassDirection lk_GnoMassDirection(li_Gno, (li_TagDirectionIndex & 1) == 1);
             
             // insert or update this entry if current half mass is lower
             if (!lk_GnoMap.contains(lk_GnoMassDirection))
@@ -936,7 +946,7 @@ void k_GpfQuery::readFlankingAminoAcids(qint64 ai_Start, qint64 ai_Stop,
         }
         // read triplet
         qint32 li_Triplet = gk_GpfBase.
-            readNucleotideTriplet(mk_GpfIndexFile.muc_pDnaBuffer.data(), li_Pointer - li_BBackwardsFactor * 2) & 511;
+            readNucleotideTriplet(mk_GpfIndexFile.muc_pDnaBuffer.data(), li_Pointer - li_BBackwardsFactor * 2);
         ls_Left = ac_TripletToAminoAcid_[li_Triplet] + ls_Left;
         li_Pointer -= ai_BStep1 * 3;
     }
@@ -957,7 +967,7 @@ void k_GpfQuery::readFlankingAminoAcids(qint64 ai_Start, qint64 ai_Stop,
         }
         // read triplet
         qint32 li_Triplet = gk_GpfBase.
-            readNucleotideTriplet(mk_GpfIndexFile.muc_pDnaBuffer.data(), li_Pointer - li_BBackwardsFactor * 2) & 511;
+            readNucleotideTriplet(mk_GpfIndexFile.muc_pDnaBuffer.data(), li_Pointer - li_BBackwardsFactor * 2);
         ls_Right += ac_TripletToAminoAcid_[li_Triplet];
         li_Pointer += ai_BStep1 * 3;
     }
