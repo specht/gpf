@@ -55,7 +55,7 @@ CGACCACGAATGCCAGCAGCTCCACGCCCACGCTCCATAGCAGCAACAAAAGGGCTTGAGTGAGAACGTTAGAAGTAACG
 </pre><h3 id='h_buildingtheindex'>Building the index</h3>
 <p>Before peptides can be queried with <span class="caps">GPF</span>, an index file of the genomic <span class="caps">DNA</span> sequence must be built. In order to do this, call <em>gpfindex</em> and specify the input and output file names:</p>
 <p><strong><code>$ ./gpfindex mini.fasta mini.fasta.gpfindex</code></strong></p>
-<p>There are a couple of optional parameters which can be passed to <em>gpfindex</em>, with sensible default values. By default, <em>gpfindex</em> uses a tag size of 5 amino acids and trypsin for determination of enzymatic cleavage sites. Run the program without any parameters to see all options.</p>
+<p>There are a couple of optional parameters which can be passed to <em>gpfindex</em>, all of which have sensible default values. By default, <em>gpfindex</em> uses a tag size of 5 amino acids and trypsin for determination of enzymatic cleavage sites. Run the program without any parameters to see all options.</p>
 <h3 id='h_queryingtheindex'>Querying the index</h3>
 <p>Query the index with a peptide with the following command:</p>
 <p><strong><code>$ ./gpfquery mini.fasta.gpfindex DHECQQLHAHAP</code></strong></p>
@@ -81,7 +81,7 @@ DHECQQLHAHAP,RDRDR,DHECQQLHAHAP,*QQQK,1384.5936,"{mini/mini}+259:36",,
 	</tr>
 	<tr>
 		<td> Peptide </td>
-		<td> The peptide resulting from <span class="caps">GPF</span> search. This peptide is usually a bit differeny from your query, unless you run the program with <code>--similaritySearch no</code>, which only looks for perfect matches (and is therefore faster). </td>
+		<td> The peptide resulting from <span class="caps">GPF</span> search. This peptide is usually a bit different from your query, unless you run the program with <code>--similaritySearch no</code>, which only looks for perfect matches (and is therefore faster). However, the mass of this peptide matches the mass of the query peptide within the user-specified mass accuracy. </td>
 	</tr>
 	<tr>
 		<td> AA C-term </td>
@@ -89,12 +89,12 @@ DHECQQLHAHAP,RDRDR,DHECQQLHAHAP,*QQQK,1384.5936,"{mini/mini}+259:36",,
 	</tr>
 	<tr>
 		<td> Mass </td>
-		<td> The monoisotopic mass of the <span class="caps">GPF</span> peptide. </td>
+		<td> The monoisotopic mass of the <span class="caps">DNA</span>-aligned <span class="caps">GPF</span> peptide. </td>
 	</tr>
 	<tr>
 		<td> Assembly </td>
 		<td> A textual representation of the alignment. <br /> The part in curly braces describes the genomic <span class="caps">DNA</span> identifier and the contig, separated by a slash. <br /> The + or &#8211; sign denotes the reading direction. <br />
-The rest is a list of offset:length tuples, offsets are zero-based in respect the contig, if there&#8217;s more than one tuple, it&#8217;s a spliced alignment. <br /> Offsets are always oriented towards the peptide&#8217;s N-terminus, tuples always start with the N-terminal part. </td>
+The rest is a list of offset:length tuples, offsets are zero-based in respect to the contig. If there&#8217;s more than one tuple, it&#8217;s a spliced alignment. <br /> Offsets are always oriented towards the peptide&#8217;s N-terminus, the pair of tuples in a spliced alignment always starts with the N-terminal part. </td>
 	</tr>
 	<tr>
 		<td> Intron length </td>
@@ -117,13 +117,13 @@ R  G  R  G  R  G  R  G  R  I  G  A  A  G  R  G  R  E  M  A  A  V  F  P  S  S  H 
   V  A  V  A  V  A  V  V  F  A  L  L  E  V  G  V  S  W  L  L  L  L  L  A  Q  T  L  V  N  S  T  V  N  F 
  S  R  S  R  S  R  S  W  S  H  W  C  S  W  A  W  A  G  Y  C  C  C  F  P  K  L  S  F  T  L  L  L  T  L  
  
-</pre><p><span class="caps">GPF</span> is also capable of aligning partially correct peptides, so let&#8217;s trying shuffling the C-terminal half of <span class="caps">DHECQQLHAHAP</span> and try <span class="caps">DHECQQAAHHLP</span>, which produces the same result:</p>
+</pre><p><span class="caps">GPF</span> is also capable of aligning partially correct peptides, so let&#8217;s trying shuffling the C-terminal half of <span class="caps">DHECQQLHAHAP</span> and try <span class="caps">DHECQQAAHHLP</span>, which results in the same peptide alignment:</p>
 <pre><codelisting>Processing query 1 of 1...  done.
 GPF search took 0.1 milliseconds.
 Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site
 DHECQQAAHHLP,RDRDR,DHECQQLHAHAP,*QQQK,1384.5936,"{mini/mini}+259:36",,
 </codelisting>
-</pre><p>Because the N-terminal part of the peptide was left intact, <span class="caps">GPF</span> could still find the peptide. As long as a single tag from the query peptide (5 amino acids by default) can be found in the genomic <span class="caps">DNA</span>, <span class="caps">GPF</span> will attempt to deduce a peptide. Furthermore, one enzymatic cleavage site is sufficient to find a peptide, this means that also semitryptic peptides can be found.</p>
+</pre><p>Because the N-terminal part of the peptide was left intact, <span class="caps">GPF</span> could still find the peptide. As long as a single tag from the query peptide (5 amino acids by default, I/L not distinguished) can be found in the genomic <span class="caps">DNA</span>, <span class="caps">GPF</span> will attempt to deduce a peptide. Furthermore, one enzymatic cleavage site is sufficient to find a peptide, this means that also semitryptic peptides can be found.</p>
 <p>Let&#8217;s search for another peptide, <span class="caps">QAQHRFS</span>:</p>
 <pre><codelisting>Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site
 QAQHRFS,PAWQ*,QAQHRFS,AA*AP,872.4250,"{mini/mini}+64:15,93:6",14,GC|AG
@@ -156,8 +156,8 @@ A  G  Q  P  Q  A  N  G  I  A  P  G  Q  E  G  Q  V  A  E  A  V  V  A  A  G  A  G 
   G  R  L  S  L  M  A  S  R  P  G  R  S  V  R  S  P  R  P  S  W  L  L  A  L  E  S  L  L  R  R  S  R  S  R  S  W  L  E  V
  G  G  S  A  S  C  Q  R  D  R  A  G  A  *  G  P  R  G  R  R  G  C  C  R  W  S  R  Y  C  G  G  A  G  A  G  A  G  C  S  W 
 
-</pre><p>The <span class="caps">DNA</span> fragments highlighted in green depict the coding nucleotide triplet which is split by an intron. After intron splicing, these fragments get assembled to <span class="caps">GCG</span>, resulting in an alanine residue (A). Note that technically, this is not the same alanine residue as the one left to the C-terminal exon part, which is not found by <span class="caps">GPF</span> because the resulting intron splice site dinucleotide pair would be GG/CA, which is not what we were looking for in this query.</p>
-<p>Although all queries shown so far resulted in alignments on the forward strand, alignments on the reverse strand are identified just as well. However, care must be taken when interpreting results from the reverse strand, because offsets are stored from the N-terminal side of an alignment, and in the case of spliced peptides, exon parts from the most N-terminal exon are stored first. Take a close look at the following example <span class="caps">CSV</span> output and the corresponding genome view to wrap your head around this:</p>
+</pre><p>The <span class="caps">DNA</span> fragments highlighted in green denote the coding nucleotide triplet which is split by an intron. After intron splicing, these fragments get assembled to <span class="caps">GCG</span>, resulting in an alanine residue (A). Note that technically, this is not the same alanine residue as the one left to the C-terminal exon part, which is not found by <span class="caps">GPF</span> because the resulting intron splice site dinucleotide pair would be GG/CA, which is not what we were looking for in this query.</p>
+<p>Although all queries shown so far resulted in alignments on the forward strand, alignments on the reverse strand are identified just as well. However, care must be taken when interpreting results from the reverse strand, because offsets are stored from the N-terminal side of an alignment, and in the case of spliced peptides, the exon part of the most N-terminal exon is stored first. Take a close look at the following example <span class="caps">CSV</span> output and the corresponding genome view to wrap your head around this:</p>
 <pre><codelisting>Query,AA N-term,Peptide,AA C-term,Mass,Assembly,Intron length,Splice site
 RSHSSPFRGRG,*RYF*,RSHSSPFRGRG,AAGIR,1242.6326,"{mini/mini}-325:21,289:12",15,GT|AG
 </codelisting>

@@ -70,11 +70,11 @@
 <p>In order to quickly determine all locations in the genome which could potentially explain an observed MS/MS scan, a previously compiled index is queried. The elements in the index file are <em>half mass sequence tags</em> (<span class="caps">HMST</span>) which consist of:</p>
 <ul>
 	<li>a small sequence of amino acids (typically 3 or 5)</li>
-	<li>the mass of either the N-terminal or C-terminal fragment up to the next enzymatic cleavage site</li>
+	<li>the mass of either the N-terminal or C-terminal fragment up to the next enzymatic cleavage site (or stop codon, or the end of a contig)</li>
 </ul>
 <p>From the query peptide (which is specified by the user), all possible <span class="caps">HMST</span> are extracted and queried. All locations of interest (or <em>seeding points</em>) are collected and passed to the next stage: peptide alignment.</p>
 <h3 id='h_findpeptidealignments'>Find peptide alignments</h3>
-<p>From a given location of interest, which always starts at a cleavage site and extends into either the N-terminal or C-terminal direction, an unspliced peptide assembly is attempted first. After that, spliced alignments may be attempted (by default, this only happens when no unspliced alignment has been found), taking splice site dinucleotide consensus sequences into account. In any case, any peptide is reported which has a monoisotopic mass which is equal to the mass of the query peptide within the user-specified mass accuracy (10 ppm by default).</p>
+<p>From a given location of interest, which always starts at a cleavage site and extends into either the N-terminal or C-terminal direction, an unspliced peptide assembly is attempted first. After that, spliced alignments may be attempted (by default, this only happens when no unspliced alignment has been found), taking splice site dinucleotide consensus sequences into account. In any case, every peptide is reported which has a monoisotopic mass equal to the mass of the query peptide within the user-specified mass accuracy (10 ppm by default).</p>
 <p>The following image is an attempt to clarify what&#8217;s happening:</p>
 <p><img src="images/gpf-workflow-small.png" alt="" /></p>
 <p><em>Note: Subfigure C in the figure above has been corrected because the spliced example in the <a href="http://dx.doi.org/10.1002/pmic.201000621">original figure</a> was pretending to show an alignment on the reverse strand (reading frames 4 to 6), which it was not.</em></p>
@@ -87,12 +87,12 @@
 	<li>direction (0 if forward, 1 if reverse)</li>
 	<li>fragment mass</li>
 </ul>
-<p>An example for a <span class="caps">HMST</span> is [&#8216;<span class="caps">LQYSE</span>&#8217;, 0, 186.0793], corresponding to something which has &#8216;<span class="caps">LQYSE</span>&#8217; in it and N-terminal fragment (direction = 0) with a mass of 186 Da and which ends at a tryptic cleavage site.</p>
+<p>An example for a <span class="caps">HMST</span> is [&#8216;<span class="caps">LQYSE</span>&#8217;, 0, 186.0793], corresponding to something which has &#8216;<span class="caps">LQYSE</span>&#8217; in it and an N-terminal fragment (direction = 0) with a mass of 186 Da that ends at a tryptic cleavage site (or stop codon, or the end of a contig, you get the point).</p>
 <p>The index can be queried with a given tag/direction pair (in our example, [&#8216;<span class="caps">LQYSE</span>&#8217;, 0]) and returns a list of occurences in the genomic <span class="caps">DNA</span>, sorted by fragment mass. Using the sorted fragment masses, the subset of interest can quickly be determined using <a href="http://en.wikipedia.org/wiki/Binary_search_algorithm">binary search</a>, using the HMST&#8217;s fragment mass plus/minus the user-defined mass accuracy.</p>
 <p>Because leucine (L) and isoleucine (I) are not distinguished in the tags due to their equal masses, the number of possible tag/direction pairs is calculated as follows:</p>
-<p><b>tag/direction pair count</b> = 19 ^ tag size * 2<br />
-<i>(all strings of length <em>tag size</em> using 19 different characters (amino acids) plus one extra bit (*2) for the reading direction)</i></p>
-<p>Instead of recording actual amino acid sequences in the tags, all possible sequences are simply enumerated, for example <span class="caps">GGGGG</span> would correspond to 0, <span class="caps">GGGGA</span> would correspond to 1. All amino acids are sorted by their monoisotopic mass, and isoleucine is skipped, resulting in a numeric range from 0 to 18 for the amino acids glycine to tryptophan.</p>
+<p><b>tag/direction pair count</b> = (19 ^ tag size) * 2<br />
+<i>(all strings of length <em>tag size</em> using 19 different characters (amino acids) plus one extra bit (*2) to denote whether this is an N- or C-terminal <span class="caps">HMST</span>)</i></p>
+<p>Instead of recording actual amino acid sequences in the index, all possible sequences are simply enumerated, for example <span class="caps">GGGGG</span> would correspond to 0, <span class="caps">GGGGA</span> would correspond to 1. All amino acids are sorted by their monoisotopic mass, and isoleucine is skipped, resulting in a numeric range from 0 to 18 for the amino acids glycine to tryptophan.</p>
 <h3 id='h_chunks'>Chunks</h3>
 <p>A <span class="caps">GPF</span> index file consists of a sequence of chunks, in the following order:</p>
 <h4 id='h_identifierchunk'>Identifier chunk</h4>
