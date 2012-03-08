@@ -341,23 +341,17 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
             gk_GpfBase.mk_TranslationTables[mk_GpfIndexFile.mi_GeneticCode].data();
         
         tk_IntPairListHash* lk_IntronStart_ = NULL;
-        tk_IntPairListHash* lk_IntronEnd_ = NULL;
         tk_IntPairList* lk_IntronStartKeys_ = NULL;
-        tk_IntPairList* lk_IntronEndKeys_ = NULL;
         
         if (lb_BackwardsFrame)
         {
             lk_IntronStart_ = lb_RightHalfMass ? &mk_IntronCTermReverse : &mk_IntronNTermReverse;
-            lk_IntronEnd_ = lb_RightHalfMass ? &mk_IntronNTermReverse : &mk_IntronCTermReverse;
             lk_IntronStartKeys_ = lb_RightHalfMass ? &mk_IntronCTermReverseKeys : &mk_IntronNTermReverseKeys;
-            lk_IntronEndKeys_ = lb_RightHalfMass ? &mk_IntronNTermReverseKeys : &mk_IntronCTermReverseKeys;
         }
         else
         {
             lk_IntronStart_ = lb_RightHalfMass ? &mk_IntronCTerm : &mk_IntronNTerm;
-            lk_IntronEnd_ = lb_RightHalfMass ? &mk_IntronNTerm : &mk_IntronCTerm;
             lk_IntronStartKeys_ = lb_RightHalfMass ? &mk_IntronCTermKeys : &mk_IntronNTermKeys;
-            lk_IntronEndKeys_ = lb_RightHalfMass ? &mk_IntronNTermKeys : &mk_IntronCTermKeys;
         }
         int li_IntronStartMaxLength = lb_RightHalfMass ? mi_IntronCTermMaxLength : mi_IntronNTermMaxLength;
         int li_IntronEndMaxLength = lb_RightHalfMass ? mi_IntronNTermMaxLength : mi_IntronCTermMaxLength;
