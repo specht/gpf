@@ -11,6 +11,8 @@ h2. Building GPF
 GPF requires Qt 4.6+, and building is straightforward:
 
 <pre>
+$ git submodule update --init
+
 $ cd projects/gpfindex
 $ qmake
 $ make release
