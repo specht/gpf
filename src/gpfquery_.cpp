@@ -248,7 +248,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         exit(1);
     }
     
-    QList<tk_StringIntPair> lk_QueryPeptides;
+    QList<r_Query> lk_QueryPeptides;
     
     foreach (QString ls_Path, lk_PeptideFiles)
     {
@@ -263,22 +263,57 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
                 QString ls_Line = lk_Stream.readLine();
                 ++li_LineCount;
                 QStringList lk_Line = ls_Line.split(lk_RegExp);
-                QString ls_Peptide = lk_Line[0];
-                qint64 li_Mass = 0;
-                if (lk_Line.size() > 1)
+                if (lk_Line.size() == 5)
                 {
+                    QString ls_Id = lk_Line[0];
                     bool lb_Ok = false;
-                    double ld_Mass = lk_Line[1].toDouble(&lb_Ok);
+
+                    double ld_NTerminalMass = lk_Line[1].toDouble(&lb_Ok);
+                    if (!lb_Ok)
+                    {
+                        fprintf(stderr, "Error: Invalid N-terminal mass in %s, line %d.\n", ls_Path.toStdString().c_str(), li_LineCount);
+                        exit(1);
+                    }
+                    qint64 li_NTerminalMass = (qint64)(ld_NTerminalMass * lk_pGpfIndexFile->mi_MassPrecision);
+
+                    QString ls_Peptide = lk_Line[2];
+
+                    double ld_CTerminalMass = lk_Line[3].toDouble(&lb_Ok);
+                    if (!lb_Ok)
+                    {
+                        fprintf(stderr, "Error: Invalid C-terminal mass in %s, line %d.\n", ls_Path.toStdString().c_str(), li_LineCount);
+                        exit(1);
+                    }
+                    qint64 li_CTerminalMass = (qint64)(ld_CTerminalMass * lk_pGpfIndexFile->mi_MassPrecision);
+
+                    double ld_PrecursorMass = lk_Line[4].toDouble(&lb_Ok);
                     if (!lb_Ok)
                     {
                         fprintf(stderr, "Error: Invalid precursor mass in %s, line %d.\n", ls_Path.toStdString().c_str(), li_LineCount);
                         exit(1);
                     }
-                    li_Mass = (qint64)(ld_Mass * lk_pGpfIndexFile->mi_MassPrecision);
+                    qint64 li_PrecursorMass = (qint64)(ld_PrecursorMass * lk_pGpfIndexFile->mi_MassPrecision);
+                    lk_QueryPeptides << r_Query(ls_Peptide, li_PrecursorMass, li_NTerminalMass, li_CTerminalMass, ls_Id);
                 }
                 else
-                    li_Mass = lk_pGpfIndexFile->peptideMass(ls_Peptide);
-                lk_QueryPeptides << tk_StringIntPair(ls_Peptide, li_Mass);
+                {
+                    QString ls_Peptide = lk_Line[0];
+                    qint64 li_Mass = 0;
+                    if (lk_Line.size() > 1)
+                    {
+                        bool lb_Ok = false;
+                        double ld_Mass = lk_Line[1].toDouble(&lb_Ok);
+                        if (!lb_Ok)
+                        {
+                            fprintf(stderr, "Error: Invalid precursor mass in %s, line %d.\n", ls_Path.toStdString().c_str(), li_LineCount);
+                            exit(1);
+                        }
+                        li_Mass = (qint64)(ld_Mass * lk_pGpfIndexFile->mi_MassPrecision);
+                    }
+                    else
+                        li_Mass = lk_pGpfIndexFile->peptideMass(ls_Peptide);
+                    lk_QueryPeptides << r_Query(ls_Peptide, li_Mass);
+                }
             }
             lk_File.close();
         }
@@ -307,7 +342,7 @@ int main(int ai_ArgumentCount, char **ac_Arguments__)
         }
         if (li_Mass == 0)
             li_Mass = lk_pGpfIndexFile->peptideMass(ls_Peptide);
-        lk_QueryPeptides << tk_StringIntPair(ls_Peptide, li_Mass);
+        lk_QueryPeptides << r_Query(ls_Peptide, li_Mass);
     }
 
     k_GpfQuery lk_Query(*(lk_pGpfIndexFile.data()), ld_MassAccuracy,

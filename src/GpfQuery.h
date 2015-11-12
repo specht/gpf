@@ -42,6 +42,31 @@ struct r_IntronSearchType
     };
 };
 
+struct r_Query
+{
+    QString ms_Peptide;
+    QString ms_Id;
+    qint64 mi_PrecursorMass;
+    qint64 mi_NTerminalMass;
+    qint64 mi_CTerminalMass;
+
+    r_Query(QString as_Peptide, qint64 ai_PrecursorMass)
+        : ms_Peptide(as_Peptide)
+        , ms_Id(QString())
+        , mi_PrecursorMass(ai_PrecursorMass)
+        , mi_NTerminalMass(0)
+        , mi_CTerminalMass(0)
+    {}
+
+    r_Query(QString as_Peptide, qint64 ai_PrecursorMass, qint64 ai_NTerminalMass,
+                 qint64 ai_CTerminalMass, QString as_Id)
+        : ms_Peptide(as_Peptide)
+        , ms_Id(as_Id)
+        , mi_PrecursorMass(ai_PrecursorMass)
+        , mi_NTerminalMass(ai_NTerminalMass)
+        , mi_CTerminalMass(ai_CTerminalMass)
+    {}
+};
 
 // mass direction: false == left, true == right
 typedef QPair<qint64, bool> tk_GnoMassDirection;
@@ -67,8 +92,8 @@ public:
                QIODevice* ak_CsvOutput_, QIODevice* ak_PeptidesOutput_);
     virtual ~k_GpfQuery();
     
-    void execute(const QString& as_Peptide, qint64 ai_PrecursorMass);
-    void execute(const QList<tk_StringIntPair> ak_Peptides);
+    void execute(const QString& as_Peptide, qint64 ai_PrecursorMass, qint64 ai_NTerminalMass, qint64 ai_CTerminalMass, QString as_Id);
+    void execute(const QList<r_Query> ak_Peptides);
     
 protected:
     void findAlignments(const tk_GnoMap& ak_GnoMap,
@@ -129,6 +154,7 @@ protected:
     int mi_AlignmentMaxMass;
     QString ms_QueryPeptide;
     QString ms_QueryPeptideIL;
+    QString ms_QueryPeptideId;
 };
 
 

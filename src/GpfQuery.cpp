@@ -58,7 +58,7 @@ k_GpfQuery::k_GpfQuery(k_GpfIndexFile& ak_GpfIndexFile, double ad_MassAccuracy,
         mk_CsvOutStream << ",Peptide";
         if (mi_FlankingSequenceLength > 0)
             mk_CsvOutStream << ",AA C-term";
-        mk_CsvOutStream << ",Mass,Assembly,Intron length,Splice site\n";
+        mk_CsvOutStream << ",Mass,Assembly,Intron length,Splice site,ID\n";
     }
     
     // convert human readable intron splice site consensus sequences 
@@ -153,9 +153,19 @@ k_GpfQuery::~k_GpfQuery()
 }
 
 
-void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
+void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass,
+                         qint64 ai_NTerminalMass, qint64 ai_CTerminalMass, QString as_Id = QString())
 {
+    /*
+    fprintf(stderr, "[%1.4f, %s, %1.4f] (%1.4f)\n",
+            (double)ai_NTerminalMass / mk_GpfIndexFile.mi_MassPrecision,
+            as_Peptide.toStdString().c_str(),
+            (double)ai_CTerminalMass / mk_GpfIndexFile.mi_MassPrecision,
+            (double)ai_PrecursorMass / mk_GpfIndexFile.mi_MassPrecision
+           );
+    */
     ms_QueryPeptide = as_Peptide;
+    ms_QueryPeptideId = as_Id;
     ms_QueryPeptideIL = as_Peptide;
     ms_QueryPeptideIL.replace("I", "L");
     
@@ -169,14 +179,14 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
     QMultiMap<qint32, qint64> lk_AllHmst;
     
     // extract all left HMST
-    qint64 li_HalfMass = 0;
+    qint64 li_HalfMass = ai_NTerminalMass;
     for (int i = 0; i + mk_GpfIndexFile.mi_TagSize <= as_Peptide.length() && li_HalfMass <= mk_GpfIndexFile.mi_MaxMass; ++i)
     {
         QString ls_Tag = as_Peptide.mid(i, mk_GpfIndexFile.mi_TagSize);
         qint32 li_Tag = gk_GpfBase.aminoAcidPolymerCode(ls_Tag.toStdString().c_str(), mk_GpfIndexFile.mi_TagSize) * 2;
 //          fprintf(stderr, "tag: [%1.4f, %s] (%x)\n", (double)li_HalfMass / mk_GpfIndexFile.mi_MassPrecision, ls_Tag.toStdString().c_str(), li_Tag);
 
-        //fprintf(stderr, "%s %d %d\n", ls_Tag.toStdString().c_str(), li_Tag, (qint32)li_HalfMass);
+//         fprintf(stderr, "%s %d %d\n", ls_Tag.toStdString().c_str(), li_Tag, (qint32)li_HalfMass);
         lk_AllHmst.insert(li_Tag, li_HalfMass);
         
         // break loop if no similarity search
@@ -187,7 +197,7 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
     }
     
     // extract all right HMST
-    li_HalfMass = 0;
+    li_HalfMass = ai_CTerminalMass;
     for (int i = as_Peptide.length() - mk_GpfIndexFile.mi_TagSize; i >= 0 && li_HalfMass <= mk_GpfIndexFile.mi_MaxMass; --i)
     {
         QString ls_Tag = as_Peptide.mid(i, mk_GpfIndexFile.mi_TagSize);
@@ -219,7 +229,7 @@ void k_GpfQuery::execute(const QString& as_Peptide, qint64 ai_PrecursorMass)
         qint64 li_MaxMass = li_HalfMass + li_HalfMassDelta;
         
         // determine sub range in HMST list (via min and max masses)
-        //fprintf(stderr, "tag/dir %8d: %d entries.\n", li_TagDirectionIndex, (qint32)mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]);
+//         fprintf(stderr, "tag/dir %8d: %d entries.\n", li_TagDirectionIndex, (qint32)mk_GpfIndexFile.mk_HmstCount[li_TagDirectionIndex]);
 
         // TODO: This should really be a binary search, right now we look at
         // every single element, which is kind of a shame.
@@ -481,21 +491,23 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                             li_ScaffoldStart,
                                                             li_ScaffoldEnd,
                                                             lc_TripletToAminoAcid_);
-                                        mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",,\n")
+                                        mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",,,\"%7\"\n")
                                             .arg(ms_QueryPeptide)
                                             .arg(ls_LeftAminoAcids)
                                             .arg(ls_Peptide)
                                             .arg(ls_RightAminoAcids)
                                             .arg((double)li_AssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
-                                            .arg(ls_Assembly);
+                                            .arg(ls_Assembly)
+                                            .arg(ms_QueryPeptideId);
                                     }
                                     else
                                     {
-                                        mk_CsvOutStream << QString("%1,%2,%3,\"%4\",,\n")
+                                        mk_CsvOutStream << QString("%1,%2,%3,\"%4\",,,\"%5\"\n")
                                             .arg(ms_QueryPeptide)
                                             .arg(ls_Peptide)
                                             .arg((double)li_AssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
-                                            .arg(ls_Assembly);
+                                            .arg(ls_Assembly)
+                                            .arg(ms_QueryPeptideId);
                                     }
                                 }
                             }
@@ -825,7 +837,7 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                                                                 li_ScaffoldEnd,
                                                                                                 lc_TripletToAminoAcid_);
                                                                                     
-                                                                            mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",%7,%8\n")
+                                                                            mk_CsvOutStream << QString("%1,%2,%3,%4,%5,\"%6\",%7,%8,\"%9\"\n")
                                                                                 .arg(ms_QueryPeptide)
                                                                                 .arg(ls_LeftAminoAcids)
                                                                                 .arg(ls_SubPeptide)
@@ -833,17 +845,19 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
                                                                                 .arg((double)li_SubAssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
                                                                                 .arg(ls_Assembly)
                                                                                 .arg(li_IntronLength)
-                                                                                .arg(ls_SpliceSite);
+                                                                                .arg(ls_SpliceSite)
+                                                                                .arg(ms_QueryPeptideId);
                                                                         }
                                                                         else
                                                                         {
-                                                                            mk_CsvOutStream << QString("%1,%2,%3,\"%4\",%5,%6\n")
+                                                                            mk_CsvOutStream << QString("%1,%2,%3,\"%4\",%5,%6,\"%7\"\n")
                                                                                 .arg(ms_QueryPeptide)
                                                                                 .arg(ls_SubPeptide)
                                                                                 .arg((double)li_SubAssemblyMass / mk_GpfIndexFile.mi_MassPrecision, 1, 'f', mk_GpfIndexFile.mi_MassDecimalDigits)
                                                                                 .arg(ls_Assembly)
                                                                                 .arg(li_IntronLength)
-                                                                                .arg(ls_SpliceSite);
+                                                                                .arg(ls_SpliceSite)
+                                                                                .arg(ms_QueryPeptideId);
                                                                         }
                                                                     }
                                                                 }
@@ -891,18 +905,19 @@ void k_GpfQuery::findAlignments(const tk_GnoMap& ak_GnoMap,
 }
 
 
-void k_GpfQuery::execute(const QList<tk_StringIntPair> ak_Peptides)
+void k_GpfQuery::execute(const QList<r_Query> ak_Peptides)
 {
     mk_ResultingPeptides.clear();
     int i = 0;
-    foreach (tk_StringIntPair lk_Peptide, ak_Peptides)
+    foreach (r_Query lk_Query, ak_Peptides)
     {
         if (!mb_Quiet)
         {
             ++i;
             fprintf(stderr, "\rProcessing query %d of %d... ", i, ak_Peptides.size());
         }
-        this->execute(lk_Peptide.first, lk_Peptide.second);
+        this->execute(lk_Query.ms_Peptide, lk_Query.mi_PrecursorMass,
+                      lk_Query.mi_NTerminalMass, lk_Query.mi_CTerminalMass, lk_Query.ms_Id);
     }
     if (!mb_Quiet)
         fprintf(stderr, " done.\n");
